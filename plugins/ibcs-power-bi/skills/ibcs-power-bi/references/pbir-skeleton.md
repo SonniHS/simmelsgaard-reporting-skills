@@ -251,7 +251,7 @@ Microsoft's PBIR validator rejects `fontSize` there (end-to-end test, as of 2026
   `In` list, blank as the literal `null` (filter syntax from Microsoft's PBIR filter reference,
   as of 2026-10; verify once in the service):
   ```json
-  "filterConfig": {"filters": [{"name": "excludeBlankUnknown",
+  "filterConfig": {"filters": [{"name": "excludeBlankUnknown_overview_slCustomerGroup",
     "field": {"Column": {"Expression": {"SourceRef": {"Entity": "Customer"}}, "Property": "Customer Group"}},
     "type": "Categorical", "howCreated": "User",
     "filter": {"Version": 2, "From": [{"Name": "c", "Entity": "Customer", "Type": 0}],
@@ -260,7 +260,11 @@ Microsoft's PBIR validator rejects `fontSize` there (end-to-end test, as of 2026
         "Values": [[{"Literal": {"Value": "null"}}], [{"Literal": {"Value": "'Unknown'"}}]]}}}}}]}}]}
   ```
   Inside `Where` the column refers to the `From` alias (`"Source": "c"`), not the entity. Use the
-  unknown member's exact label from the model. Charts keep showing the unknown member's values
+  unknown member's exact label from the model. The filter `name` must be unique in the whole
+  report, not only in the visual: Microsoft's PBIR validator warns `PBIR_FILTER_NAME_DUPLICATE_GLOBAL`
+  when two slicers (or the synced copies of one slicer on several pages) carry the same name. Build
+  it from a fixed prefix plus the page and visual name (`excludeBlankUnknown_<page>_<visual>`, as
+  above) or use a fresh 20-character hex id per filter, as Desktop does. Charts keep showing the unknown member's values
   (totals must reconcile); only the slicer list hides it.
 - **The same slicer on several pages is synced**, so a selection carries across pages like an
   app's URL state: give each copy the same `syncGroup` inside `"visual"` (sibling of

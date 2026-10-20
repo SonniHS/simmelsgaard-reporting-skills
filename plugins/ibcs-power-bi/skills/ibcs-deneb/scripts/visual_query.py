@@ -2,7 +2,8 @@
 """Write the DAX query a Deneb visual sends, for live-data previews (render-previews.mjs --visual).
 
     python3 -I visual_query.py <…/visuals/<v>/visual.json> [--extensions <…/reportExtensions.json>]
-        [--sort-by "Month Short=Month No"] [--filter "'Date'[Year] = 2026"] [--body out.json]
+        [--sort-by "Month Short=Month No"] [--filter "'Date'[Year] = 2026"]
+        [--filter "'Customer'[Country] IN {\"DE\", \"AT\"}"] [--body out.json]
 
 It reads the visual's dataset projections, its basic (In) visual filters and its sort, and prints
 an EVALUATE SUMMARIZECOLUMNS over the columns with the measures named as the visual binds them.
@@ -10,8 +11,14 @@ Every report-level measure of reportExtensions.json (found next to the pages fol
 --extensions) is defined with DEFINE MEASURE, so the query runs against the published model
 without the report. --sort-by maps a category column to the model's sort-by column
 ("Month Short=Month No": adds 'Date'[Month No] to the query and orders by it), as the service does.
---filter adds page or slicer context the visual does not hold itself (a DAX filter expression,
-repeatable): the visual's query alone ignores slicers and page filters.
+--filter adds page or slicer context the visual does not hold itself (repeatable): the visual's
+query alone ignores slicers and page filters. `'Table'[Column] = value` and
+`'Table'[Column] IN {v1, v2}` become TREATAS ( { … }, 'Table'[Column] ), a filter table, as the
+service sends slicer context; a boolean `col = value` argument inside SUMMARIZECOLUMNS works for a
+number column but fails on a text column ("a single value for column … cannot be determined").
+Write literals in the column's type (2026 for a number, "Name" for text). Anything else is passed
+through unchanged and must be a filter TABLE expression, e.g. FILTER ( ALL ( 'Date'[Month] ),
+'Date'[Month] <= "2026-06" ) or KEEPFILTERS ( TREATAS ( … ) ).
 --body writes the executeQueries request body instead of printing the query; run it with
     fab api -A powerbi -X post "groups/<ws>/datasets/<model>/executeQueries" -i out.json > rows.json
 and pass rows.json to render-previews.mjs --visual <visual.json>=rows.json. Nothing is sent by
@@ -22,6 +29,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -61,6 +69,28 @@ def visual_filters(vis: dict) -> list[str]:
         vals = [literal(row[0]) for row in cond["In"]["Values"]]
         out.append(f"TREATAS ( {{ {', '.join(vals)} }}, {col} )")
     return out
+
+
+_SIMPLE = re.compile(r"^\s*((?:'(?:[^']|'')+'|[A-Za-z_][\w ]*?)\s*\[[^\]]+\])\s*(=|IN\b)\s*(.+?)\s*$",
+                     re.IGNORECASE | re.DOTALL)
+
+
+def filter_table(expr: str) -> str:
+    """`col = v` / `col IN {v1, v2}` -> TREATAS ( { … }, col ); anything else unchanged (a filter table).
+
+    A boolean `'T'[Text] = "x"` argument in SUMMARIZECOLUMNS fails on text columns; TREATAS works
+    for every column type and is what the service sends for slicer selections."""
+    m = _SIMPLE.match(expr)
+    if not m:
+        return expr.strip()
+    col, op, rhs = m.group(1).strip(), m.group(2).upper(), m.group(3)
+    if "&&" in rhs or "||" in rhs:   # a compound condition: leave it to the caller
+        return expr.strip()
+    if op == "IN":
+        if not (rhs.startswith("{") and rhs.endswith("}")):
+            return expr.strip()
+        rhs = rhs[1:-1].strip()
+    return f"TREATAS ( {{ {rhs} }}, {col} )"
 
 
 def report_measures(path: Path | None) -> list[str]:
@@ -108,7 +138,7 @@ def build(vis: dict, ext: Path | None, sort_by: dict[str, str], extra: list[str]
             r = f"[{name}]"
         order = f"\nORDER BY {r} {'DESC' if sort[0].get('direction') == 'Descending' else 'ASC'}"
     body = ",\n    ".join(f'"{n}", {r}' for n, r in meas)
-    filters = visual_filters(vis) + extra
+    filters = visual_filters(vis) + [filter_table(f) for f in extra]
     if cols:
         query = "EVALUATE SUMMARIZECOLUMNS (\n    " + ",\n    ".join(cols + filters + [body]) + "\n)" + order
     elif filters:
@@ -124,7 +154,8 @@ def main() -> int:
     ap.add_argument("visual")
     ap.add_argument("--extensions", help="reportExtensions.json (default: found next to the pages folder)")
     ap.add_argument("--sort-by", action="append", default=[], metavar="COL=SORTCOL")
-    ap.add_argument("--filter", action="append", default=[], metavar="DAX")
+    ap.add_argument("--filter", action="append", default=[], metavar="DAX",
+                    help="'T'[Col] = value, 'T'[Col] IN {v1, v2} (both become TREATAS) or a DAX filter table")
     ap.add_argument("--body", help="write the executeQueries request body to this file")
     a = ap.parse_args()
     vpath = Path(a.visual)

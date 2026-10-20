@@ -32,7 +32,7 @@
           "TotalValue"
         ]
       ],
-      "notes": "Value is the contribution to the total, not necessarily the source measure delta: for a cost line in a margin bridge bind −ΔCOS with Polarity +1. A cost increase therefore contributes a negative step (unfavourable), and a cost reduction contributes a positive step (favourable). Polarity changes only impact colour; geometry always follows the contribution sign. Include a remainder row (e.g. Rest) so base + Σ contribution = total. If they do not reconcile, the arrow label shows the difference with a '!'. Two waterfalls of one unit: the same pxPerUnit and labelWidth, and each visual's width sized to its own range (usermeta.ibcs.layout). Rounded-zero rule: abs(value) × 10^decimals < 0.5 is labelled 0 without sign and gets no impact colour. Input formats: (1) explicit Kind rows, with base/total values in Value; (2) one model row per element, Value as the signed contribution, optional Kind omitted, and BaseValue/TotalValue measures repeated on element rows. The template uses the first non-null value of each anchor independently in visual row order, creates each missing anchor once, and keeps explicit base/total rows when present. baseLabel/totalLabel name only the synthesized bars. Repeated anchor measures must be constant in the current filter context. Blank categories and rows whose Value, BaseValue and TotalValue are all null are dropped; zero is a value, and an anchor-only row is retained. PxPerUnit alone do not retain an unknown N/A member. Scale band (CH 4.3): set scaleBand (or bind ScaleBand) to the same round value in every chart of the unit whose scales differ (e.g. a waterfall by month next to one by entity at another px per unit). Highlight (UN 5.1): knob highlight = the row label, or field Highlight = 1 on that row, draws the blue ellipse around its value label; one highlighted value per chart, the one the key message names. With pxPerUnit = 0 the scale leaves room for the widest label (measured like bar-structure-variance) beyond the 34 px right padding, so labels are never cut at the visual edge.",
+      "notes": "Value is the contribution to the total, not necessarily the source measure delta: for a cost line in a margin bridge bind −ΔCOS with Polarity +1. A cost increase therefore contributes a negative step (unfavourable), and a cost reduction contributes a positive step (favourable). Polarity changes only impact colour; geometry always follows the contribution sign. Include a remainder row (e.g. Rest) so base + Σ contribution = total. If they do not reconcile, the arrow label shows the difference with a '!'. Two waterfalls of one unit: the same pxPerUnit and labelWidth, and each visual's width sized to its own range (usermeta.ibcs.layout). Rounded-zero rule: abs(value) × 10^decimals < 0.5 is labelled 0 without sign and gets no impact colour. Input formats: (1) explicit Kind rows, with base/total values in Value; (2) one model row per element, Value as the signed contribution, optional Kind omitted, and BaseValue/TotalValue measures repeated on element rows. The template uses the first non-null value of each anchor independently in visual row order, creates each missing anchor once, and keeps explicit base/total rows when present. baseLabel/totalLabel name only the synthesized bars. Repeated anchor measures must be constant in the current filter context. Blank categories and rows whose Value, BaseValue and TotalValue are all null are dropped; zero is a value, and an anchor-only row is retained. PxPerUnit alone do not retain an unknown N/A member. Scale band (CH 4.3): set scaleBand (or bind ScaleBand) to the same round value in every chart of the unit whose scales differ (e.g. a waterfall by month next to one by entity at another px per unit). Highlight (UN 5.1): knob highlight = the row label, or field Highlight = 1 on that row, draws the blue ellipse around its value label; one highlighted value per chart, the one the key message names. With pxPerUnit = 0 the scale leaves room for the widest label (measured like bar-structure-variance) beyond the 34 px right padding, so labels are never cut at the visual edge. Short bars (small values under a fixed pxPerUnit): a base or total label that does not fit inside its bar sits right of the bar in the text colour, and a negative variance label that would come closer than valueLabelGap px to the category axis moves to the far (right) end of its bar, so value labels never run into the category labels.",
       "knobs": [
         "refScenario",
         "minuend",
@@ -119,6 +119,22 @@
             "height": 230
           },
           "note": "Scale band at 5 display units and the highlighting ellipse on one variance label."
+        },
+        {
+          "suffix": "-short-bars",
+          "sampleData": "waterfall-variance-short-bars.json",
+          "params": {
+            "refScenario": "BU",
+            "baseLabel": "BU",
+            "totalLabel": "AC",
+            "pxPerUnit": 3,
+            "labelWidth": 60
+          },
+          "preview": {
+            "width": 360,
+            "height": 260
+          },
+          "note": "Short bars under a fixed pxPerUnit: base and total labels that do not fit inside their bar sit right of it, and a negative variance label that would reach the category labels moves to the far end of its bar."
         }
       ]
     }
@@ -191,6 +207,11 @@
       "name": "ibcsCharWidth",
       "value": 0.6,
       "description": "estimated width of one label character as a share of ibcsFontSize; with pxPerUnit = 0 the value scale leaves room inside the plot for the widest label beyond the 34 px right padding, so labels are never cut at the visual edge"
+    },
+    {
+      "name": "valueLabelGap",
+      "value": 4,
+      "description": "minimum px between a value label and the category axis: a negative variance label that would come closer (short bars, a small base under a fixed pxPerUnit) is drawn right of its bar instead, so it never runs into the category labels"
     },
     {
       "name": "labelWidth",
@@ -961,10 +982,10 @@
           "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : ibcsBackground"
         },
         "align": {
-          "expr": "datum._k != 'variance' ? 'center' : (datum._val >= 0 ? 'left' : 'right')"
+          "expr": "datum._k != 'variance' ? ((scale('x', datum._x1) >= length(datum._lbl) * ibcsFontSize * ibcsCharWidth + 6) ? 'center' : 'left') : (datum._val >= 0 || !(scale('x', datum._x1) + (scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3) - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= valueLabelGap) ? 'left' : 'right')"
         },
         "dx": {
-          "expr": "datum._k != 'variance' ? 0 : (datum._val >= 0 ? 3 : (scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * 0.6 && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * 0.6 >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3))"
+          "expr": "datum._k != 'variance' ? ((scale('x', datum._x1) >= length(datum._lbl) * ibcsFontSize * ibcsCharWidth + 6) ? 0 : scale('x', datum._x1) - scale('x', datum._x1 / 2) + 3) : (datum._val >= 0 ? 3 : ((scale('x', datum._x1) + (scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3) - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= valueLabelGap) ? (scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3) : scale('x', datum._x0) - scale('x', datum._x1) + 3))"
         },
         "stroke": {
           "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : ibcsBackground"
@@ -988,7 +1009,7 @@
       }
     },
     {
-      "description": "base/total labels inside the bar (centred); variance labels outside in the direction of the change; a negative variance label that would sit on the vertical assisting line from the base end moves left of that line",
+      "description": "base/total labels inside the bar (centred), right of the bar when it is too short for the label; variance labels outside in the direction of the change; a negative variance label that would sit on the vertical assisting line from the base end moves left of that line, and one that would come closer than valueLabelGap px to the category axis (into the category label column) moves to the far end of its bar",
       "transform": [
         {
           "calculate": "datum._k == 'variance' ? (datum._val >= 0 ? datum._x1 : datum._x1) : datum._x1 / 2",
@@ -1002,13 +1023,13 @@
           "expr": "ibcsFontSize"
         },
         "fill": {
-          "expr": "datum._k == 'total' && minuend != 'FC' ? ibcsTextOnDark : ibcsText"
+          "expr": "datum._k == 'total' && minuend != 'FC' && (scale('x', datum._x1) >= length(datum._lbl) * ibcsFontSize * ibcsCharWidth + 6) ? ibcsTextOnDark : ibcsText"
         },
         "align": {
-          "expr": "datum._k != 'variance' ? 'center' : (datum._val >= 0 ? 'left' : 'right')"
+          "expr": "datum._k != 'variance' ? ((scale('x', datum._x1) >= length(datum._lbl) * ibcsFontSize * ibcsCharWidth + 6) ? 'center' : 'left') : (datum._val >= 0 || !(scale('x', datum._x1) + (scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3) - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= valueLabelGap) ? 'left' : 'right')"
         },
         "dx": {
-          "expr": "datum._k != 'variance' ? 0 : (datum._val >= 0 ? 3 : (scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * 0.6 && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * 0.6 >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3))"
+          "expr": "datum._k != 'variance' ? ((scale('x', datum._x1) >= length(datum._lbl) * ibcsFontSize * ibcsCharWidth + 6) ? 0 : scale('x', datum._x1) - scale('x', datum._x1 / 2) + 3) : (datum._val >= 0 ? 3 : ((scale('x', datum._x1) + (scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3) - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= valueLabelGap) ? (scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3) : scale('x', datum._x0) - scale('x', datum._x1) + 3))"
         }
       },
       "encoding": {
@@ -1077,6 +1098,9 @@
         },
         "fill": {
           "expr": "ibcsText"
+        },
+        "xOffset": {
+          "expr": "max(0, length(refScenario) * ibcsFontSize * ibcsCharWidth / 2 + 2 - scale('x', datum._lx))"
         }
       },
       "encoding": {
@@ -1119,6 +1143,9 @@
         },
         "fill": {
           "expr": "ibcsText"
+        },
+        "xOffset": {
+          "expr": "max(0, length(minuend) * ibcsFontSize * ibcsCharWidth / 2 + 2 - scale('x', datum._lx))"
         }
       },
       "encoding": {
@@ -1280,7 +1307,7 @@
           "expr": "pow((length(datum._lbl) * ibcsFontSize * 0.55) + 10, 2)"
         },
         "xOffset": {
-          "expr": "datum._k != 'variance' ? 0 : (datum._val >= 0 ? 3 + (length(datum._lbl) * ibcsFontSize * 0.55) / 2 : ((scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * 0.6 && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * 0.6 >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3)) - (length(datum._lbl) * ibcsFontSize * 0.55) / 2)"
+          "expr": "datum._k != 'variance' ? ((scale('x', datum._x1) >= length(datum._lbl) * ibcsFontSize * ibcsCharWidth + 6) ? 0 : scale('x', datum._x1) - scale('x', datum._x1 / 2) + 3 + (length(datum._lbl) * ibcsFontSize * 0.55) / 2) : (datum._val >= 0 ? 3 + (length(datum._lbl) * ibcsFontSize * 0.55) / 2 : ((scale('x', datum._x1) + (scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3) - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= valueLabelGap) ? (scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * ibcsCharWidth >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3) - (length(datum._lbl) * ibcsFontSize * 0.55) / 2 : scale('x', datum._x0) - scale('x', datum._x1) + 3 + (length(datum._lbl) * ibcsFontSize * 0.55) / 2))"
         }
       },
       "encoding": {

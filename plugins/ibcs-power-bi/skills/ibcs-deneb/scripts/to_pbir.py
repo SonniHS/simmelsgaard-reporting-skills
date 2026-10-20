@@ -17,7 +17,8 @@
 
 --sort <template field>[:asc|desc]: the field must be bound (--field, or already in the visual);
 sort a month name by its number through the model's "sort by column". Deneb keeps the query order.
---filter <col>:<Table>[<Column>]=<v1>,<v2>…: a basic (In) filter in the visual's filterConfig;
+--filter <col>:<Table>[<Column>]=<v1>,<v2>…: a basic (In) filter in the visual's filterConfig, named
+<visual name>_filter<n> (filter names must be unique in the whole report);
 values are typed like PBIR literals: 2026 -> 2026L, 1.5 -> 1.5D, true/false, anything else a text.
 Text values containing a comma cannot be written with this option. For "last closed month" style
 defaults use a flag column in the model (see ibcs-power-bi §4) and filter on it here.
@@ -122,7 +123,7 @@ def pbir_literal(v: str) -> str:
     return "'" + v.replace("'", "''") + "'"
 
 
-def basic_filter(spec: str, n: int) -> dict:
+def basic_filter(spec: str, n: int, visual_name: str = "") -> dict:
     m = FILTER.match(spec.strip())
     if not m:
         raise ValueError(f"bad --filter {spec!r} (expected col:Table[Column]=v1,v2)")
@@ -130,7 +131,9 @@ def basic_filter(spec: str, n: int) -> dict:
     alias = "f"
     col = {"Column": {"Expression": {"SourceRef": {"Entity": table}}, "Property": prop}}
     return {
-        "name": f"filter{n}",
+        # unique across the report: Microsoft's PBIR validator warns PBIR_FILTER_NAME_DUPLICATE_GLOBAL
+        # when two visuals carry a filter of the same name
+        "name": f"{visual_name}_filter{n}" if visual_name else f"filter{n}",
         "field": col,
         "type": "Categorical",
         "filter": {
@@ -182,7 +185,7 @@ def apply_extras(visual: dict, a) -> None:
     if a.filter:
         existing = visual.setdefault("filterConfig", {}).setdefault("filters", [])
         start = len(existing)
-        existing += [basic_filter(f, start + i + 1) for i, f in enumerate(a.filter)]
+        existing += [basic_filter(f, start + i + 1, visual.get("name", "")) for i, f in enumerate(a.filter)]
     if a.title is not None:
         props = {"show": lit_bool(bool(a.title))}
         if a.title:

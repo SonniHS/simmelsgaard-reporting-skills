@@ -1,0 +1,38 @@
+[
+ {
+  "Category": "2026-01",
+  "Value": -0.1,
+  "BaseValue": 4.2,
+  "TotalValue": 4.5
+ },
+ {
+  "Category": "2026-02",
+  "Value": 0.3,
+  "BaseValue": 4.2,
+  "TotalValue": 4.5
+ },
+ {
+  "Category": "2026-03",
+  "Value": -0.2,
+  "BaseValue": 4.2,
+  "TotalValue": 4.5
+ },
+ {
+  "Category": "2026-04",
+  "Value": 0.0,
+  "BaseValue": 4.2,
+  "TotalValue": 4.5
+ },
+ {
+  "Category": "2026-05",
+  "Value": 0.4,
+  "BaseValue": 4.2,
+  "TotalValue": 4.5
+ },
+ {
+  "Category": "2026-06",
+  "Value": -0.1,
+  "BaseValue": 4.2,
+  "TotalValue": 4.5
+ }
+]

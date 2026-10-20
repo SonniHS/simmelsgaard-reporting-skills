@@ -121,6 +121,31 @@ Fields, knobs and notes per template are in each file's `usermeta.ibcs` and in
 - **Highlighting ellipse** (UN 5.1): `waterfall-variance` knob `highlight` (the row label) or field
   `Highlight` (1 on that row) circles the value label the key message cites. When the base and
   total bars carry the same label, use the field.
+  **A `Highlight` measure that picks the "worst" row must not iterate the axis table under
+  `ALLSELECTED`.** A measure of the shape `FILTER ( ADDCOLUMNS ( ALLSELECTED ( 'Date' ), "@d",
+  [ΔBU] ), [@d] < 0 )` → `TOPN ( 1, … )` flagged the right month in an *Execute Queries* preview
+  but EVERY negative month in the Power BI service (end-to-end test, as of 2026-10). `ALLSELECTED`
+  restores a shadow filter context that depends on how the query is wrapped, and the service wraps
+  slicer and visual filters differently from a hand-written query. Working pattern: build the
+  candidate list as plain axis **values** of the effective period (the same period logic the
+  chart's value measure uses), evaluate each candidate with an explicit filter that replaces the
+  axis filter, pick one winner with a tie-break, compare:
+  ```dax
+  VAR __P = <the effective period: a one-column table of 'Date'[Month] values, as the value measure filters>
+  VAR __cand = FILTER (
+      ADDCOLUMNS ( __P, "@d",
+          VAR __m = 'Date'[Month]
+          RETURN ROUND ( CALCULATE ( [ΔBU], REMOVEFILTERS ( 'Date' ), 'Date'[Month] = __m ), 1 ) ),
+      [@d] < 0 )   -- rounded as labelled, so a label of 0.0 is never "worst"
+  VAR __w = MAXX ( TOPN ( 1, __cand, [@d], ASC, 'Date'[Month], ASC ), 'Date'[Month] )
+  RETURN IF ( NOT ISBLANK ( [ΔBU] ) && SELECTEDVALUE ( 'Date'[Month] ) = __w, 1 )
+  ```
+  When the period comes from a slicer on the axis column, read the selection once as a list
+  (`CALCULATETABLE ( VALUES ( 'Date'[Month] ), ALLSELECTED ( 'Date' ) )`) and use it as `__P`;
+  never evaluate the measure by context transition over `ALLSELECTED` table rows. A structure axis
+  works the same way over `VALUES` of its column (e.g. `'Customer'[Customer]`) with
+  `REMOVEFILTERS ( 'Customer' )` inside. **Check highlights in the published report**, with and
+  without a slicer selection, not only in the preview: exactly one circled label.
 - **All tiers of a time chart in ONE visual** (CO 4.2): `column-two-tier-variance` knob `pinTier`
   adds ΔX% pins as a third tier above the absolute variance tier, on their own % scale
   (`pinPxPerUnit` px per percentage point, the same on every pin tier and `pin-relative-variance`
@@ -234,7 +259,10 @@ VEGA_HOME="$VEGA_HOME" node "${CLAUDE_SKILL_DIR}/scripts/render-previews.mjs" --
 the page's filter context with *Execute Queries* (report measures as `DEFINE MEASURE`).
 `python3 -I "${CLAUDE_SKILL_DIR}/scripts/visual_query.py" <…/visual.json> --sort-by "Month Short=Month No"
 [--filter "'Date'[Year] = 2026"] --body q.json` writes that query (fields, visual filters, sort,
-every report measure defined; add slicer/page context with `--filter`); run it with
+every report measure defined; add slicer/page context with `--filter`: `'T'[Col] = value` and
+`'T'[Col] IN {v1, v2}` become `TREATAS ( { … }, 'T'[Col] )` like the service's slicer filters, so
+text columns work too; anything else must be a filter table such as `FILTER ( ALL ( 'T'[Col] ), … )`);
+run it with
 `fab api -A powerbi -X post "groups/<ws>/datasets/<model>/executeQueries" -i q.json > rows.json`, then
 `VEGA_HOME="$VEGA_HOME" node "${CLAUDE_SKILL_DIR}/scripts/render-previews.mjs" --visual
 <…/visual.json>=<rows.json> [--visual …] --out ./deneb-preview --png`. It decodes the spec and
