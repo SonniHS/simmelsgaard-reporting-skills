@@ -419,6 +419,47 @@ SUMMARIZECOLUMNS (
 
 Align rows with the base bar chart (same categories, same order, same height); same scale.
 
+**Member-level variances without `Ibcs.DeltaMember`.** Many models have explicit Δ measures (or
+only `Ibcs.Delta` / `Ibcs.DeltaPct`) whose Δ is BLANK for a member without AC or without
+reference, so the rows do not add up to the total Δ ([dax-patterns.md](dax-patterns.md) §10).
+Define the member rule in the query, in plain DAX (explicit-measure names as in §0.7; any model
+table can hold the query measure):
+
+```dax
+DEFINE
+    MEASURE 'Measures'[q Revenue ΔBU member] =
+        VAR _ac  = [Revenue]
+        VAR _ref = [Revenue BU]
+        VAR _refExists = NOT ISBLANK ( CALCULATE ( [Revenue BU], REMOVEFILTERS ( Entity ) ) )   -- the structure dimension
+        RETURN
+            IF ( _refExists && NOT ( ISBLANK ( _ac ) && ISBLANK ( _ref ) ),
+                 COALESCE ( _ac, 0 ) - COALESCE ( _ref, 0 ) )
+    MEASURE 'Measures'[q Revenue ΔBU% member] =               -- signed reference; N/A when ≤ 0 or blank
+        VAR _ref = [Revenue BU]
+        RETURN IF ( _ref > 0, DIVIDE ( [q Revenue ΔBU member], _ref ) )
+EVALUATE
+SUMMARIZECOLUMNS (
+    Entity[EntityCode], Entity[EntityName],
+    TREATAS ( { "2026-07", "2026-08", "2026-09" }, 'Date'[MonthLabel] ),
+    "AC", [Revenue], "BU", [Revenue BU],
+    "ΔBU", [q Revenue ΔBU member], "ΔBU%", [q Revenue ΔBU% member],
+    "ImpactΔBU", Ibcs.Impact ( [q Revenue ΔBU member], [Revenue Polarity] )
+)
+ORDER BY Entity[EntityCode]
+```
+
+- A discontinued member gets 0 − BU and −100 %, a new member AC − 0 and N/A, a member with
+  neither nothing; where both exist the result equals the model's Δ (checked against a model's
+  explicit Δ measure, 2026-10). With `Ibcs.DeltaPct` available, the Δ% line can be
+  `Ibcs.DeltaPct ( COALESCE ( [Revenue], 0 ), [Revenue BU] )`.
+- Keep the both-blank guard: `COALESCE ( _ac, 0 ) - COALESCE ( _ref, 0 )` alone returns 0 for
+  every empty member, including the blank member, and `SUMMARIZECOLUMNS` then keeps those rows.
+- `_refExists` stops a period without any reference data (before the budget or PY history)
+  from turning every AC into a variance. Without a model `Polarity` measure use a constant
+  (`Ibcs.Impact ( …, 1 )`) or `SIGN ( Δ × polarity )` in plain DAX, guarded for BLANK and 0.
+- Flag it as for every query-scoped measure: footnote, and the model's change list
+  (`Ibcs.DeltaMember`, §0.7).
+
 ### Vertical pins (ΔBU% by entity)
 
 The previous query with `"ΔBU%"`. BLANK → `N/A`.

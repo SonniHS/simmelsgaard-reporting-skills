@@ -29,6 +29,14 @@ group.json (ranges in display units after unitDivisor; pin charts in percentage 
       ]
     }
 
+Tiers that exist only with a knob (`onlyIf` in the template layout) count only when the member's params
+set it: column-two-tier-variance with "params": {"showBase": false} has no base tier, with
+{"pinTier": true, "pinPxPerUnit": 2} it has a "pins" tier (range in percentage points) sized at
+pinPxPerUnit px per point (the tier's own scale), e.g.
+        {"id": "monthly", "template": "column-two-tier-variance",
+         "params": {"pinTier": true, "pinPxPerUnit": 2},
+         "tiers": {"base": [0, 23], "variance": [-2.1, 3.4], "pins": [-12, 20]}}
+
 Optional per template member (the docs' extra paddings, so nothing is cut or squashed):
     "comment": true          Comment markers bound: + ibcsFontSize + 18 px on the first tier's padHigh
     "clipPct": true          pin outliers cut (clipPct / ClipPct): + ibcsFontSize + ibcsPinHeadMax + 6 px
@@ -153,6 +161,8 @@ def member_parts(m: dict, tdir: Path, group_ppu: float | None = None) -> dict:
         fs = float(params.get("ibcsFontSize", 12))
         trend_px = fs + 10 + float(params.get("trendLiftPx", 0) or 0) + (fs + 10 if params.get("trendLabel") else 4)
     for tier in lay["tiers"]:
+        if tier.get("onlyIf") and params.get(tier["onlyIf"]) is not True:
+            continue   # e.g. base tier with showBase false, pin tier without pinTier
         if tier["id"] not in given:
             sys.exit(f"member {m['id']}: missing tier {tier['id']!r} ({tier['range']})")
         lo, hi = given[tier["id"]]
@@ -163,6 +173,10 @@ def member_parts(m: dict, tdir: Path, group_ppu: float | None = None) -> dict:
         tppu = m.get("tierPxPerUnit", {}).get(tier["id"])
         if tppu == "group":
             tppu = group_ppu
+        if tppu is None and tier.get("pxPerUnitParam"):
+            # a tier on its own scale inside the visual (pin tier: px per percentage point)
+            tppu = float(params.get(tier["pxPerUnitParam"]) or 0) or sys.exit(
+                f"member {m['id']}: tier {tier['id']!r} needs knob {tier['pxPerUnitParam']} > 0 to be sized")
         if tppu is None and m.get("own"):
             tppu = m.get("basePxPerUnit") or sys.exit(f"member {m['id']}: own scale needs basePxPerUnit")
         if tppu is not None:

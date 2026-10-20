@@ -782,6 +782,20 @@ class FinalRetestRegressions(unittest.TestCase):
         self.assertTrue(self.field_findings(wf, ["Category", "Value"]))
         self.assertFalse(self.field_findings(wf, ["Category", "Value", "BaseValue", "TotalValue"]))
 
+    def test_prepended_transform_supplies_required_fields(self):
+        wf = json.loads((self.TEMPLATES / "waterfall-variance.vl.json").read_text(encoding="utf-8"))
+        # a fold before the template's own transforms creates Kind and Value from separate measures
+        folded = dict(wf, transform=[{"fold": ["Base", "Step", "Total"], "as": ["Kind", "Value"]},
+                                     {"calculate": "datum.Kind", "as": "Category"}] + wf["transform"])
+        self.assertEqual(self.field_findings(folded, ["Base", "Step", "Total"]), [])
+        calc = dict(wf, transform=[{"calculate": "datum.Category === 'Start' ? 'base' : 'variance'", "as": "Kind"}]
+                    + wf["transform"])
+        self.assertEqual(self.field_findings(calc, ["Category", "Value"]), [])
+        # a field read before a transform creates it is still the dataset's: unbound Kind is reported
+        late = dict(wf, transform=[{"filter": "isValid(datum['Kind'])"},
+                                   {"calculate": "'variance'", "as": "Kind"}] + wf["transform"])
+        self.assertTrue(any("Kind" in f["evidence"] for f in self.field_findings(late, ["Category", "Value"])))
+
     def test_misnamed_required_field_is_still_reported(self):
         spec = json.loads((self.TEMPLATES / "bar-structure-variance.vl.json").read_text(encoding="utf-8"))
         found = self.field_findings(spec, ["Cat", "AC"])

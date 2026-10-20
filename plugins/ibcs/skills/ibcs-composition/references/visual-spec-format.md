@@ -137,6 +137,15 @@ per page (e.g. `pct-pl`). Indexed zoom (domain not including 0) is allowed only 
 group if it fits; otherwise follow ibcs-notation §8 (full-year total next to months): own group
 only with a scale band in both groups and a `deviations` entry.
 
+**Check px per unit against the cells before declaring a group (ours).** One group may span a
+vertical column chart and a horizontal bar chart in cells of very different size, e.g. monthly
+columns in a short wide cell and YTD bars by member in a narrow one, whose values differ about
+10×. Before writing the group, compute (cell extent − fixed overhead) ÷ range for each member,
+take the smallest, and check every member at that px per unit: the bars, pins and variances in
+**each tier** must stay readable (OURS: the largest bar of each chart ≥ 24 px; steps shorter than
+8 px need a magnifying glass). If one member flattens the others, do not declare the group: give
+that member its own group with a scale band and a `deviations` entry, or change the cell sizes.
+
 ## 5. `visuals[]` fields
 
 | Field | Type | Req. | Meaning |

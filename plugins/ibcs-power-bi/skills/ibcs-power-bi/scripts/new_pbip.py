@@ -24,7 +24,7 @@ Writes (nothing else, never publishes):
     <out>/<name>.Report/definition/pages/pages.json
     <out>/<name>.Report/definition/pages/<page>/page.json     one empty page at the given canvas size,
                                                               canvas and wallpaper in the theme page colour
-    <out>/<name>.Report/StaticResources/RegisteredResources/<theme file>
+    <out>/<name>.Report/StaticResources/RegisteredResources/<theme file>   its "name" = the file name
     <out>/.gitignore                                          (only if missing)
 
 Ids, names and workspaces are arguments only; nothing tenant-specific is stored in this script.
@@ -158,7 +158,15 @@ def main() -> int:
     if target.exists() and not a.force:
         raise SystemExit(f"{target} exists; use --force")
     target.parent.mkdir(parents=True, exist_ok=True)
-    shutil.copyfile(theme_src, target)
+    theme = json.loads(theme_src.read_text(encoding="utf-8"))
+    if theme.get("name") != theme_file:
+        # Microsoft's PBIR validator (PBIR_THEME_FILE_NAME_MISMATCH) and Desktop need the theme's
+        # "name" to equal the registered file name, .json included.
+        print(f"theme name {theme.get('name')!r} -> {theme_file!r} (must equal the file name)")
+        theme["name"] = theme_file
+        target.write_text(json.dumps(theme, indent=2, ensure_ascii=False) + "\n", encoding="utf-8", newline="\n")
+    else:
+        shutil.copyfile(theme_src, target)
     print(f"wrote {target}")
     gi = out / ".gitignore"
     if not gi.exists():

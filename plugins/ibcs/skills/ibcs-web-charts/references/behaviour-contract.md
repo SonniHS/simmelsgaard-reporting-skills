@@ -122,7 +122,8 @@ Data: structure rows `{ category, AC?, FC?, PY?, PL?, BU?, variances?, impact?/i
   (token `geometry.remainderGapRatio`), total bold.
 - The remainder is a row like any other: value label, variances and pins. When the remainder (or
   any member) has a reference but no actual (e.g. a discontinued member), the query returns AC = 0
-  and Δ = 0 − reference (`Ibcs.DeltaMember`), never blank, so the rows reconcile with the total.
+  and Δ = 0 − reference (`Ibcs.DeltaMember`; a model without it: the query-scoped pattern in
+  `semantic-model-ibcs` `visual-data-contract.md` §2), never blank, so the rows reconcile with the total.
 - Reference as an overlapped bar behind, shifted up (`geometry.referenceOffsetRatio.bar`), or as
   a downward triangle with its tip on the bar's top edge.
 - Variance tiers to the right of the base bars, in this order by default: absolute (ΔPL) on the
@@ -171,15 +172,19 @@ computes it as total − base (the data contract forbids client-side variances).
 - A total-variance marker (arrow plus "ΔPY −2.1") between base and total, from `variance`.
 - Orientation bars (structure contributions) or columns (time, PY → Q1..Q4 → AC).
 - Warn when base + Σ steps ≠ total, or `variance.value` ≠ total − base (OURS tolerance 0.5 %);
-  offer a remainder step. Steps come from `Ibcs.DeltaMember` so discontinued and new members
-  count.
+  offer a remainder step. Steps come from `Ibcs.DeltaMember` (or the same query-scoped member
+  rule) so discontinued and new members count.
 - Magnifying glass (CH 4.5) when the largest step is shorter than the minimum readable bar
   (OURS: 8 px) on the page scale. Geometry: the overview keeps base, total and the steps on the
   page px/unit; beside it (columns) or below it (bars) a detail panel draws only the steps on a
   factor scale `k` = the smallest of 1, 2, 5, 10, 20, 50 … that makes the largest step ≥ 40 px,
   starting from the running total at the first step (cut axis: a zigzag break mark on the value
   axis, the panel header "Steps ×k"). Connector lines join each step in the overview to its row
-  in the panel; labels sit in the panel only. At phone width the panel goes below the overview.
+  in the panel; labels sit in the panel only. Bars: when the cell is wide enough for the overview
+  plus the panel with its label rooms, put the panel **beside** the overview with its step rows on
+  the same y as the overview rows (category labels once, at the left; OURS) — the default "below"
+  repeats every label and leaves a wide cell half empty. At phone width the panel goes below the
+  overview.
   Without room for a panel, keep the page scale and rely on the step labels; never enlarge steps
   inside the overview (two scales in one plot).
 

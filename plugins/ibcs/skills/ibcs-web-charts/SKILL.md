@@ -144,6 +144,12 @@ The most common IBCS breach in web apps is each chart auto-scaling on its own (I
   same round value on every chart of the unit, with a footnote ("Customers on their own scale");
   or move the long-tail ranking to its own page. Never truncate the remainder to fit, never let
   it set the scale silently.
+- **Mixed orientations and cell sizes.** A group that spans a vertical column chart (height per
+  unit) and a horizontal bar chart (width per unit) shares one px per unit across both
+  directions, so a monthly chart in a short cell and a YTD chart about 10× larger in value in a
+  narrow cell can flatten each other. The readability rule above applies per tier, in every
+  member; when it fails, split the group with a scale band as above (ibcs-composition
+  `visual-spec-format.md` §4).
 
 ## 6. Tables
 

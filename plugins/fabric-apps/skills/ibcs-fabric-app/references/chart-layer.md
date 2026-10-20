@@ -35,6 +35,14 @@ Rules:
   from its own range (span × px per unit, plus its fixed px for labels and tier gaps) and returns
   that height; the page places it. A chart with smaller values is shorter; no chart receives
   another chart's max or stretches its axis to fill a fixed box (CH 4.1 with CH 4.2).
+- **Every scale request stays positive** (ours, 2026-10). A chart that requests px per unit from a
+  cell height subtracts its fixed px first (label rooms above and below each tier, tier gaps,
+  category labels). With several pin tiers the label rooms can exceed the cell or the share given
+  to a tier: the request turns zero or negative, a registry that drops non-positive requests skips
+  it silently, and the chart draws on another chart's scale and clips. Floor the plot height
+  (`plot = max(minPlotPx, cellPx − overheadPx)`, about 40 px), give each tier at least a minimum
+  plot, return a warning when the floor applies, and unit-test a short cell with many tiers: no
+  request ≤ 0, no mark outside the returned height.
 - Layout functions never compute variances or impact; they draw what the query returned
   (`queries-and-data.md` §3).
 - Hatch pattern ids are unique per chart instance (`useId`), because `url(#id)` breaks across

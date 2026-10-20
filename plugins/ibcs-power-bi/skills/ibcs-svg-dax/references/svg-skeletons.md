@@ -456,6 +456,14 @@ VAR _Room = 46                      -- label room beyond the longest bar
 - Column width (= the SVG `width`, = `grid.imageWidth` of the table, one value for every image
   column) = the largest column's range × `_S` (pins: × `_SP` × 100) + `_Room` + axis offset. When
   the columns' ranges differ a lot, put them in separate tables rather than stretching one width.
+- **Several tiers per row** (bars + Δ bars + Δ% pins, card 26): one SVG measure per row that draws
+  all tiers side by side (x offsets per tier inside the SVG, one GEOM block) is more robust than
+  one image column per tier, because every image column of a table shares `imageWidth`. The tier
+  names and the integrated legend go into a static header image (SVG in `RegisteredResources`,
+  an `image` visual above the table at the image column's x, as wide as the SVG).
+- The table's image column must be at least ~20 px wider than `imageWidth`: narrower, the cell
+  clips the image and the service shows a stray truncation mark (".") at the right end of each
+  row (end-to-end test, as of 2026-10).
 - Bar length = value ÷ `_Div` × `_S`; pin length = Δ% × 100 × `_SP`. The `MAXX` scaling in
   skeletons 1, 2 and 5 fits a column that stands alone; in a table with several bar columns, or
   next to Deneb members of a scale group, use GEOM instead (a per-column `MAXX` gives every

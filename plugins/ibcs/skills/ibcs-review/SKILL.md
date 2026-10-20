@@ -119,6 +119,12 @@ indicated, justified (growth across orders of magnitude) and aimed at a familiar
 (CH 1.2, p. 69); square pin heads and top-left titles are illustrated defaults — consistency is
 the rule; any deviation documented in the organisation's notation manual / token overrides.
 
+**A14 against a spec's explicit decimals (ours).** When the page's visual spec sets `display`
+(prefix, decimals) for a measure and the build follows it, the spec wins: values with more than 3
+digits in a chart are not a build failure. Report A14 as `check` with the spec's setting as
+evidence, record it as a deviation (and ask the designer to add it to the spec's `deviations` if it
+is not there), and suggest a larger scaling prefix only as an improvement.
+
 ## 4. Output format
 
 Always use this structure:

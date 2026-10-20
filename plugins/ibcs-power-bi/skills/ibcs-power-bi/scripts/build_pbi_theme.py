@@ -54,7 +54,10 @@ def solid(color: str) -> dict:
     return {"solid": {"color": color}}
 
 
-def build_theme(t: dict, variant: str = "standard") -> dict:
+def build_theme(t: dict, variant: str = "standard", file_name: str | None = None) -> dict:
+    """file_name: the theme's file name including .json. Microsoft's PBIR validator requires the
+    theme's "name" to equal the file name that report.json registers (PBIR_THEME_FILE_NAME_MISMATCH),
+    so the name is the file name, not a display label."""
     g = ibcs_tokens.get
     sc = g(t, "color.scenario")
     var = g(t, "color.variance")
@@ -163,7 +166,7 @@ def build_theme(t: dict, variant: str = "standard") -> dict:
 
     theme = {
         "$schema": SCHEMA_URL,
-        "name": "IBCS Notation" + {"standard": "", "cvd": " (CVD)", "bw": " (B/W)"}[variant],
+        "name": file_name or ("ibcs-pbi-theme" + {"standard": "", "cvd": "-cvd", "bw": "-bw"}[variant] + ".json"),
         "dataColors": data_colors,
         "good": impact["good"],
         "bad": impact["bad"],
@@ -344,7 +347,8 @@ def main() -> int:
     ap.add_argument("--overrides", help="your ibcs-tokens.overrides.json (optional)")
     ap.add_argument("--theme-overrides", help="Power BI theme fragment merged over the result")
     ap.add_argument("--out-dir", default=".", help="output directory (default: current directory)")
-    ap.add_argument("--name", default="ibcs-pbi-theme", help="file stem (default ibcs-pbi-theme)")
+    ap.add_argument("--name", default="ibcs-pbi-theme",
+                    help="file stem (default ibcs-pbi-theme); the theme's \"name\" is set to the file name")
     ap.add_argument("--variants", default="standard,cvd", help="comma list of standard,cvd,bw")
     ap.add_argument("--check", action="store_true", help="exit 1 if generated files are stale")
     ap.add_argument("--validate", action="store_true", help="validate against the theme JSON schema")
@@ -359,14 +363,15 @@ def main() -> int:
     out_dir = Path(a.out_dir)
     status = 0
     for variant in variants:
-        theme = build_theme(tok, variant)
+        suffix = "" if variant == "standard" else f"-{variant}"
+        path = out_dir / f"{a.name}{suffix}.json"
+        theme = build_theme(tok, variant, path.name)
         if frag:
             theme = deep_merge(theme, frag)
+            theme["name"] = path.name  # a fragment must not break the name = file name rule
         errs = key_check(theme)
         if a.validate:
             errs += [f"schema: {e}" for e in schema_validate(theme, a.schema)]
-        suffix = "" if variant == "standard" else f"-{variant}"
-        path = out_dir / f"{a.name}{suffix}.json"
         body = json.dumps(theme, indent=2, ensure_ascii=False) + "\n"
         if errs:
             status = 1

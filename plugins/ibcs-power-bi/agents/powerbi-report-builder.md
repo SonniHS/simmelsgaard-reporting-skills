@@ -56,8 +56,11 @@ visual spec.
    Deneb: `${CLAUDE_PLUGIN_ROOT}/skills/ibcs-deneb/scripts/to_pbir.py` with `--field` mappings,
    the spec's knobs (`pxPerUnit` on every member of a same-unit scale group with the container
    size from `ibcs-power-bi/scripts/scale_layout.py`, `unitDivisor` or scaled measures,
-   `triangleScenario` for a `draw: triangle` tier, `varPxPerUnit` / `fcLabel` on a Total visual),
-   `--sort`, `--filter`, `--title`. KPI cards and structure tables with pins: SVG measures in one
+   `triangleScenario` for a `draw: triangle` tier, `varPxPerUnit` / `fcLabel` on a Total visual,
+   `pinTier` for a Δ% pin tier above the columns in the same visual, `showBase: false` for a
+   second variance tier), `--sort`, `--filter`, `--title`. Slicers: `textSize`, a visual-level
+   filter without blank and unknown members, one `syncGroup` per field across pages; dynamic
+   texts on `cardVisual` (`pbir-skeleton.md` §6, §9). KPI cards and structure tables with pins: SVG measures in one
    `tableEx` (`ibcs-svg-dax`, one GEOM block; JSON in `pbir-skeleton.md` §9). Missing measures:
    in the model when the task includes it, else report measures (step 1); list them (name,
    intent) for the model owner either way. After the visuals: `report_measures.py <report> --fix`

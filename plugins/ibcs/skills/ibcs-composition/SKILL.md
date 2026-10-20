@@ -80,6 +80,10 @@ chosen first end up showing what the data has instead of what the reader needs.
 - Make every list **MECE**: no overlaps ("Nordics" next to "Norway", "Costs" next to "Expenses",
   a subtotal next to its own component) and exhaustive (add "Other"/"Rest of …" last, after a gap;
   structures add up to 100 %).
+- A **variance waterfall reconciles**: base + Σ steps = total. When the decomposition measures
+  (e.g. price, volume, mix) do not add up to the total variance, add an explicit, named remainder
+  step ("Other effects") with its own value, never a silent balancing bar, and say in the footnote
+  what it contains (ours).
 - Keep lists **consistent**: same item type, same statement type (all detections or all
   suggestions), same grammar (imperative verb + noun for actions), same icon style.
 - **Inductive** (parallel MECE arguments) by default — dashboards, monthly reports. **Deductive**

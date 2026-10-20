@@ -43,6 +43,11 @@ a `\` continuation; for anything longer, write a small script into the project (
 loads data (the data proxy needs the portal frame). Share the portal URL, or package the item in an
 org app ([fabric-org-apps](../../fabric-org-apps/SKILL.md)).
 
+**Check in the portal after each deploy.** It needs a browser signed in to the tenant that the
+agent can drive; without one, report the check as not run and hand the user the item URL and the
+list of checks. A failure that shows only in the portal is debugged through the dev-URI embed with
+the raw error shown in dev builds ([queries-and-data.md](queries-and-data.md) §0).
+
 | Env | Workspace | Who deploys | How |
 |---|---|---|---|
 | dev | `<app>-dev` (per developer or shared) | developer, with approval | `npx rayfin up --workspace <app>-dev --item-name "<app>"` |

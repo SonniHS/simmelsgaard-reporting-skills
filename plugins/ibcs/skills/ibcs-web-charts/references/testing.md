@@ -52,7 +52,10 @@ leaves ≈ 1050 px beside its navigation; an iframe, a SharePoint column). Label
 first between the breakpoints: a check at 390 and 1280 alone passed a chart whose axis labels
 collided at 1050. Along with screenshots, assert:
 
-- `document.documentElement.scrollWidth === clientWidth` (no horizontal page scroll);
+- `document.documentElement.scrollWidth === clientWidth` (no horizontal page scroll). Put the
+  visually hidden class on a **wrapping `<div>`**, never on the chart's hidden `<table>`: a table
+  ignores the 1 px width and is not clipped by `overflow`, so it widens `scrollWidth` and the page
+  height and the check fails on text nobody sees (ours, 2026-10);
 - no chart below a minimum height, no console errors, no `NaN`/`undefined` in the page text;
 - **no text collides and no text is clipped** in any chart (below) — page scroll and console
   checks alone pass a page whose legend sits on its labels;

@@ -47,6 +47,28 @@ the model, so the page shows no data there.
    <alias> --file src/queries/<page>/<viz>.dax` (or `--query '<DAX>'`, `--limit 50`) runs the same
    SDK pipeline from the terminal as the developer.
 
+**Prerequisite for any portal check: a browser signed in to the tenant that the agent can drive**
+(a browser-automation tool attached to the user's session, or a persistent automation profile in
+which the user signed in once). Never automate the sign-in. Without such a browser, do not claim
+in-portal validation: report "portal check not run (no signed-in browser)", list the checks that
+remain for the user (pages load, no error states, values match the terminal queries), and give the
+exact item URL with `&devUri=…` to open.
+
+**Debugging a portal-only failure (ours, 2026-10).** A query that passes in the terminal can still
+fail in the portal (see the factory-output test in §2). The deployed app runs in nested
+cross-origin frames, and its console was not readable from the portal tab with a browser tool, so:
+
+1. Run `npm run dev` on the pinned port and open the app item with
+   `&devUri=http://localhost:<port>`: the portal now frames your local build.
+2. Chrome's Local Network Access check blocks a public site from framing `http://localhost`. A
+   normal profile asks for local-network access: the user must allow it. An automated browser
+   needs the flag that the `app-validation` skill describes (shipped in
+   `node_modules/@microsoft/rayfin-cli/templates/data-app/.agents/skills/app-validation/` with CLI
+   1.36.2, though the `dataapp` scaffold did not install it).
+3. In dev builds only, show the raw error text under the user-facing error message
+   (`{import.meta.env.DEV && <pre>{error.category}: {error.message}</pre>}`), so a screenshot can
+   read it. Production builds keep the plain messages (SKILL.md §5).
+
 **Port.** The scaffold's Vite default is 5173, and another dev server often holds it. Pick one
 port per app and pin it in three places, or sign-in fails with a redirect error:
 `server: { port: <port>, strictPort: true }` in `vite.config.ts` (fail instead of silently moving
@@ -154,6 +176,24 @@ return <Panel title={title}>
   path B per the `rayfin-connectors` skill.
 - Unit-test factories (parameters → query text) and adapters (fixture rows with the real column
   names → chart props).
+
+**Selection substitution and the factory-output test.** A common factory keeps a valid default in
+the `.dax` file and swaps tagged lines for the selection, e.g.
+`VAR __Months = TREATAS ( { … }, 'Date'[Month] ) // @period` inside `DEFINE`. Match **only** the
+tagged line, anchored, never `line.includes("// @period")`: a header comment such as
+`// @period and @company lines are replaced …` also matches, the replacement `VAR` lands above
+`DEFINE`, and the query fails with a DAX syntax error, in the portal only, because the terminal
+test ran the raw file (seen 2026-10).
+
+```ts
+if (/^\s*VAR __Months\b.*\/\/ @period\s*$/.test(line)) return `    VAR __Months = ${months} // @period`;
+```
+
+- Test the **factory output**, not the `.dax` file: write `factory(selection).query` to a temp
+  file and run `npx fabric-app-data query <alias> --file <tmp>.dax` for a default and a
+  non-default selection.
+- Unit-test that a comment mentioning the tag survives unchanged, that the tagged `VAR` occurs
+  once and after `DEFINE`, and that equal selections give identical text (cache hits).
 
 ## 3. Values the app must not compute
 

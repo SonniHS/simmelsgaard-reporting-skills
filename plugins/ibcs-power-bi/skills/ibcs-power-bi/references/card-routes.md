@@ -28,22 +28,22 @@ Card numbers ("card 5") are the chart cards of the IBCS chart overview, EX 1.1.
 | card 5 `grouped-column`, AC vs PY | full (overlap) | `column-two-tier-variance` | card/button only | yes | native unless FC periods |
 | card 5, AC vs PL | full (PL outline via `dataPoint` border) | yes | — | yes | native unless FC |
 | card 6 `column-triangles` | ✗ (error-bar triangle points up, centred) | yes | — | yes | Deneb |
-| card 7 `variance-column` | full (colour measure) | tier in `column-two-tier-variance` | — | yes | native alone; Deneb as a tier |
-| card 8 `pin-time` | ~ (error-bar workaround, no N/A, no head notation) | `pin-relative-variance` | — | yes | Deneb |
+| card 7 `variance-column` | full (colour measure) | tier in `column-two-tier-variance`; alone or as a second variance tier: `showBase: false` | — | yes | native alone; Deneb as a tier |
+| card 8 `pin-time` | ~ (error-bar workaround, no N/A, no head notation) | `pin-relative-variance`; as a tier of a column chart: `column-two-tier-variance` `pinTier: true` | — | yes | Deneb; pins above columns in the same visual (`pinTier`) |
 | cards 12/15 `line`, `line-grouped` | AC/PY full; hatched FC / hollow PL markers ✗ | `line-scenarios` | — | yes | native without FC/PL, else Deneb |
 | card 19 `bar` | full | — | yes | — | native `barChart` |
 | card 23 `grouped-bar` | full (overlap) | `bar-structure-variance` (`refMark: bar`) | very good | yes | native / SVG in a table |
 | card 24 `bar-triangles` | ✗ | `bar-structure-variance` | very good | yes | Deneb (chart) / SVG (table) |
 | card 23 + third scenario as triangle (AC vs BU, PY triangle; tier `draw: triangle`) | ✗ | `bar-structure-variance` `refMark: bar`, `triangleScenario: PY` (column chart: `column-two-tier-variance`) | very good (skeleton 5) | yes | Deneb (chart) / SVG (table) |
 | card 25 `variance-bar` | full | tier | very good | yes | native alone; Deneb/SVG as a tier |
-| card 26 `pin-structure`; a structure chart with a Δ% pin tier (bars + ΔBU + ΔBU%) | ✗ (no head) | not built (no structure pin template) | excellent | yes | **SVG table**: category column + skeleton 5 (bars) + 1 (Δ bars) + 2 (Δ% pins), one GEOM block ([svg-skeletons](../../ibcs-svg-dax/references/svg-skeletons.md)); tableEx JSON in [pbir-skeleton.md](pbir-skeleton.md) §9 |
+| card 26 `pin-structure`; a structure chart with a Δ% pin tier (bars + ΔBU + ΔBU%) | ✗ (no head) | not built (no structure pin template) | excellent | yes | **SVG table**: category column + **one** SVG measure per row holding all tiers (skeletons 5 bars + 1 Δ bars + 2 Δ% pins in one GEOM block, [svg-skeletons](../../ibcs-svg-dax/references/svg-skeletons.md)) + a static header image with the tier names and legend; not one SVG column per tier, because a table's image columns share `imageWidth`. Image column ≥ SVG width + 20 px. tableEx JSON in [pbir-skeleton.md](pbir-skeleton.md) §9 |
 | card 28 `calculation-waterfall` | ✗ (column-only, one total) | `waterfall-calculation` | good | yes | Deneb |
 | card 29 `variance-waterfall-structure` | ✗ (wrong orientation, colours by sign) | `waterfall-variance` | good | yes | Deneb |
 | A-2 `stacked-column` (scenario on the lowest segment, grays above, D9) | ~ (stacked column; no hatch, no per-segment scenario) | `stacked-columns` | — | yes | native for AC-only; Deneb with FC/PL |
 | A-32/33 `scatter` / `bubble` of two relative measures (G5 diagonal, tolerance band) | ~ (scatter, no diagonal/band; analytics line only for a constant) | `scatter-relative` | — | yes | Deneb |
 | forecast evolution: columns on a version axis with ΔFC per version | ✗ (no hatch, no per-category scenario) | `column-version-axis` | — | yes | Deneb |
 | budget progress (BAC outlined, AC to date, budget-to-date tick) | ~ (bullet-like overlap) | — | skeleton 6 | yes | SVG in a table |
-| CO 4.2 multi-tier | ~ (separate aligned visuals + shared scale measure) | yes, one scale guaranteed | — | yes | Deneb |
+| CO 4.2 multi-tier | ~ (separate aligned visuals + shared scale measure) | yes, one scale guaranteed; base + ΔX + ΔX% pins in ONE visual (`column-two-tier-variance` `pinTier`) | — | yes | Deneb, all tiers in one visual |
 | CO 5.1 `small-multiples` | full (shared axis) | `small-multiples-columns` | — | yes | native unless FC |
 | `table-variance` (EX 1.2) | matrix + calculation group | — | variance bars, pins | yes | matrix + SVG |
 | `table-time` (EX 1.2) | matrix | — | sparklines (indexed) | yes | matrix |
@@ -187,6 +187,11 @@ Each projection needs `field`, `queryRef` (`Table.Column`, `_Measures.Name`) and
 `nativeQueryRef`; a report-level measure needs `"Schema": "extension"` in its `SourceRef`
 (`report_measures.py --fix` adds it). Never set `"active": true` except on slicers and drill
 hierarchy levels.
+
+A `tableEx` `sortDefinition` works only on a field that is projected in `Values`: a sort on a
+measure the table does not show is silently ignored and the rows come back alphabetically (found
+in an end-to-end test, as of 2026-10). Sort by a projected measure, e.g. the SVG measure with its
+embedded numeric sort key ([pbir-skeleton.md](pbir-skeleton.md) §9).
 
 ### Small multiples (CO 5.1)
 

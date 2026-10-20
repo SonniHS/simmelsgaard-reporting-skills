@@ -60,6 +60,7 @@ PARAMS = {
     "ibcsAssist": "color.marker.assistingLine",
     "ibcsAssistArea": "color.marker.assistingArea",
     "ibcsHighlight": "color.marker.highlight",
+    "ibcsHighlightWidth": "stroke.highlightEllipsePx",
     "ibcsAnnotation": "color.marker.annotationRef",
     "ibcsScaleBandFill": "color.marker.scaleBandFill",
     "ibcsScaleBandLine": "color.marker.scaleBandLine",

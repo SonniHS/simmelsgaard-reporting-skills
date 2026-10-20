@@ -32,11 +32,11 @@ arithmetic sign, polarity only selects the colour (good / bad / **neutral blue**
 
 | File | Visual-spec `type` | IBCS | Preview |
 |---|---|---|---|
-| `column-two-tier-variance.vl.json` | `grouped-column` (+ triangle tier) + `variance-column` tier | EX 1.1 cards 5, 6, 7; CO 4.2 | `column-two-tier-variance{,-pl,-bu-py-triangle,-scale-group,-scale-band,-comments}.png` |
+| `column-two-tier-variance.vl.json` | `grouped-column` (+ triangle tier) + `variance-column` tier (+ `pin-time` tier) | EX 1.1 cards 5, 6, 7, 8; CO 4.2 | `column-two-tier-variance{,-pl,-bu-py-triangle,-scale-group,-scale-band,-comments,-pins,-pins-px,-variance-only,-variance-only-pins}.png` |
 | `pin-relative-variance.vl.json` | `pin-time` | card 8; UN 4.1 | `pin-relative-variance{,-pl,-cost,-wide,-outlier}.png` |
 | `bar-structure-variance.vl.json` | `bar-triangles` / `grouped-bar` (+ triangle tier) + `variance-bar` tier | cards 23–25; EX 4.2; CO 4.2 | `bar-structure-variance{,-py-overlap,-bu-py-triangle,-scale-band}.png` |
 | `waterfall-calculation.vl.json` | `calculation-waterfall` | card 28 | `waterfall-calculation.png` |
-| `waterfall-variance.vl.json` | `variance-waterfall-structure` | card 29 | `waterfall-variance.png` |
+| `waterfall-variance.vl.json` | `variance-waterfall-structure` | card 29 | `waterfall-variance{,-scale-band-highlight}.png` |
 | `small-multiples-columns.vl.json` | `small-multiples` of `grouped-column` | CO 5.1; CH 4.1 | `small-multiples-columns{,-totals}.png` |
 | `line-scenarios.vl.json` | `line` / `line-grouped` | cards 12, 15; UN 3.2 | `line-scenarios{,-trend}.png` |
 | `stacked-columns.vl.json` | `stacked-column` | A-2; D9 (scenario on the lowest segment) | `stacked-columns.png` |
@@ -114,9 +114,31 @@ Fields, knobs and notes per template are in each file's `usermeta.ibcs` and in
   cuts a business-irrelevant relative outlier at that value: no head, full label, a small
   triangle beyond the label in the growth direction. Absolute columns and bars are never cut
   (CH 2.1): give them their own scale with a **scale band** instead.
-- **Scale band** (CH 4.3): `column-two-tier-variance` and `bar-structure-variance` knob
-  `scaleBand` (or field `ScaleBand`) draws a light area from the axis to that value with a
-  labelled line; set the same round value in every chart of the unit whose scales differ.
+- **Scale band** (CH 4.3): `column-two-tier-variance`, `bar-structure-variance` and
+  `waterfall-variance` knob `scaleBand` (or field `ScaleBand`) draws a light area from the axis to
+  that value with a labelled line; set the same round value in every chart of the unit whose
+  scales differ (`waterfall-calculation` has the same knob).
+- **Highlighting ellipse** (UN 5.1): `waterfall-variance` knob `highlight` (the row label) or field
+  `Highlight` (1 on that row) circles the value label the key message cites. When the base and
+  total bars carry the same label, use the field.
+- **All tiers of a time chart in ONE visual** (CO 4.2): `column-two-tier-variance` knob `pinTier`
+  adds ΔX% pins as a third tier above the absolute variance tier, on their own % scale
+  (`pinPxPerUnit` px per percentage point, the same on every pin tier and `pin-relative-variance`
+  chart of the page; without it the pins take `pinShare` of the base tier). Prefer it to stacking a
+  pin visual on a column visual: separate visuals each anchor their own plot, so when a filter
+  shrinks the data under a fixed `pxPerUnit` the base visual's plot drops to its bottom while the
+  pin visual stays at its top, and a gap opens between the tiers. In one view the space the data
+  does not need stays above the top tier and the tiers never drift apart. `scale_layout.py` sizes
+  it with tier `pins` (member params `pinTier`, `pinPxPerUnit`). Outlier clipping (`clipPct`) is
+  only in `pin-relative-variance`.
+- **Variance-only tier:** `column-two-tier-variance` knob `showBase: false` draws only the
+  variance tier (axis, columns, labels, tier name; with `pinTier` a ΔX + ΔX% pair), e.g. a ΔPY tier
+  above an AC vs BU chart that already shows ΔBU, so the base is not drawn twice. Size it with
+  `scale_layout.py` (no `base` tier) and stack it with `showCategoryLabels: false` when the visual
+  below shows the categories; the drift warning above applies to every stacked pair of visuals.
+- **Stacked visuals line up:** `column-two-tier-variance` and `pin-relative-variance` use the same
+  plot padding (left 40, right 30 px), so a pin or variance-only visual stacked on a column visual
+  takes the same x and width; no pixel offset between them.
 - **Trend arrow** (UN 5.1): `line-scenarios` knobs `trendArrow`, `trendLabel` (`cagr` / `delta`),
   `polarity`, `trendLiftPx`.
 - **Comment markers** (UN 2.4): `column-two-tier-variance` field `Comment` puts a numbered circle
@@ -163,7 +185,7 @@ Fields, knobs and notes per template are in each file's `usermeta.ibcs` and in
 - **Pins and triangles are clamped in px** (tokens `geometry.pin.stemPx`, `geometry.pin.headPx`,
   `geometry.triangleSizePx`), so a large `stepScale` widens columns without blowing pins up.
 - **`showCategoryLabels: false`** hides the category labels of a tier stacked on another visual
-  that already shows them.
+  that already shows them (prefer `pinTier` / one visual where possible, see above).
 - **Polarity:** a `Polarity` field per row (1 / −1 / 0) wins over the `polarity` knob.
 - **Labels** use `number.format.*.d3` with `decimals` precision; the Deneb config sets the locale
   from the tokens (thousands separator, minus sign, `N/A`). Change locale via token overrides.
@@ -234,6 +256,8 @@ PATH` or `CHROME=…` off macOS). Compare the PNG with the IBCS figure named in 
   size is a number in the spec. An outlier panel at double size needs a second visual with the
   same `pxPerUnit` and a taller panel. Its `pxPerUnit` reads Vega-Lite's internal `child_height`
   signal (render-checked with Vega-Lite 6.4.3 only).
+- `pinTier`, `showBase: false` and the `waterfall-variance` scale band and highlight are
+  render-checked outside Power BI only (previews), not yet in Desktop or the service.
 - `pxPerUnit` and `usermeta.ibcs.layout` are render-checked outside Power BI (previews; the
   renderer checks the px per unit of every `pxPerUnit` member); not yet checked in Desktop or at a
   report zoom other than 100 % (`FitToPage` / `FitToWidth` may scale the container but not the px
@@ -242,8 +266,7 @@ PATH` or `CHROME=…` off macOS). Compare the PNG with the IBCS figure named in 
   measured from the text, so pass their width to `scale_layout.py`.
 - Not built: integrated variance (CO 4.1), horizontal variance/growth waterfalls (cards 10/11),
   normalised (100 %) columns and bars, stacked bars, remainder-row gap, outlier markers on
-  absolute charts (by design: CH 2.1), index and ranking marks (E16, E17), three tiers with pins in one view (stack the pin visual on the
-  column visual with `showCategoryLabels: false`), a structure chart with a Δ% pin tier (card 26;
+  absolute charts (by design: CH 2.1), index and ranking marks (E16, E17), a structure chart with a Δ% pin tier (card 26;
   route: one SVG table, skeletons 5 + 1 + 2 of `ibcs-svg-dax`), a Total/extension category inside
   a template, a Vega port for web apps.
 - Label collision handling is basic: line end labels, stacked-column legends and scatter point

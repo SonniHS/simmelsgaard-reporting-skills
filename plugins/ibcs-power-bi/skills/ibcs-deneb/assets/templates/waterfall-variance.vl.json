@@ -1,6 +1,6 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-  "description": "IBCS vertical variance waterfall (EX 1.1 card 29): reference total (PY/PL) at the top from the axis, the variance by structure element as floating bars (impact colour, signed labels outside), the primary total (AC/FC) at the bottom, assisting lines, and the total variance arrow under the result.",
+  "description": "IBCS vertical variance waterfall (EX 1.1 card 29): reference total (PY/PL) at the top from the axis, the variance by structure element as floating bars (impact colour, signed labels outside), the primary total (AC/FC) at the bottom, assisting lines, and the total variance arrow under the result. Options: scale band (CH 4.3) and a highlighting ellipse on one value (UN 5.1).",
   "usermeta": {
     "ibcs": {
       "template": "waterfall-variance",
@@ -15,7 +15,9 @@
         "Polarity": "optional measure 1 / -1 / 0; else the polarity knob",
         "PxPerUnit": "optional measure, same value on every row: px per display unit for the page's scale group; wins over pxPerUnit",
         "BaseValue": "optional measure on element rows: starting/reference value; the first non-null value in visual row order synthesizes a base bar unless an explicit Kind base row exists. Values are before unitDivisor",
-        "TotalValue": "optional measure on element rows: primary/result value; the first non-null value in visual row order synthesizes a total bar unless an explicit Kind total row exists. Values are before unitDivisor"
+        "TotalValue": "optional measure on element rows: primary/result value; the first non-null value in visual row order synthesizes a total bar unless an explicit Kind total row exists. Values are before unitDivisor",
+        "ScaleBand": "optional measure, same value on every row: scale band value in data units (before unitDivisor); wins over scaleBand",
+        "Highlight": "optional measure: 1 on the row whose value label gets the highlighting ellipse (the value the key message cites); blank or 0 = none"
       },
       "requiredFields": [
         "Category",
@@ -30,7 +32,7 @@
           "TotalValue"
         ]
       ],
-      "notes": "Value is the contribution to the total, not necessarily the source measure delta: for a cost line in a margin bridge bind −ΔCOS with Polarity +1. A cost increase therefore contributes a negative step (unfavourable), and a cost reduction contributes a positive step (favourable). Polarity changes only impact colour; geometry always follows the contribution sign. Include a remainder row (e.g. Rest) so base + Σ contribution = total. If they do not reconcile, the arrow label shows the difference with a '!'. Two waterfalls of one unit: the same pxPerUnit and labelWidth, and each visual's width sized to its own range (usermeta.ibcs.layout). Rounded-zero rule: abs(value) × 10^decimals < 0.5 is labelled 0 without sign and gets no impact colour. Input formats: (1) explicit Kind rows, with base/total values in Value; (2) one model row per element, Value as the signed contribution, optional Kind omitted, and BaseValue/TotalValue measures repeated on element rows. The template uses the first non-null value of each anchor independently in visual row order, creates each missing anchor once, and keeps explicit base/total rows when present. baseLabel/totalLabel name only the synthesized bars. Repeated anchor measures must be constant in the current filter context. Blank categories and rows whose Value, BaseValue and TotalValue are all null are dropped; zero is a value, and an anchor-only row is retained. PxPerUnit alone do not retain an unknown N/A member.",
+      "notes": "Value is the contribution to the total, not necessarily the source measure delta: for a cost line in a margin bridge bind −ΔCOS with Polarity +1. A cost increase therefore contributes a negative step (unfavourable), and a cost reduction contributes a positive step (favourable). Polarity changes only impact colour; geometry always follows the contribution sign. Include a remainder row (e.g. Rest) so base + Σ contribution = total. If they do not reconcile, the arrow label shows the difference with a '!'. Two waterfalls of one unit: the same pxPerUnit and labelWidth, and each visual's width sized to its own range (usermeta.ibcs.layout). Rounded-zero rule: abs(value) × 10^decimals < 0.5 is labelled 0 without sign and gets no impact colour. Input formats: (1) explicit Kind rows, with base/total values in Value; (2) one model row per element, Value as the signed contribution, optional Kind omitted, and BaseValue/TotalValue measures repeated on element rows. The template uses the first non-null value of each anchor independently in visual row order, creates each missing anchor once, and keeps explicit base/total rows when present. baseLabel/totalLabel name only the synthesized bars. Repeated anchor measures must be constant in the current filter context. Blank categories and rows whose Value, BaseValue and TotalValue are all null are dropped; zero is a value, and an anchor-only row is retained. PxPerUnit alone do not retain an unknown N/A member. Scale band (CH 4.3): set scaleBand (or bind ScaleBand) to the same round value in every chart of the unit whose scales differ (e.g. a waterfall by month next to one by entity at another px per unit). Highlight (UN 5.1): knob highlight = the row label, or field Highlight = 1 on that row, draws the blue ellipse around its value label; one highlighted value per chart, the one the key message names.",
       "knobs": [
         "refScenario",
         "minuend",
@@ -43,7 +45,9 @@
         "pxPerUnit",
         "ibcsLabelPx",
         "baseLabel",
-        "totalLabel"
+        "totalLabel",
+        "scaleBand",
+        "highlight"
       ],
       "layout": {
         "valueAxis": "width",
@@ -52,13 +56,13 @@
         "tiers": [
           {
             "id": "waterfall",
-            "range": "0 … max(base, running sum, total)",
+            "range": "0 … max(base, running sum, total, scaleBand)",
             "padHigh": [
               "ibcsLabelPx"
             ]
           }
         ],
-        "rule": "container width = fixedPx + row labels + (hi − lo) × pxPerUnit + padHigh; measured with Vega-Lite 6.4.3 at ibcsFontSize 12"
+        "rule": "container width = fixedPx + row labels + (hi − lo) × pxPerUnit + padHigh; measured with Vega-Lite 6.4.3 at ibcsFontSize 12; a highlighting ellipse reaches 5 px beyond its label on each side: keep ibcsLabelPx (right pad) large enough when the highlighted label is the rightmost one"
       },
       "sampleData": "variance-waterfall.json",
       "preview": {
@@ -103,6 +107,18 @@
             "height": 230
           },
           "note": "A negative step whose label would sit on the vertical assisting line from the base end: the label moves left of that line."
+        },
+        {
+          "suffix": "-scale-band-highlight",
+          "params": {
+            "scaleBand": 5,
+            "highlight": "Germany"
+          },
+          "preview": {
+            "width": 420,
+            "height": 230
+          },
+          "note": "Scale band at 5 display units and the highlighting ellipse on one variance label."
         }
       ]
     }
@@ -177,6 +193,16 @@
       "description": "px reserved for the row labels when the container is narrow; the label column is measured from the text, pass its width to scale_layout.py"
     },
     {
+      "name": "scaleBand",
+      "value": 0,
+      "description": "scale band (CH 4.3) in display units: a light area from the axis to this value and a labelled line, the same round value in every chart of the unit whose scales differ; 0 = off (field ScaleBand wins, in data units before unitDivisor)"
+    },
+    {
+      "name": "highlight",
+      "value": "",
+      "description": "row label (Category, or baseLabel / totalLabel for the synthesized bars) whose value label gets the blue highlighting ellipse (UN 5.1): the value the key message cites; '' = none. The field Highlight (1 on the row) does the same from the model"
+    },
+    {
       "name": "stepScale",
       "value": 1.5,
       "description": "multiplies the category step (ibcsCategoryStep), keep it identical for every chart of the page"
@@ -244,6 +270,22 @@
     {
       "name": "ibcsAssistArea",
       "value": "#F2F2F2"
+    },
+    {
+      "name": "ibcsScaleBandFill",
+      "value": "#DCE8FA"
+    },
+    {
+      "name": "ibcsScaleBandLine",
+      "value": "#5B9BD5"
+    },
+    {
+      "name": "ibcsHighlight",
+      "value": "#0064FF"
+    },
+    {
+      "name": "ibcsHighlightWidth",
+      "value": 1.5
     },
     {
       "name": "ibcsBarRatio",
@@ -383,6 +425,10 @@
     {
       "calculate": "datum._copy == 1 ? 'base' : datum._copy == 2 ? 'total' : datum._inputKind",
       "as": "_k"
+    },
+    {
+      "calculate": "(highlight != '' && (datum._copy == 1 ? baseLabel : datum._copy == 2 ? totalLabel : datum['Category']) == highlight) || (datum._copy == 0 && isValid(datum['Highlight']) && datum['Highlight'] !== '' && datum['Highlight'] !== 0 && datum['Highlight'] !== false)",
+      "as": "_hl"
     },
     {
       "calculate": "datum._copy == 1 ? baseLabel : datum._copy == 2 ? totalLabel : datum['Category']",
@@ -542,7 +588,11 @@
       ]
     },
     {
-      "calculate": "max(datum._xmax, xMax)",
+      "calculate": "isValid(datum['ScaleBand']) && datum['ScaleBand'] > 0 ? datum['ScaleBand'] / unitDivisor : scaleBand",
+      "as": "_band"
+    },
+    {
+      "calculate": "max(datum._xmax, xMax, datum._band)",
       "as": "_xmax"
     },
     {
@@ -599,6 +649,66 @@
             "nice": false
           },
           "axis": null
+        }
+      }
+    },
+    {
+      "description": "scale band (CH 4.3): light area from the axis to the common value behind all rows; set the same value in every chart of the unit whose scale must differ",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._band > 0"
+        }
+      ],
+      "mark": {
+        "type": "rect",
+        "fill": {
+          "expr": "ibcsScaleBandFill"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "_band",
+          "type": "quantitative"
+        },
+        "x2": {
+          "datum": 0
+        },
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      }
+    },
+    {
+      "description": "scale band line",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._band > 0"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsScaleBandLine"
+        },
+        "strokeWidth": 1
+      },
+      "encoding": {
+        "x": {
+          "field": "_band",
+          "type": "quantitative"
+        },
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
         }
       }
     },
@@ -1116,6 +1226,83 @@
         "text": {
           "value": {
             "expr": "['Δ' + refScenario, datum._dlbl]"
+          }
+        }
+      }
+    },
+    {
+      "description": "highlighting ellipse (UN 5.1) around the value label the key message cites (knob highlight or field Highlight); drawn after the labels, outline only",
+      "transform": [
+        {
+          "filter": "datum._hl && datum._lbl != ''"
+        },
+        {
+          "calculate": "datum._k == 'variance' ? datum._x1 : datum._x1 / 2",
+          "as": "_lx"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "filled": false,
+        "opacity": 1,
+        "stroke": {
+          "expr": "ibcsHighlight"
+        },
+        "strokeWidth": {
+          "expr": "ibcsHighlightWidth"
+        },
+        "shape": {
+          "expr": "'M-1,0A1,' + format((ibcsFontSize / 2 + 4) / ((length(datum._lbl) * ibcsFontSize * 0.55) / 2 + 5), '.3f') + ' 0 1,0 1,0A1,' + format((ibcsFontSize / 2 + 4) / ((length(datum._lbl) * ibcsFontSize * 0.55) / 2 + 5), '.3f') + ' 0 1,0 -1,0Z'"
+        },
+        "size": {
+          "expr": "pow((length(datum._lbl) * ibcsFontSize * 0.55) + 10, 2)"
+        },
+        "xOffset": {
+          "expr": "datum._k != 'variance' ? 0 : (datum._val >= 0 ? 3 + (length(datum._lbl) * ibcsFontSize * 0.55) / 2 : ((scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * 0.6 && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * 0.6 >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3)) - (length(datum._lbl) * ibcsFontSize * 0.55) / 2)"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_lx",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "scale band label, above the line",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._band > 0"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "baseline": "bottom",
+        "dy": -3,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsScaleBandLine"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "_band",
+          "type": "quantitative"
+        },
+        "y": {
+          "value": 0
+        },
+        "text": {
+          "value": {
+            "expr": "format(datum._band, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + (datum._band % 1 == 0 ? 0 : decimals)))"
           }
         }
       }

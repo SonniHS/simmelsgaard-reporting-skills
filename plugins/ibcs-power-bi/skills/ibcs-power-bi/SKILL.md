@@ -81,7 +81,7 @@ footnoted compromise:
 | a **third scenario** as triangle (tier `draw: triangle`, e.g. AC vs BU with PY) | Deneb `column-two-tier-variance` / `bar-structure-variance` (`refMark: bar`) with `triangleScenario`; in a table SVG skeleton 5 | no native triangle at a value |
 | `kpi-cards` (B-T-KPI) | SVG KPI card measures in one `tableEx` ([ibcs-svg-dax](../ibcs-svg-dax/SKILL.md) skeleton 4) | the new card cannot colour Δ and Δ% by polarity with a rounded-zero rule, nor lay out several comparisons per card |
 | `pin-time`, `pin-structure` | Deneb (chart) / SVG (table) | no native pin head, no N/A rule |
-| multi-tier (CO 4.2) | Deneb `column-two-tier-variance` / `bar-structure-variance` | one scale guaranteed |
+| multi-tier (CO 4.2) | Deneb `column-two-tier-variance` (ΔX% pins as a third tier: `pinTier`; a second variance tier alone: `showBase: false`) / `bar-structure-variance` | one scale guaranteed; all tiers in one visual cannot drift apart under filtering |
 | `calculation-waterfall`, `variance-waterfall-structure` | Deneb | native waterfall is column-only and colours by sign |
 | `small-multiples` | native (shared axis) or Deneb | native is fine without FC |
 | `line`, `line-grouped` | native for AC/PY; Deneb when FC/PL markers matter | no hatched or hollow markers natively |
@@ -154,6 +154,11 @@ Layout logic comes from `ibcs-composition`. Power BI specifics (values from the 
   (`color.marker.assistingArea`) behind its marks. Deneb templates draw that band for
   `__selected__ == 'on'`.
 - Edit interactions so variance tiers filter together with their base chart, never independently.
+  `visualInteractions` types are `DataFilter`, `HighlightFilter` and `NoFilter`
+  ([pbir-skeleton.md](references/pbir-skeleton.md) §9).
+- Dimension slicers: exclude "(Blank)" and the model's unknown member with a visual-level filter,
+  and sync the same slicer across pages with one `syncGroup`, so a selection carries over like an
+  app's URL state ([pbir-skeleton.md](references/pbir-skeleton.md) §9).
 
 ## 5. Report measures in a live-connected report
 
@@ -240,6 +245,8 @@ skill (plugin `fabric-apps`). What matters for the report builder:
 - [ ] Every compromise footnoted and listed under `deviations`; report measures footnoted and
       listed for the model owner, none of them `hidden`, all bound with `"Schema": "extension"`
       (`report_measures.py --check` clean); no `"active"` outside slicers.
+- [ ] Theme `name` = its file name (`.json` included); slicers without "(Blank)" / unknown
+      members and synced across pages; interaction types `DataFilter` / `HighlightFilter` / `NoFilter`.
 - [ ] After publishing: every visual renders in the service (browser or PDF export).
 - [ ] Checked at the target size, exported to PDF, and with the CVD theme.
 - [ ] Custom visuals allowed by the tenant; licences confirmed for every viewer group.

@@ -1,6 +1,6 @@
 {
   "$schema": "https://raw.githubusercontent.com/microsoft/powerbi-desktop-samples/main/Report%20Theme%20JSON%20Schema/reportThemeSchema-2.157.json",
-  "name": "IBCS Notation (CVD)",
+  "name": "ibcs-pbi-theme-cvd.json",
   "dataColors": [
     "#404040",
     "#A6A6A6",

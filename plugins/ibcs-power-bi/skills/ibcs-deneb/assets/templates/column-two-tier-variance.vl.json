@@ -1,12 +1,13 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-  "description": "IBCS two-tier column chart (CO 4.2, UN 4.1): AC/FC columns with the reference scenario (PY or PL) overlapped behind and offset left, absolute variance tier above on the SAME value scale, variance axis in the reference scenario's notation.",
+  "description": "IBCS two-tier column chart (CO 4.2, UN 4.1): AC/FC columns with the reference scenario (PY or PL) overlapped behind and offset left, absolute variance tier above on the SAME value scale, variance axis in the reference scenario's notation. Options: pinTier adds the relative variance as pins in a third tier on their own % scale (card 8), showBase false draws the variance tier alone.",
   "usermeta": {
     "ibcs": {
       "template": "column-two-tier-variance",
       "cards": [
         "EX 1.1 card 5",
         "EX 1.1 card 7",
+        "EX 1.1 card 8",
         "CO 4.2"
       ],
       "fields": {
@@ -48,7 +49,13 @@
         "triangleScenario",
         "showCategoryLabels",
         "fcLabel",
-        "scaleBand"
+        "scaleBand",
+        "showBase",
+        "pinTier",
+        "pinPxPerUnit",
+        "pinShare",
+        "pinDecimals",
+        "naOnNegativeRef"
       ],
       "layout": {
         "valueAxis": "height",
@@ -61,7 +68,8 @@
             "padHigh": [
               "ibcsLabelPx",
               "ibcsTierGapPx"
-            ]
+            ],
+            "onlyIf": "showBase"
           },
           {
             "id": "variance",
@@ -72,9 +80,23 @@
             "padLowIfNegative": [
               "ibcsLabelPx"
             ]
+          },
+          {
+            "id": "pins",
+            "onlyIf": "pinTier",
+            "unit": "percentage point",
+            "pxPerUnitParam": "pinPxPerUnit",
+            "range": "min(Δ%, 0) … max(Δ%, 0) in percentage points",
+            "padLow": [
+              "ibcsTierGapPx",
+              "ibcsLabelPx"
+            ],
+            "padHigh": [
+              "ibcsLabelPx"
+            ]
           }
         ],
-        "rule": "container height = fixedPx + Σ over tiers of ((hi − lo) × pxPerUnit + padHigh + padLow); measured with Vega-Lite 6.4.3 at ibcsFontSize 12; with varPxPerUnit the variance tier contributes (hi − lo) × varPxPerUnit instead (scale_layout.py: member tierPxPerUnit); with Comment markers add ibcsFontSize + 18 px to the base tier's padHigh; periodLabel 'month' with visible category labels uses fixedPxMonthLabels instead of fixedPx for the second label line (at ibcsFontSize 12)",
+        "rule": "container height = fixedPx + Σ over tiers of ((hi − lo) × pxPerUnit + padHigh + padLow); measured with Vega-Lite 6.4.3 at ibcsFontSize 12; with varPxPerUnit the variance tier contributes (hi − lo) × varPxPerUnit instead (scale_layout.py: member tierPxPerUnit); with Comment markers add ibcsFontSize + 18 px to the base tier's padHigh; periodLabel 'month' with visible category labels uses fixedPxMonthLabels instead of fixedPx for the second label line (at ibcsFontSize 12); tiers with onlyIf count only when that knob is true (showBase false drops the base tier and its padHigh; pinTier true adds the pin tier at pinPxPerUnit px per percentage point); with pxPerUnit the space the data does not need stays ABOVE the top tier, so the tiers never drift apart when a filter shrinks the data",
         "fixedPxMonthLabels": 38
       },
       "sampleData": "time-series-ac-fc-py-pl.json",
@@ -116,9 +138,58 @@
             "width": 960,
             "height": 340
           }
+        },
+        {
+          "suffix": "-pins",
+          "params": {
+            "refScenario": "BU",
+            "pinTier": true
+          },
+          "preview": {
+            "width": 420,
+            "height": 400
+          },
+          "note": "Three tiers in one view: ΔBU% pins above ΔBU above AC&FC vs BU; pins on their own % scale (pinShare of the base tier)."
+        },
+        {
+          "suffix": "-pins-px",
+          "params": {
+            "pinTier": true,
+            "pxPerUnit": 10,
+            "pinPxPerUnit": 2
+          },
+          "preview": {
+            "width": 420,
+            "height": 420
+          },
+          "note": "pxPerUnit 10 and pinPxPerUnit 2 in a container taller than the data needs: the spare space stays above the pin tier, the three tiers stay together."
+        },
+        {
+          "suffix": "-variance-only",
+          "params": {
+            "showBase": false
+          },
+          "preview": {
+            "width": 420,
+            "height": 140
+          },
+          "note": "showBase false: only the ΔPY tier, for stacking a second variance tier above a chart that already draws the base."
+        },
+        {
+          "suffix": "-variance-only-pins",
+          "params": {
+            "showBase": false,
+            "pinTier": true,
+            "refScenario": "PL"
+          },
+          "preview": {
+            "width": 420,
+            "height": 240
+          },
+          "note": "showBase false with pinTier: a ΔPL + ΔPL% pair without the base."
         }
       ],
-      "notes": "Same unit, same scale (CH 4.1) means the same px per unit, not the same domain: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field from one DAX measure) and size each visual's height to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill computes it), so a chart with smaller values is shorter (CH 4.2). yMax, varMin, varMax only share a domain: use them for visuals of the same height that must show the same range, never to align a smaller chart with a larger one. A Total / extension column (e.g. the year next to its months) is a separate visual with periodType 'year'; when its values need another scale, mark it with a scaling indicator or a footnote. Same column width across visuals (e.g. the month chart and its total): set barPx. Values are drawn as delivered: bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Period or no value in AC, FC, PY, PL, BU, refScenario or triangleScenario are dropped, even if constant scale measures are present; reference-only periods remain. The integrated reference legend names the first period with a nonblank reference value, including zero. periodLabel: auto preserves category labels unchanged; month formats YYYY-MM as Jan..Dec with the year below the first visible month of each year and a thin separator at subsequent year boundaries; short formats YYYY-MM as mm. Other category formats are left unchanged. When showCategoryLabels is false, year labels and year separators are hidden too. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Comment markers (UN 2.4): bind Comment (e.g. a DAX SWITCH returning 1, 2 … for the periods the comments explain) and print the same numbers in circles in the comment text box; the marker sits above the value label, so keep ibcsTierGapPx large enough when a variance tier is stacked above.",
+      "notes": "Same unit, same scale (CH 4.1) means the same px per unit, not the same domain: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field from one DAX measure) and size each visual's height to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill computes it), so a chart with smaller values is shorter (CH 4.2). yMax, varMin, varMax only share a domain: use them for visuals of the same height that must show the same range, never to align a smaller chart with a larger one. A Total / extension column (e.g. the year next to its months) is a separate visual with periodType 'year'; when its values need another scale, mark it with a scaling indicator or a footnote. Same column width across visuals (e.g. the month chart and its total): set barPx. Values are drawn as delivered: bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Period or no value in AC, FC, PY, PL, BU, refScenario or triangleScenario are dropped, even if constant scale measures are present; reference-only periods remain. The integrated reference legend names the first period with a nonblank reference value, including zero. periodLabel: auto preserves category labels unchanged; month formats YYYY-MM as Jan..Dec with the year below the first visible month of each year and a thin separator at subsequent year boundaries; short formats YYYY-MM as mm. Other category formats are left unchanged. When showCategoryLabels is false, year labels and year separators are hidden too. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Comment markers (UN 2.4): bind Comment (e.g. a DAX SWITCH returning 1, 2 … for the periods the comments explain) and print the same numbers in circles in the comment text box; the marker sits above the value label, so keep ibcsTierGapPx large enough when a variance tier is stacked above. Variance-only tier (showBase false): only the variance axis, variance columns and labels and the tier label are drawn; stack it above a chart that shows the base, with showCategoryLabels false when the visual below shows them. Pin tier (pinTier true): ΔX% = (AC&FC − REF) / REF with the signed reference, N/A when REF is blank or 0, or negative while naOnNegativeRef is true; drawn as pins above the absolute variance tier in the same view, so base, ΔX and ΔX% always share the category axis and stay together when a filter changes the data (separate stacked visuals each anchor their own plot and drift apart). The pins have their own % scale: pinPxPerUnit px per percentage point (the same on every pin tier and pin chart of the page), else pinShare of the base tier. Outlier clipping (clipPct) exists only in pin-relative-variance.",
       "previewGroups": [
         {
           "suffix": "-scale-group",
@@ -154,7 +225,7 @@
   "width": "container",
   "height": "container",
   "padding": {
-    "left": 34,
+    "left": 40,
     "right": 30,
     "top": 4,
     "bottom": 2
@@ -244,6 +315,36 @@
       "name": "fcLabel",
       "value": "FC",
       "description": "integrated-legend name of the hatched (forecast) columns: 'FC' for forecast months; 'AC&FC' on a Total / extension visual whose column is the year of actual plus forecast (bind that measure as FC so it is hatched)"
+    },
+    {
+      "name": "showBase",
+      "value": true,
+      "description": "false draws only the variance tier: no base columns, value labels, scenario legend, triangles, comment markers, scale band or category axis line. Use it for a second variance tier (e.g. ΔPY above an AC vs BU chart that already shows ΔBU) so the base is not drawn twice; with pinTier the visual is a ΔX + ΔX% pair"
+    },
+    {
+      "name": "pinTier",
+      "value": false,
+      "description": "true adds the relative variance (ΔX% = (AC&FC − REF) / REF, signed reference) as pins in a third tier above the absolute variance tier, in the same view, so all tiers move together under filtering and share one category axis (CO 4.2). The pins have their own % scale (pinPxPerUnit)"
+    },
+    {
+      "name": "pinPxPerUnit",
+      "value": 0,
+      "description": "px per percentage point of the pin tier; set the same value on every pin tier and pin-relative-variance chart of the page (one % scale). Needs pxPerUnit > 0; 0 (or pxPerUnit 0) = the pin tier gets pinShare of the base tier's extent"
+    },
+    {
+      "name": "pinShare",
+      "value": 0.5,
+      "description": "without pinPxPerUnit: extent of the pin tier as a share of the base tier (of the variance tier with showBase false)"
+    },
+    {
+      "name": "pinDecimals",
+      "value": 0,
+      "description": "decimals of the pin labels (percent)"
+    },
+    {
+      "name": "naOnNegativeRef",
+      "value": true,
+      "description": "pin tier: N/A when the reference is negative (IBCS UN 4.1); a zero or blank reference is always N/A"
     },
     {
       "name": "ibcsLabelPad",
@@ -386,6 +487,30 @@
       "value": 1
     },
     {
+      "name": "ibcsPinRatio",
+      "value": 0.3
+    },
+    {
+      "name": "ibcsPinHeadRatio",
+      "value": 0.85
+    },
+    {
+      "name": "ibcsPinStemMin",
+      "value": 2
+    },
+    {
+      "name": "ibcsPinStemMax",
+      "value": 4
+    },
+    {
+      "name": "ibcsPinHeadMin",
+      "value": 6
+    },
+    {
+      "name": "ibcsPinHeadMax",
+      "value": 10
+    },
+    {
       "name": "ibcsFontSize",
       "value": 12
     },
@@ -396,6 +521,14 @@
     {
       "name": "ibcsFmtVar",
       "value": "+,.1f"
+    },
+    {
+      "name": "ibcsFmtRelVar",
+      "value": "+.0%"
+    },
+    {
+      "name": "ibcsNA",
+      "value": "N/A"
     },
     {
       "name": "ibcsHatch",
@@ -426,6 +559,19 @@
       "name": "triPx",
       "expr": "clamp(ibcsTriangleRatio * min(bw, tokBw), ibcsTriMin, ibcsTriMax)",
       "description": "triangle height: token ratio × column width / bar thickness, clamped in px (geometry.triangleSizePx)"
+    },
+    {
+      "name": "pinBw",
+      "expr": "min(bw, tokBw)",
+      "description": "pin tier: the token column width, so pins keep the size of pin-relative-variance"
+    },
+    {
+      "name": "stemPx",
+      "expr": "clamp(ibcsPinRatio * pinBw, ibcsPinStemMin, ibcsPinStemMax)"
+    },
+    {
+      "name": "headPx",
+      "expr": "clamp(ibcsPinHeadRatio * pinBw * ibcsPinRatio * 2.2, ibcsPinHeadMin, ibcsPinHeadMax)"
     }
   ],
   "transform": [
@@ -557,7 +703,7 @@
       ]
     },
     {
-      "calculate": "max(datum._maxV, datum._maxR, isValid(datum._maxT) ? datum._maxT : 0, datum._kMax, datum._band, 0)",
+      "calculate": "showBase ? max(datum._maxV, datum._maxR, isValid(datum._maxT) ? datum._maxT : 0, datum._kMax, datum._band, 0) : 0",
       "as": "_M"
     },
     {
@@ -569,7 +715,11 @@
       "as": "_dLo"
     },
     {
-      "calculate": "datum._ppu > 0 ? ibcsLabelPx / datum._ppu : datum._M * ibcsLabelPad",
+      "calculate": "showBase ? datum._M : max(datum._dHi - datum._dLo, 1e-9)",
+      "as": "_span"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? ibcsLabelPx / datum._ppu : datum._span * ibcsLabelPad",
       "as": "_lp"
     },
     {
@@ -586,15 +736,73 @@
       ]
     },
     {
-      "calculate": "(datum._ppu > 0 ? ibcsTierGapPx / datum._ppu : datum._M * ibcsTierGap) + (datum._anyComment > 0 ? (datum._ppu > 0 ? (ibcsFontSize + 18) / datum._ppu : datum._M * 0.12) : 0)",
+      "calculate": "showBase ? (datum._ppu > 0 ? ibcsTierGapPx / datum._ppu : datum._M * ibcsTierGap) + (datum._anyComment > 0 ? (datum._ppu > 0 ? (ibcsFontSize + 18) / datum._ppu : datum._M * 0.12) : 0) : 0",
       "as": "_tg"
     },
     {
-      "calculate": "datum._M + datum._lp + datum._tg - datum._dLo + (datum._dLo < 0 ? datum._lp : 0)",
+      "calculate": "(showBase ? datum._M + datum._lp + datum._tg : 0) - datum._dLo + (datum._dLo < 0 ? datum._lp : 0)",
       "as": "_B"
     },
     {
-      "calculate": "datum._B + datum._dHi + datum._lp",
+      "calculate": "isValid(datum._v) && isValid(datum._r) && datum._r != 0 && !(naOnNegativeRef && datum._r < 0)",
+      "as": "_pOk"
+    },
+    {
+      "calculate": "datum._pOk ? (datum._v - datum._r) / datum._r : null",
+      "as": "_p"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_p",
+          "as": "_pMaxF"
+        },
+        {
+          "op": "min",
+          "field": "_p",
+          "as": "_pMinF"
+        }
+      ]
+    },
+    {
+      "calculate": "max(isValid(datum._pMaxF) ? datum._pMaxF : 0, 0) * 100",
+      "as": "_pHi"
+    },
+    {
+      "calculate": "min(isValid(datum._pMinF) ? datum._pMinF : 0, 0) * 100",
+      "as": "_pLo"
+    },
+    {
+      "calculate": "datum._ppu > 0 && pinPxPerUnit > 0 ? pinPxPerUnit / datum._ppu : pinShare * datum._span / max(datum._pHi - datum._pLo, 1)",
+      "as": "_pk"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? ibcsTierGapPx / datum._ppu : datum._span * ibcsTierGap",
+      "as": "_tgP"
+    },
+    {
+      "calculate": "datum._B + datum._dHi + datum._lp + datum._tgP + datum._lp - datum._pLo * datum._pk",
+      "as": "_P0"
+    },
+    {
+      "calculate": "datum._pOk ? datum._P0 + datum._p * 100 * datum._pk : null",
+      "as": "_pEnd"
+    },
+    {
+      "calculate": "datum._pOk ? datum._pEnd : datum._P0",
+      "as": "_pLy"
+    },
+    {
+      "calculate": "!isValid(datum._p) || abs(datum._p) * 100 * pow(10, pinDecimals) < 0.5 ? null : datum._pol == 0 ? ibcsNeutral : (datum._p * datum._pol > 0 ? ibcsGood : ibcsBad)",
+      "as": "_pc"
+    },
+    {
+      "calculate": "datum._pOk ? (abs(datum._p) * 100 * pow(10, pinDecimals) < 0.5 ? format(0, '.' + pinDecimals + '%') : format(datum._p, replace(ibcsFmtRelVar, /[.][0-9]+/, '.' + pinDecimals))) : (isValid(datum._v) ? ibcsNA : '')",
+      "as": "_pLabel"
+    },
+    {
+      "calculate": "pinTier ? datum._P0 + datum._pHi * datum._pk + datum._lp : datum._B + datum._dHi + datum._lp",
       "as": "_top"
     },
     {
@@ -746,6 +954,9 @@
       "description": "scale band (CH 4.3): light area from the axis to the common value, with a labelled line; set the same value in every chart of the unit whose scale must differ",
       "transform": [
         {
+          "filter": "showBase"
+        },
+        {
           "filter": "datum._i == 1 && datum._band > 0"
         }
       ],
@@ -776,6 +987,9 @@
     {
       "description": "scale band line",
       "transform": [
+        {
+          "filter": "showBase"
+        },
         {
           "filter": "datum._i == 1 && datum._band > 0"
         }
@@ -827,6 +1041,9 @@
         }
       },
       "transform": [
+        {
+          "filter": "showBase"
+        },
         {
           "filter": "datum._i == 1"
         }
@@ -979,11 +1196,19 @@
         "y2": {
           "datum": 0
         }
-      }
+      },
+      "transform": [
+        {
+          "filter": "showBase"
+        }
+      ]
     },
     {
       "description": "white underlay so hatched FC columns hide the reference column behind them",
       "transform": [
+        {
+          "filter": "showBase"
+        },
         {
           "filter": "datum._isFC"
         }
@@ -1048,11 +1273,19 @@
             "title": "Δ"
           }
         ]
-      }
+      },
+      "transform": [
+        {
+          "filter": "showBase"
+        }
+      ]
     },
     {
       "description": "third scenario (triangleScenario) as a right-pointing triangle left of the column pair, tip at its value; size clamped in px",
       "transform": [
+        {
+          "filter": "showBase"
+        },
         {
           "filter": "isValid(datum._t)"
         }
@@ -1120,6 +1353,9 @@
       },
       "transform": [
         {
+          "filter": "showBase"
+        },
+        {
           "calculate": "max(datum._v, isValid(datum._r) ? datum._r : 0)",
           "as": "_ly"
         }
@@ -1128,6 +1364,9 @@
     {
       "description": "numbered comment marker (UN 2.4, UN 5.1): circle with the number of the comment that explains this period, above its value label; the same number marks the comment text",
       "transform": [
+        {
+          "filter": "showBase"
+        },
         {
           "filter": "isValid(datum['Comment']) && datum['Comment'] !== ''"
         },
@@ -1162,6 +1401,9 @@
     {
       "description": "comment marker number",
       "transform": [
+        {
+          "filter": "showBase"
+        },
         {
           "filter": "isValid(datum['Comment']) && datum['Comment'] !== ''"
         },
@@ -1263,6 +1505,9 @@
       "description": "integrated legend: reference scenario name left of the first column, at the height of the first period that has a reference value (a series starting without PY still names PY)",
       "transform": [
         {
+          "filter": "showBase"
+        },
+        {
           "joinaggregate": [
             {
               "op": "argmin",
@@ -1316,6 +1561,9 @@
     {
       "description": "integrated legend: AC left of the first column (upper), reference name below it",
       "transform": [
+        {
+          "filter": "showBase"
+        },
         {
           "calculate": "!datum._isFC && isValid(datum._v) ? datum._v : null",
           "as": "_acV"
@@ -1385,6 +1633,9 @@
     {
       "description": "integrated legend: FC right of the last forecast column",
       "transform": [
+        {
+          "filter": "showBase"
+        },
         {
           "filter": "datum._i == datum._n && datum._isFC"
         },
@@ -1457,6 +1708,9 @@
       "description": "integrated legend: triangle scenario name left of the first triangle",
       "transform": [
         {
+          "filter": "showBase"
+        },
+        {
           "filter": "datum._i == 1 && isValid(datum._t)"
         }
       ],
@@ -1490,6 +1744,9 @@
       "description": "scale band label, right end above the line",
       "transform": [
         {
+          "filter": "showBase"
+        },
+        {
           "filter": "datum._i == 1 && datum._band > 0"
         }
       ],
@@ -1518,6 +1775,266 @@
         "text": {
           "value": {
             "expr": "format(datum._band, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + (datum._band % 1 == 0 ? 0 : decimals)))"
+          }
+        }
+      }
+    },
+    {
+      "description": "pin tier (pinTier): variance axis = reference scenario, PY solid light thick line",
+      "transform": [
+        {
+          "filter": "pinTier && datum._i == 1 && refScenario == 'PY'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxisPY"
+        },
+        "strokeWidth": {
+          "expr": "ibcsPYAxisWidth"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_P0",
+          "type": "quantitative"
+        },
+        "x": {
+          "value": 0
+        },
+        "x2": {
+          "value": {
+            "expr": "width"
+          }
+        }
+      }
+    },
+    {
+      "description": "pin tier: PL/BU two parallel lines (upper)",
+      "transform": [
+        {
+          "filter": "pinTier && datum._i == 1 && refScenario != 'PY'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxisPL"
+        },
+        "strokeWidth": {
+          "expr": "ibcsPLAxisLine"
+        },
+        "yOffset": {
+          "expr": "-ibcsPLAxisGap / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_P0",
+          "type": "quantitative"
+        },
+        "x": {
+          "value": 0
+        },
+        "x2": {
+          "value": {
+            "expr": "width"
+          }
+        }
+      }
+    },
+    {
+      "description": "pin tier: PL/BU two parallel lines (lower)",
+      "transform": [
+        {
+          "filter": "pinTier && datum._i == 1 && refScenario != 'PY'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxisPL"
+        },
+        "strokeWidth": {
+          "expr": "ibcsPLAxisLine"
+        },
+        "yOffset": {
+          "expr": "ibcsPLAxisGap / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_P0",
+          "type": "quantitative"
+        },
+        "x": {
+          "value": 0
+        },
+        "x2": {
+          "value": {
+            "expr": "width"
+          }
+        }
+      }
+    },
+    {
+      "description": "pin tier: pin body, thin, impact colour; geometry follows the arithmetic sign; own % scale",
+      "transform": [
+        {
+          "filter": "pinTier && datum._pOk"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "strokeCap": "butt",
+        "stroke": {
+          "expr": "datum._pc"
+        },
+        "strokeWidth": {
+          "expr": "stemPx"
+        },
+        "tooltip": true,
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "_pEnd",
+          "type": "quantitative"
+        },
+        "y2": {
+          "field": "_P0"
+        },
+        "tooltip": [
+          {
+            "field": "Period",
+            "type": "nominal"
+          },
+          {
+            "field": "_pLabel",
+            "title": "Δ%"
+          }
+        ]
+      }
+    },
+    {
+      "description": "pin tier: white ground under hatched FC heads",
+      "transform": [
+        {
+          "filter": "pinTier && datum._pOk && datum._isFC"
+        }
+      ],
+      "mark": {
+        "type": "square",
+        "filled": true,
+        "opacity": 1,
+        "fill": {
+          "expr": "ibcsFCGround"
+        },
+        "size": {
+          "expr": "headPx * headPx"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_pEnd",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "pin tier: pin head in the minuend's notation (AC solid dark, FC hatched)",
+      "transform": [
+        {
+          "filter": "pinTier && datum._pOk"
+        }
+      ],
+      "mark": {
+        "type": "square",
+        "filled": true,
+        "fill": {
+          "expr": "datum._isFC ? pbiPatternSVG(ibcsHatch, ibcsFCStripe, ibcsFCGround) : ibcsAC"
+        },
+        "stroke": {
+          "expr": "datum._isFC ? ibcsFCStroke : null"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "size": {
+          "expr": "headPx * headPx"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "_pEnd",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "pin tier: labels outside the head in the direction of the change; N/A on the axis",
+      "transform": [
+        {
+          "filter": "pinTier"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "baseline": {
+          "expr": "!datum._pOk || datum._p >= 0 ? 'bottom' : 'top'"
+        },
+        "dy": {
+          "expr": "!datum._pOk ? -4 : (datum._p >= 0 ? -1 : 1) * (headPx / 2 + 2)"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_pLy",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_pLabel"
+        }
+      }
+    },
+    {
+      "description": "pin tier: tier label ΔPY% / ΔPL% left of its axis",
+      "transform": [
+        {
+          "filter": "pinTier && datum._i == 1"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "right",
+        "baseline": "bottom",
+        "dy": -2,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "xOffset": {
+          "expr": "-bw / 2 - ibcsOffsetCol * bw - 3 - (triangleScenario != '' ? triPx + 2 : 0)"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_P0",
+          "type": "quantitative"
+        },
+        "text": {
+          "value": {
+            "expr": "'Δ' + refScenario + '%'"
           }
         }
       }

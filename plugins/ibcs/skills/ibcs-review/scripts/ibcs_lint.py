@@ -492,6 +492,18 @@ def used_fields(spec) -> set[str]:
     return out
 
 
+def upstream_fields(spec) -> set[str]:
+    """Fields a top-level transform creates before any top-level transform reads them: a fold or
+    calculate prepended to a template's own transforms supplies those fields like the dataset does."""
+    out, read = set(), set()
+    for t in spec.get("transform") or []:
+        if not isinstance(t, dict):
+            continue
+        out |= produced_fields(t) - read
+        read |= used_fields({"transform": [t]})
+    return out
+
+
 def guide_nodes(node):
     """Every axis / legend / header object of a spec (their expressions see a guide datum)."""
     if isinstance(node, dict):
@@ -540,7 +552,8 @@ def lint_vegalite(spec, loc, palette=None, dataset_fields=None):
                       and p.get("name") in SCENARIO_KNOBS and isinstance(p.get("value"), str)}
             optional |= set(declared) - set(required) - chosen
         groups = [g for g in ibcs.get("requiredAnyOf") or [] if isinstance(g, list)]
-        if groups and not any(set(g) <= set(dataset_fields) for g in groups):
+        supplied = set(dataset_fields) | upstream_fields(spec)
+        if groups and not any(set(g) <= supplied for g in groups):
             add("LINT", "-", "S", "check", f"{loc}:fields",
                 "none of the field sets " + " | ".join("+".join(g) for g in groups) + " is bound",
                 "The template needs one of these sets (see its field table); without it the chart has no base or total.")
