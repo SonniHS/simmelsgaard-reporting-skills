@@ -29,7 +29,9 @@ Shared conventions:
   for millions) and rounded to the fixed decimals of its scale group; never print raw values.
   The unit goes in the title or the card's unit line.
 - **Rounded zero:** a Δ that rounds to 0 at display precision gets no impact colour, no sign and
-  the default text colour (`0.0`, `0.0%`).
+  the default text colour (`0.0`, `0.0%`, `0.00` for ratios), the zero-variance rule of
+  ibcs-notation: compare the ROUNDed value with 0 (`_D1 = 0`), never the raw value, and never print
+  `+0.00`.
 - **Variance numbers as text** may be tinted only with the text variants of the impact colours
   (`color.variance.goodText` / `badText` / `neutralText`, ≥ 4.5:1 contrast); otherwise black.
   Bars, pins and markers keep the graphic colours.

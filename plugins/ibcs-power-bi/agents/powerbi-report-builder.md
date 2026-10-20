@@ -41,8 +41,8 @@ visual spec.
      format string, tested as `DEFINE MEASURE` first), footnote it, and list it for the model
      owner.
 2. Generate the assets from the tokens: the theme with
-   `${CLAUDE_PLUGIN_ROOT}/skills/ibcs-power-bi/scripts/build_pbi_theme.py` (with `--shell cards`
-   for the page shell, `ibcs-power-bi` references/page-shell.md, unless the user wants a plain
+   `${CLAUDE_PLUGIN_ROOT}/skills/ibcs-power-bi/scripts/build_pbi_theme.py` (with `--shell` for the page shell,
+   rounded cards by default, `--shell cards` for square ones, `ibcs-power-bi` references/page-shell.md, unless the user wants a plain
    white page) and, if the
    organisation has an `ibcs-tokens.overrides.json`, a synced Deneb template set with
    `${CLAUDE_PLUGIN_ROOT}/skills/ibcs-deneb/scripts/sync_tokens.py --overrides … --out …`. Colours, sizes and formats come
@@ -66,7 +66,7 @@ visual spec.
    Deneb: `${CLAUDE_PLUGIN_ROOT}/skills/ibcs-deneb/scripts/to_pbir.py` with `--field` mappings,
    the spec's knobs (`pxPerUnit` on every member of a same-unit scale group with the container
    size from `ibcs-power-bi/scripts/scale_layout.py`, `unitDivisor` or scaled measures,
-   `triangleScenario` for a `draw: triangle` tier, `varPxPerUnit` / `fcLabel` on a Total visual,
+   `triangleScenario` for a `draw: triangle` tier, `fcLabel`, `categoryLabelPx` and the aligned tier ranges (`scale_layout.py` `alignTiers`) on a Total visual,
    `pinTier` for a Δ% pin tier above the columns in the same visual, `showBase: false` for a
    second variance tier), `--sort`, `--filter`, `--title`. Slicers: `textSize`, a visual-level
    filter without blank and unknown members, one `syncGroup` per field across pages; dynamic

@@ -30,7 +30,7 @@ A = category width (columns) or row step (bars); B = bar width.
 | Pin | stem ≈ 0.3 B clamped to 2–4 px, square head ≈ 0.85 B clamped to 6–10 px (B = absolute bar thickness) | `geometry.pin.*`, `geometry.pin.stemPx`, `geometry.pin.headPx` |
 | Variance axis | PY: one light thick line; PL/BU: two thin lines with a gap; FC: hatched band | `stroke.varianceAxis.*`, `color.axis.*` |
 | Category axis | thin, dark, drawn **before** the marks | `stroke.categoryAxisPx`, `color.axis.category` |
-| FC hatching | 45° stripes, small period, dark on white, with a thin outline | `pattern.fcHatch.*` (`svgTemplate`) |
+| FC hatching | 45° stripes, small period, dark on white, with a thin outline; hatched FC **variance** marks stripe in their impact colour: one pattern per stripe colour (absolute grey, good, bad, neutral), ids unique per chart (`${id}-fc`, `${id}-fc-good`, …) | `pattern.fcHatch.*` (`svgTemplate`) |
 | Remainder gap | one extra row step before "Other" | `geometry.remainderGapRatio` |
 | Lines | absolute thick, relative half; square markers ≈ 2.5 × line | `stroke.line.*` |
 | Category width by period | year > quarter > month > week > day | `geometry.categoryWidthByPeriod`, `geometry.categoryStepPx` |

@@ -11,8 +11,9 @@ values by hand: regenerate after any token change, and run `--check` in CI.
   neutral or ambiguous impact. IBCS fixes the hues and their meaning, not the exact codes: pick
   codes once for the organisation (token overrides) and keep them.
 - One font family; no gridlines, no value axes, data labels on, legend off (label series
-  directly), no backgrounds, borders or shadows (SI 1.2); with `--shell cards` white visual
-  backgrounds on a neutral canvas, still no borders or shadows.
+  directly), no backgrounds, borders or shadows (SI 1.2); with `--shell` (fluent-cards) card
+  shapes with ring and shadow behind transparent content, with `--shell cards` white visual
+  backgrounds; content visuals never get borders or shadows.
 
 ## What the generated theme sets
 
@@ -35,10 +36,16 @@ specific readers or for output without colour; whether to maintain all of them i
 
 ## Page shell variant
 
-`--shell cards` (references/page-shell.md): page background and outspace a neutral light canvas
-(`--canvas`, default `#F3F3F3`), every visual and table background white with left/right padding
-`--card-padding` (12 px). Borders, shadows and radius stay off: the white visuals stacked edge to
-edge form the cards. A coloured canvas is not allowed (the linter fails it).
+`--shell` = `--shell fluent-cards` (default page shell, references/page-shell.md): canvas 5 % ink
+over the page colour; `visualStyles.shape` is the card (white fill, 1 px ring at 10 % ink,
+`roundEdge` 8, drop shadow distance 2 / blur 4 / transparency 88); every other visual has no
+background, no border, no shadow and left/right padding `--card-padding` (16 px). One shape per
+card sits behind its content (lower z).
+
+`--shell cards` (square): canvas `--canvas` (default `#F3F3F3`), every visual and table background
+white with left/right padding `--card-padding`; no borders, shadows or radius: the white visuals
+stacked edge to edge form the cards. A coloured canvas is not allowed in either mode (the linter
+fails it).
 
 ## What a theme cannot do
 

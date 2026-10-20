@@ -66,7 +66,7 @@ Card numbers ("card 5") are the chart cards of the IBCS chart overview, EX 1.1.
 | Integrated variance | **no** | Deneb or a certified visual |
 | P&L vertical waterfall with subtotals | partly | native waterfall has breakdown and totals but no scenario notation or polarity |
 | Small multiples on an identical scale | yes | shared axis is the default; keep independent axes off |
-| Signed data labels (`+13`) | yes | format string `+#,0;-#,0;0` (dynamic format strings or calculation-group format expressions) |
+| Signed data labels (`+13`) | yes | format string `+#,0;-#,0;0` (dynamic format strings or calculation-group format expressions). A value that rounds to 0 (0.004 at 2 decimals) still takes the + or − section (`+0.00`): for the zero-variance rule use a dynamic format string `IF ( ROUND ( SELECTEDMEASURE (), 2 ) = 0, "0.00", "+#,0.00;-#,0.00;0.00" )` |
 | Variance bars inside a matrix | simple only | conditional-formatting data bars: each column scales on its own, no reference axis notation; strict IBCS needs SVG |
 | Sparklines in a matrix | basic | no scenario coding; hatched FC needs SVG |
 | KPI card with ΔPY / ΔPY% (`kpi-cards`) | partly | the new card (`cardVisual`) shows reference labels coloured from theme `good`/`bad`, but not by polarity per measure, without the rounded-zero rule and with no fixed layout for several comparisons. **Route: SVG KPI cards** in one `tableEx` (ibcs-svg-dax skeleton 4); the new card only as a footnoted compromise |
@@ -141,7 +141,8 @@ Bind it with a `Measure` expression and a wildcard selector:
 ```
 
 Plot `[ΔPY]` itself (arithmetic sign), never `[ΔPY] * polarity`. Format string
-`+#,0.0;-#,0.0;0.0` (token `number.format.variance.excel`). The variance axis notation is not
+`+#,0.0;-#,0.0;0.0` (token `number.format.variance.excel`); for values that round to 0 the dynamic
+format string of the row above (zero-variance rule: unsigned `0.0`, ibcs-notation). The variance axis notation is not
 available natively: footnote it or use the Deneb tier.
 
 ### Same scale across visuals (UN 4.1, CH 4.1)

@@ -169,7 +169,11 @@ type × data shape → chart card A-n); tables: [references/table-catalogue.md](
   the ISO 4217 code (**kEUR, mEUR, bEUR**); physical/SI units k, M, G; counts "#". The unit goes in
   title line 2 or the subtitle, not on every number. One prefix per scale group.
 - One organisation-wide format: thousands separator narrow space (`1 234`), one decimal sign, one
-  negative style (−123 or (123)). Codes, not symbols, when currencies mix (EUR, not €). Locale,
+  negative style (−123 or (123)).
+- **Zero variance (one rule everywhere: charts, tables, KPI cards, messages):** a Δ that rounds to 0
+  at the displayed decimals is printed without sign and in the default text colour, with the
+  usual decimals (`0.00`, `0.0%`, `0.0pp`), and gets no mark. Every other Δ carries its sign
+  ("+" or "−"), taken from the unrounded value. Never `+0.00` or `-0.0`. Codes, not symbols, when currencies mix (EUR, not €). Locale,
   currency and decimal sign are settings in the token overrides, not hard-coded.
 - Dates ISO 8601: `2026-06-30`, `2026-Q2`, `2026-06`, `2026-W17`; within a year `Q2`, `Jun`,
   `W17` (year in the title, not repeated on every label — SI 4.3). Spans `Jan..Mar`,

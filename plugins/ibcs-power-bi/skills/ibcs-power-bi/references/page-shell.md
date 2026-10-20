@@ -2,12 +2,15 @@
 
 A report page is easier to scan when its parts sit on separate white "sheets": a header card with
 the key message and title, a row of KPI cards, one card per chart block, and a footnote card, on
-a light neutral canvas. The cards are a **layout grouping only** (ours, grounded in IBCS SI 1 and
-UN 2): no borders, shadows, rounded corners or colour; inside a card every IBCS rule for a white
-page holds. Numbers below are for a 1280 px wide page (`FitToWidth`, height = content), with the
-`layout.*` tokens (margin 16, gutter 12). Status: the theme switch and the numbers are built and
-lint-checked, and a full page built from them rendered in the service as specified (2026-10, PDF
-export). Check the first page after publishing anyway (SKILL.md §6 step 7).
+a light neutral canvas. **Default: rounded cards** (`--shell fluent-cards`): white, a 1 px ring,
+radius 8 and a soft shadow. Square white cards without ring or shadow (`--shell cards`) are the
+option. The card shape is **chrome outside the content** (house style, ours: not stated by IBCS,
+grounded in SI 1 and UN 2 as a layout grouping); inside a card every IBCS rule for a white page
+holds: no frames, shadows, colour or decoration on charts, tables or text. Numbers below are for
+a 1280 px wide page (`FitToWidth`, height = content): margin 16, gap between cards 16, card
+padding 16. Status: the square shell rendered in the service as specified (2026-10, PDF export);
+the fluent-cards theme and shapes are lint- and test-checked, not yet rendered in the service.
+Check the first page after publishing (SKILL.md §6 step 7).
 
 ## Contents
 - [1. Theme](#1-theme)
@@ -21,15 +24,35 @@ export). Check the first page after publishing anyway (SKILL.md §6 step 7).
 ## 1. Theme
 
 ```sh
-python3 -I "${CLAUDE_SKILL_DIR}/scripts/build_pbi_theme.py" --out-dir ./theme --shell cards [--canvas '#F3F3F3'] [--card-padding 12]
+python3 -I "${CLAUDE_SKILL_DIR}/scripts/build_pbi_theme.py" --out-dir ./theme --shell [--card-padding 16]
+python3 -I "${CLAUDE_SKILL_DIR}/scripts/build_pbi_theme.py" --out-dir ./theme --shell cards [--canvas '#F3F3F3']
 ```
 
-- Page background and outspace: the canvas `#F3F3F3` (neutral grey, no hue; any `--canvas` must
-  stay neutral and light, the linter fails a coloured one).
-- Every visual, tables included: background white (`color.background.page`), transparency 0,
-  padding left/right 12 px, top/bottom 0. Border, shadow and radius stay off.
-- A card is a column of visuals stacked **edge to edge** (no gap): their white backgrounds merge
-  into one sheet. Gaps (12 px) exist only between cards, so the canvas shows only there.
+Chrome tokens (both routes; the app uses the same values, ibcs-fabric-app report-shell.md §9):
+
+| Token | Value |
+|---|---|
+| canvas | 5 % ink (`color.text.primary`) over the page colour (#F2F2F2 with black ink on white) |
+| card | white (`color.background.page`) |
+| ring | 1 px, 10 % ink (#E6E6E6) |
+| radius | 8 px |
+| shadow | distance 2, blur 4, transparency 88 (ink colour), outer, downwards |
+| card padding / gap / margin | 16 / 16 / 16 px |
+
+- **fluent-cards (default).** Every card is one `shape` visual (rounded rectangle) placed behind
+  its content (lower z: the shape's `z` below every content visual of the card, e.g. 0–999 for
+  shapes and 1000+ for content), exactly the card's rectangle. The theme styles shapes as the card
+  (fill white, ring, radius 8, shadow) and gives content visuals **no background** (so the ring
+  and the rounded corners stay visible) and padding left/right 16. Only shapes carry an outline or
+  shadow; the linter fails a border or shadow on any content visual (A4) and content on the grey
+  canvas outside a card shape (A2). Chosen over border + radius + shadow on the content visuals:
+  a card is several visuals stacked edge to edge, and per-visual borders would draw seams and a
+  shadow under every piece.
+- **cards (square).** No shapes; every visual, tables included, has a white background and padding
+  left/right 16; the white visuals stacked edge to edge form the sheet. Canvas `#F3F3F3` (any
+  `--canvas` must stay neutral and light; the linter fails a coloured one).
+- A card is a column of visuals stacked **edge to edge** (no gap). Gaps (16 px) exist only between
+  cards, so the canvas shows only there.
 - Padding is inside the visual: a Deneb or SVG visual's position = the size from
   `scale_layout.py` + its padding (left + right for width, top + bottom for height).
 
@@ -39,15 +62,21 @@ python3 -I "${CLAUDE_SKILL_DIR}/scripts/build_pbi_theme.py" --out-dir ./theme --
 |---|---|---|---|---|
 | margin (all sides) | 16 | 16 | — | — |
 | content | 16 | — | 1248 | — |
-| gutter between cards (both directions) | — | — | 12 | 12 |
-| card padding (inside, via visual padding) | 12 | 12 | — | — |
-| header card | 16 | 16 | 1248 | 206 |
-| KPI cards (5) | 16, 268, 520, 772, 1024 | 234 | 240 | 142 |
-| first chart card | 16 | 388 | 1248 | title 36 + subtitle 24 + charts + 12 |
-| next card | 16 | previous bottom + 12 | 1248 (or 618 + 12 + 618 for two side by side) | — |
+| gap between cards (both directions) | — | — | 16 | 16 |
+| card padding (inside, via visual padding) | 16 | 16 | — | — |
+| header card (two-line message) | 16 | 16 | 1248 | 226 (one-line message: 204) |
+| KPI cards (5) | 16, 268, 520, 772, 1024 | 258 | 236 (last 240) | 142 |
+| first chart card | 16 | 416 | 1248 | title 40 + subtitle 24 + charts + 16 |
+| next card | 16 | previous bottom + 16 | 1248 (or 616 + 16 + 616 for two side by side) | — |
 | page height | — | — | — | last card bottom + 16 |
 
-Four KPI cards: width (1248 − 3 × 12) / 4 = 303; three: 408. Two chart cards side by side: 618 each.
+Four KPI cards: width (1248 − 3 × 16) / 4 = 300; three: 405 (last 406). Two chart cards side by
+side: 616 each. With a one-line message every y below the header moves up by 22 (KPI row 236,
+first chart card 394). In fluent-cards mode add one shape per card at exactly these rectangles.
+
+Cards in one row have **equal heights**: the row height is its tallest card's content + padding,
+and every card of the row gets that height (content top-aligned; the extra space sits at the
+bottom of the shorter cards, the only allowed empty bottom).
 
 ## 3. Header card
 
@@ -56,24 +85,37 @@ ends where the next begins), x = 16 unless stated:
 
 | Visual | Position (x, y, w, h) | Content |
 |---|---|---|
-| key message | 16, 16, 1076, 84 | `tableEx` with the SVG key message (ibcs-svg-dax skeleton 7): one image column, `displayName: " "`, column header font 8 pt. Its empty header strip renders **about 28 px** high and is the card's top padding. Column width 1030, SVG and `grid.imageWidth` 1010, `imageHeight` 48 (two lines of 17 px bold at 22 px line height + 4): 28 + 48 + 8 = 84 |
-| logo (optional) | 1092, 16, 172, 84 | `image` visual, the organisation's logo at most 148 × 40, right-aligned, padding 12 (top 14); the linter lists it (A1) for review: one logo in the header card's corner, nowhere else |
-| title lines | 16, 100, 1248, 58 | three text cards or one text box: who / **what** in unit / when, 10–11 pt, about 19 px per line |
-| slicers | 16, 158, 212, 64 / 228, 158, 272, 64 | dropdown slicers with **short headers** ("Company", "Period"), padding bottom 12 (the card's bottom padding); spans 16–228 and 228–500 |
-| scope chips | 500, 158, 764, 32 (+ a second line 500, 190, 764, 32) | text from the **slicer top**: what the selection means ("all companies, intercompany included ¹", "none = Jan..last closed month ²"), 9 pt grey, footnote numbers; span 500–1264 |
+**Vertical rhythm** (fixed, top to bottom): key message → 12 px → the three title lines at
+consecutive line height (no blank line between them) → at least 12 px → the slicer labels. The
+message visual ends where its text ends (no spare image height), and the 12 px gaps are the
+**top padding** of the next visual, never canvas. Positions for a two-line message:
 
-The card ends at y 222 (158 + 64). Never leave a gap between two visuals of one card: the grey
-canvas shows through as a hole in the sheet.
+| Visual | Position (x, y, w, h) | Content |
+|---|---|---|
+| key message | 16, 16, 1076, 76 | `tableEx` with the SVG key message (ibcs-svg-dax skeleton 7): one image column, `displayName: " "`, column header font 8 pt. Its empty header strip renders **about 28 px** high and is the card's top padding. Column width 1030, SVG and `grid.imageWidth` 1010, `imageHeight` = lines × 22 + 4 (two lines of 17 px bold at 22 px line height: 48; one line: 26). Height = 28 + `imageHeight` (76; one line 54) |
+| logo (optional) | 1092, 16, 172, 76 | `image` visual, the organisation's logo at most 148 × 40, right-aligned, padding 16; the linter lists it (A1) for review: one logo in the header card's corner, nowhere else |
+| title lines | 16, 92, 1248, 70 | one text box (or three text cards edge to edge, the first one with the padding) with **padding top 12** (the rhythm gap; left/right 16): who / **what** in unit / when, 10–11 pt, 19 px per line: 12 + 3 × 19 + 1 = 70 |
+| slicers | 16, 162, 212, 80 / 228, 162, 272, 80 | dropdown slicers with **padding top 12** (the gap below title line 3) and bottom 16 (the card's bottom padding): 12 + 52 + 16 = 80; spans 16–228 and 228–500 |
+| scope chips | 500, 162, 764, 38 (+ a second line 500, 200, 764, 38) | text from the **slicer label top** (padding top 12): what the selection means ("all companies, intercompany included ¹", "none = Jan..last closed month ²"), 9 pt grey, footnote numbers; span 500–1264 |
+
+The card ends at y 242 (162 + 80); with a one-line message 22 px higher (message 54, titles at 70,
+slicers at 140, card end 220). Never leave a gap between two visuals of one card: the grey canvas
+shows through as a hole in the sheet. The linter fails slicer labels less than 12 px below the
+text box above them (it compares visual boxes and their own padding, not the rendered text).
 
 **No rules in image tables.** A `tableEx` draws a line under its (empty) column header and between
-rows. In every image table of the shell set `columnHeaders` and `values` `outline` to `'None'`,
-and `grid` `outlineColor` white with `outlineWeight` 0. A column exactly as wide as the visual's
-content width scrolls: keep column width = `imageWidth` + 20 and the visual at least column
-width + its left/right padding + 2.
+rows. In every image table of the shell set `grid` `outlineColor` white with `outlineWeight` 0 (and
+`gridHorizontal` / `gridVertical` off). Do **not** set `columnHeaders` or `values` `outline` to
+`'None'`: Microsoft's PBIR validator rejects that value. A column exactly as wide as the visual's
+content width scrolls: keep column width = `imageWidth` + 20 and the visual at least column width +
+its left/right padding + 2.
 
-The explanation of a slicer's empty state goes into the scope chips or a footnote, never into the
-slicer header: a header longer than about (width − 16) / 7 characters is cut with an ellipsis
-(the linter fails it).
+**Slicer headers.** Default: the short form with its meaning in brackets when it fits the slicer,
+e.g. "Company (all = <group>)" or "Period (none = <default>)"; otherwise just "Company" /
+"Period". It fits when (characters × 7) + 16 ≤ the slicer width (the linter's truncation rule: a
+longer header is cut with an ellipsis and fails). The full rule ("none selected = Jan..last closed
+month; several months = their sum") goes into a footnote, never into the header or a two-line
+help text beside the slicer.
 
 Fallback for the message when the SVG route is not wanted: a `cardVisual` on the plain-text
 message measure with `value.bold` true and 13 pt (pbir-skeleton.md §6): bold, numbers black.
@@ -83,11 +125,11 @@ message measure with `value.bold` true and 13 pt (pbir-skeleton.md §6): bold, n
 One visual per KPI, so the canvas shows between the cards (one `tableEx` holding all cards would
 be one white strip, and with column width < `imageWidth` + 20 it draws a stray "." per card):
 
-- `tableEx` (x, 234, 240, 142), one image column bound to the card's SVG measure
+- `tableEx` (x, 258, 236, 142), one image column bound to the card's SVG measure
   (ibcs-svg-dax skeleton 4), `displayName: " "`, column header 8 pt (its empty header strip,
   about 28 px, is the top padding); no rules (§3).
-- Visual padding left 10, right 0, top 0, bottom 0; column width 220; `grid.imageWidth` 200,
-  `imageHeight` 104 (28 + 104 + 10 = 142).
+- Visual padding left 14, right 0, top 0, bottom 0 (236 ≥ 14 + column 220 + 2); column width 220;
+  `grid.imageWidth` 200, `imageHeight` 104 (28 + 104 + 10 = 142).
 - The card SVG at **200 × 104**: in skeleton 4 set `width='200'` and `viewBox='0 0 200 104'` and
   move the x positions: centre 120 → 100, Δ% end 100 → 84, Δ end 176 → 147, scenario code 184 → 154.
   Text sizes stay 12 / 28 px (never scale the SVG to fit: the labels would shrink below 12 px).
@@ -97,19 +139,36 @@ be one white strip, and with column width < `imageWidth` + 20 it draws a stray "
 
 ## 5. Chart cards
 
-- **Title inside the card:** two visuals: a text box (16, y, card width, 36) with padding top 12,
-  the measure in bold and the dimension ("**Revenue** by month"), 11 pt; below it (y + 36, height
-  24) the scenarios, period and variances, 9 pt grey. One 52 px box for both lines scrolls in the
+- **Title inside the card:** two visuals: a text box (16, y, card width, 40) with padding top 16,
+  the measure in bold and the dimension ("**Revenue** by month"), 11 pt; below it (y + 40, height
+  24) the scenarios, period and variances, 9 pt grey. One box for both lines scrolls in the
   service. No visual titles on the charts below it.
-- **Charts** directly below (y + 60), sized by `scale_layout.py` (SKILL.md §3) plus their padding.
-  The first chart of a row gets padding left 12, the last padding right 12; charts between them
-  0. The bottom visual of the card gets padding bottom 12 (its position height = computed + 12).
+- **Card height from content:** the card ends at its last visual's content + the bottom padding
+  16; nothing else. More than 24 px of empty space at a card's bottom is a hole (the linter fails
+  a card background that ends more than 24 px below its last visual). Exception: equal heights
+  in one row (§2).
+- **Charts** directly below (y + 64), sized by `scale_layout.py` (SKILL.md §3) plus their padding.
+  The first chart of a row gets padding left 16, the last padding right 16; charts between them
+  0. The bottom visual of the card gets padding bottom 16 (its position height = computed + 16).
 - A Total / year column of a monthly chart is its own visual in the **same** card, right of the
-  months, without a gap; it has its own scale only with a scale band in both (Deneb `scaleBand`)
-  or a footnote.
-  Its tiers line up with the months' only with the same tier ranges: set the same `varMin` /
-  `varMax` (Δ tier) and `pinMin` / `pinMax` (Δ% pins) on both visuals and give `scale_layout.py`
-  the union ranges; the Δ tier then uses the months' px per unit (`varPxPerUnit`).
+  months, without a gap. It has its own scale, and so do its Δ tiers: base and Δ tier of the
+  Total use the **Total's** px per unit (ibcs-composition: one scale per column block), shown by a
+  scale band in both visuals (Deneb `scaleBand`) and a footnote ("the Total has its own scale").
+  A Δ that is tiny on that scale (1–2 px) is still drawn at its true height with its label; never
+  inflate it to be visible (the label carries the value).
+- **Alignment with the months.** The Total's baseline and tiers sit at the same y as the months':
+  - same visual top and same height for months and Total;
+  - the category-label band has an explicit height in both (Deneb knob `categoryLabelPx`: months
+    with a year line need 28 px at 12 px type, a single "Total" label 14 px, so give both 28; the
+    fixed height is then 38 px in both), and `scale_layout.py` uses it in the fixed height;
+  - each tier's **height** is the union of the months' and the Total's px extents for that tier,
+    each at its own px per unit: list both in `"alignTiers": [["months", "total"]]` of the
+    `scale_layout.py` group; it prints the same height for both and the tier ranges per visual
+    (`setParams`: `yMax`, `varMin`/`varMax`, `pinMin`/`pinMax`). Under filters bind the fields
+    `YMax`, `VarMin`/`VarMax`, `PinMin`/`PinMax` to union measures computed the same way
+    (column-two-tier-variance notes give the DAX); they win over the knobs, like `PxPerUnit`, so a
+    filter that grows the months' tiers grows the Total's too. Fixed knobs suit an unfiltered page
+    only.
 - Value labels need room at the right end of bars (and left of negative ones): give
   `scale_layout.py` the longest formatted label (`longestValueLabel`); it names the knob to raise.
 - Two-column blocks (e.g. bars by company left, Δ and Δ% right) stay in one card: one Deneb
@@ -117,12 +176,12 @@ be one white strip, and with column width < `imageWidth` + 20 it draws a stray "
 
 ## 6. Footnote card
 
-- One text box, full width (16, y, 1248, h), padding 12 top and left/right, 8 pt (≈ 11 px; it renders
-  at about 17 px per line), grey `color.text.secondary`. Height = 28 + lines × 17, where lines = Σ over notes of
-  ceil(characters × 5.5 / 1224): sized to its text, **never a scroll box** (a scrolled note is not
+- One text box, full width (16, y, 1248, h), padding 16 top and left/right, 8 pt (≈ 11 px; it renders
+  at about 17 px per line), grey `color.text.secondary`. Height = 32 + lines × 17, where lines = Σ over notes of
+  ceil(characters × 5.5 / 1216): sized to its text, **never a scroll box** (a scrolled note is not
   printed and not read).
 - Last line: source and data as of (`YYYY-MM-DD hh:mm`), so the card is also the page footer. As a
-  separate text card below the notes (height 34, padding bottom 12) it closes the card; use the
+  separate text card below the notes (height 38, padding bottom 16) it closes the card; use the
   same 8 pt as the notes.
 - Short: one line per note where possible, at most about eight notes. Longer definitions (KPI
   formulas, company names, model compromises) go to a glossary / details page linked from the
@@ -132,7 +191,9 @@ be one white strip, and with column width < `imageWidth` + 20 it draws a stray "
 ## 7. Checks
 
 `ibcs_lint.py pbir <name>.Report --layout layout.json` (ibcs-review) checks the shell mechanics:
-neutral canvas only with white visuals (A2), slicer headers and titles that would be cut (LINT),
-image columns at least `imageWidth` + 20 (LINT), Deneb sizes and px per unit against
-`scale_layout.py --json` (G8). What it cannot see: the rendered result. Export the page to PDF
+neutral canvas, content on a white card shape or with a white background (A2), no border or
+shadow on content visuals while card shapes may have them (A4), slicer labels at least 12 px below
+the title text box above them, card backgrounds that end more than 24 px below their last visual,
+slicer headers and titles that would be cut, image columns at least `imageWidth` + 20 (LINT),
+Deneb sizes and px per unit against `scale_layout.py --json` (G8). What it cannot see: the rendered result. Export the page to PDF
 (pbir-skeleton.md §10) and compare it with the spec and this grid.

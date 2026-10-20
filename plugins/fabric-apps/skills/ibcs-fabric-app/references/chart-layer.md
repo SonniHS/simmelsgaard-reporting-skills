@@ -43,10 +43,36 @@ Rules:
   (`plot = max(minPlotPx, cellPx − overheadPx)`, about 40 px), give each tier at least a minimum
   plot, return a warning when the floor applies, and unit-test a short cell with many tiers: no
   request ≤ 0, no mark outside the returned height.
+- **Total next to the months** (own scale, ibcs-composition): the Total's base and its Δ tiers use
+  the Total's px per unit from the registry (its own scale group), never the months'. They line up
+  with the months by **px extents**, not units: the Total's base cell gets the months' base height
+  (union of both base extents in px), and every tier's height is the union of the months' and the
+  Total's px extents for that tier (each at its own px per unit); both charts get the same
+  category-label band height and the same top, so baselines and tier axes sit at the same y. A Δ
+  that is tiny on the Total's scale is drawn at its true height (a minimum of 1 px so it stays
+  visible, never inflated to "look right") with its label carrying the value; the scale band in
+  both charts and a footnote name the separate scale. Unit-test: months and Total tier axes at
+  the same y for a filter that changes either range.
 - Layout functions never compute variances or impact; they draw what the query returned
   (`queries-and-data.md` §3).
 - Hatch pattern ids are unique per chart instance (`useId`), because `url(#id)` breaks across
-  iframes and shadow roots, and the Fabric portal hosts the app in an iframe.
+  iframes and shadow roots, and the Fabric portal hosts the app in an iframe. Hatched FC
+  **variance** marks in impact colours need one pattern per stripe colour (good, bad, neutral, and
+  the grey of absolute FC), each with its own id (`${chartId}-hatch-good`, …): one shared pattern
+  would draw every hatched variance in the same colour.
+- **End legends** (scenario names right of the last column, and right of the Total) sit at their
+  marks' y, never as a fixed list: PY at the triangle tip, BU (or another outlined reference) at
+  the middle of the outline, AC or FC at the middle of the bar; "AC&FC" when the series runs from
+  AC into FC, plain "AC" when the last column is AC. Spread them with a collision shift (minimum
+  gap font size + 2 px between centres, kept inside the base tier). The same rule as the Deneb
+  end legend (`column-two-tier-variance` legendSide "end") and `ibcs-web-charts` behaviour
+  contract §2.
+- **Structure-chart legend header** (scenario names above the bars): at least 1 em between names
+  and clear of the first row's markers (triangle, outline end); when crowded, use the end-legend
+  rule instead (names at the first or last row's marks).
+- **Waterfall magnifier** (a zoom box on a part of the bars): the end-bar labels never sit on the
+  zoom box's corner or on a connector: reserve label room outside the box (or put the labels
+  above it) and route connectors around the labels.
 - Generate the token module from the token file with a script; never hand-copy hex values. The
   copied script's default `--tokens` path points into the skill folder, so always pass the paths
   in a `tokens` npm script:
@@ -102,6 +128,11 @@ behaviour. Without `onSelect` the hit marks render nothing, so static charts sta
 - **Total**: a Total-only chart under the months: one category, its own scale with the same
   scale band value, its tiers aligned to the months' tier order, tier names left of the column
   inside the chart width (not at the far left of a wide box).
+- **Label collisions at narrow steps**: before drawing, test each value label's box against the
+  neighbouring bars' boxes and labels (1.2 em high, measured width); a label that would touch the
+  next bar is shifted (above the bar end, or to the free side) or dropped by the thinning order
+  above, never drawn over a bar. Long category names are cut **from the end** with an ellipsis or
+  wrapped to two lines, never with a middle ellipsis.
 - **Structure chart** (companies): stack the variance tiers under the bars (`ibcs-web-charts`
   behaviour contract §4: bars, then ΔBU, then ΔBU%, each full width on the same category order and
   scale), instead of a horizontally scrolling row.

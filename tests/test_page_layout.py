@@ -185,6 +185,47 @@ class Truncation(unittest.TestCase):
             self.assertEqual([x for x in rows(f, "LINT", "short (") if "is cut" in x["evidence"]], [])
 
 
+def placed(item, x, y, w, h, pad_top=None):
+    name, v = item
+    v = json.loads(json.dumps(v))
+    v["position"] = {"x": x, "y": y, "width": w, "height": h}
+    if pad_top is not None:
+        v["visual"].setdefault("visualContainerObjects", {})["padding"] = [{"properties": {"top": lit(f"{pad_top}D")}}]
+    return name, v
+
+
+def shape(name, x, y, w, h):
+    return name, {"name": name, "position": {"x": x, "y": y, "width": w, "height": h},
+                  "visual": {"visualType": "shape", "visualContainerObjects": {}}}
+
+
+class HeaderRhythm(unittest.TestCase):
+    def test_slicer_touching_the_title_lines_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            title = placed(textbox("title", "Sales in mEUR"), 16, 100, 1248, 58)
+            r = report(Path(tmp), {"p1": [title, placed(slicer("touch", "Company", 212), 16, 158, 212, 64)]})
+            _, f, _ = lint(r)
+            self.assertEqual(len([x for x in rows(f, "LINT", "touch (") if "below the title" in x["evidence"]]), 1)
+
+    def test_slicer_with_padding_top_12_passes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            title = placed(textbox("title", "Sales in mEUR"), 16, 92, 1248, 70)
+            s = placed(slicer("padded", "Company", 212), 16, 162, 212, 76, pad_top=12)
+            _, f, _ = lint(report(Path(tmp), {"p1": [title, s]}))
+            self.assertEqual([x for x in rows(f, "LINT", "padded (") if "below the title" in x["evidence"]], [])
+
+
+class CardBottom(unittest.TestCase):
+    def test_card_background_with_empty_bottom_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            a = placed(textbox("a", "Revenue by month"), 20, 400, 600, 36)
+            b = placed(textbox("b", "AC and PY"), 20, 436, 600, 24)
+            _, f, _ = lint(report(Path(tmp), {"p1": [shape("bgLoose", 16, 396, 1248, 160), a, b]}))
+            self.assertEqual(len([x for x in rows(f, "LINT", "bgLoose (") if "below its last visual" in x["evidence"]]), 1)
+            _, f, _ = lint(report(Path(tmp) / "t2", {"p1": [shape("bgTight", 16, 396, 1248, 76), a, b]}))
+            self.assertEqual([x for x in rows(f, "LINT", "bgTight (") if "below its last visual" in x["evidence"]], [])
+
+
 class PageShell(unittest.TestCase):
     def test_grey_canvas_needs_white_visuals(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -215,6 +256,52 @@ class PageShell(unittest.TestCase):
             self.assertEqual((bg["show"], bg["color"]["solid"]["color"].upper()), (True, "#FFFFFF"))
             self.assertFalse(theme["visualStyles"]["*"]["*"]["border"][0]["show"])
             self.assertFalse(theme["visualStyles"]["*"]["*"]["dropShadow"][0]["show"])
+
+
+    def test_fluent_cards_is_the_default_shell_mode(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            p = subprocess.run([sys.executable, "-I", "-B", str(THEME), "--out-dir", tmp, "--shell",
+                                "--variants", "standard"], capture_output=True, text=True)
+            self.assertEqual(p.returncode, 0, p.stderr)
+            theme = json.loads((Path(tmp) / "ibcs-pbi-theme.json").read_text())
+            vs = theme["visualStyles"]
+            self.assertEqual(vs["page"]["*"]["background"][0]["color"]["solid"]["color"].upper(), "#F2F2F2")
+            self.assertFalse(vs["*"]["*"]["background"][0]["show"])        # content transparent
+            self.assertFalse(vs["*"]["*"]["dropShadow"][0]["show"])        # no shadow on content
+            shape = vs["shape"]["*"]
+            self.assertEqual(shape["shape"][0]["roundEdge"], 8)
+            self.assertTrue(shape["dropShadow"][0]["show"])
+            self.assertEqual(shape["dropShadow"][0]["transparency"], 88)
+            self.assertEqual(shape["outline"][0]["lineColor"]["solid"]["color"].upper(), "#E6E6E6")
+
+
+def shadowed(item, on=True):
+    name, v = item
+    v["visual"].setdefault("visualContainerObjects", {})["dropShadow"] = [{"properties": {"show": lit(str(on).lower())}}]
+    return name, v
+
+
+class CardChrome(unittest.TestCase):
+    def test_shadow_allowed_on_card_shape_not_on_content(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = report(Path(tmp), {"p1": [shadowed(shape("card", 16, 0, 1248, 120)),
+                                          textbox("title", "Sales in mEUR"),
+                                          shadowed(placed(slicer("sl", "Company", 212), 16, 30, 212, 64))]})
+            _, f, _ = lint(r)
+            a4 = rows(f, "A4")
+            self.assertEqual([x for x in a4 if "card (" in x["location"]], [])
+            self.assertEqual(len([x for x in a4 if "sl (" in x["location"]]), 1)
+
+    def test_transparent_content_on_a_card_shape_passes_on_grey_canvas(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = report(Path(tmp), {"p1": [shape("card", 16, 0, 1248, 120),
+                                          placed(textbox("inside", "Sales in mEUR"), 16, 10, 600, 24),
+                                          placed(textbox("outside", "Notes"), 16, 300, 600, 24)]},
+                       canvas="#F2F2F2")
+            _, f, _ = lint(r)
+            a2 = [x for x in rows(f, "A2") if x["status"] == "fail"]
+            self.assertEqual([x for x in a2 if "inside (" in x["location"]], [])
+            self.assertEqual(len([x for x in a2 if "outside (" in x["location"]]), 1)
 
 
 class LabelRoom(unittest.TestCase):
@@ -256,6 +343,29 @@ class LabelRoom(unittest.TestCase):
         self.assertLessEqual(m["containerPx"], 330)
         self.assertLessEqual(e["containerPx"], 640)
         self.assertGreater(out["pxPerUnit"], 5)   # not squeezed by the bars' range alone
+
+    def test_align_tiers_gives_months_and_total_the_same_height_and_px_ranges(self):
+        out, _ = self.layout({"pxPerUnit": 9, "alignTiers": [["m", "t"]], "members": [
+            {"id": "m", "template": "column-two-tier-variance",
+             "params": {"periodLabel": "month", "categoryLabelPx": 28},
+             "tiers": {"base": [0, 23.3], "variance": [-1.4, 1.8]}},
+            {"id": "t", "template": "column-two-tier-variance", "own": True, "basePxPerUnit": 1,
+             "params": {"periodType": "year", "categoryLabelPx": 28},
+             "tiers": {"base": [0, 216], "variance": [0, 2.5]}}]})
+        m, t = out["members"]
+        self.assertEqual(m["containerPx"], t["containerPx"])
+        self.assertAlmostEqual(m["setParams"]["yMax"] * 9, t["setParams"]["yMax"] * 1, places=3)
+        self.assertAlmostEqual(m["setParams"]["varMin"] * 9, t["setParams"]["varMin"], places=3)
+        self.assertAlmostEqual(m["setParams"]["varMax"] * 9, t["setParams"]["varMax"], places=3)
+
+    def test_category_label_band_sets_the_fixed_height(self):
+        a, _ = self.layout({"pxPerUnit": 9, "members": [
+            {"id": "a", "template": "column-two-tier-variance", "params": {"categoryLabelPx": 28},
+             "tiers": {"base": [0, 10], "variance": [0, 1]}}]})
+        b, _ = self.layout({"pxPerUnit": 9, "members": [
+            {"id": "b", "template": "column-two-tier-variance", "params": {"periodLabel": "month"},
+             "tiers": {"base": [0, 10], "variance": [0, 1]}}]})
+        self.assertEqual(a["members"][0]["containerPx"], b["members"][0]["containerPx"])
 
 
 if __name__ == "__main__":

@@ -24,9 +24,9 @@ group.json (ranges in display units after unitDivisor; pin charts in percentage 
         {"id": "table-bars", "template": "svg", "range": [-5, 4], "fixedPx": 0},
         {"id": "...", "template": "...", "params": {"showCategoryLabels": false}, "maxPx": 400},
         {"id": "total", "template": "column-two-tier-variance", "own": true,
-         "tiers": {"base": [0, 216], "variance": [0, 2.5]}, "basePxPerUnit": 1,
-         "tierPxPerUnit": {"variance": "group"}}
-      ]
+         "tiers": {"base": [0, 216], "variance": [0, 2.5]}, "basePxPerUnit": 1}
+      ],
+      "alignTiers": [["monthly", "total"]]   optional: tiers of these members line up (see below)
     }
 
 Tiers that exist only with a knob (`onlyIf` in the template layout) count only when the member's params
@@ -37,10 +37,15 @@ pinPxPerUnit px per point (the tier's own scale), e.g.
          "params": {"pinTier": true, "pinPxPerUnit": 2},
          "tiers": {"base": [0, 23], "variance": [-2.1, 3.4], "pins": [-12, 20]}}
 
-Visuals side by side whose tiers must line up (a month chart and its Total) need the SAME variance and
-pin ranges: give both members the union range here and set it as varMin/varMax (display units) and
-pinMin/pinMax (fractions: -0.12 for -12 points) on both visuals, so each tier's axis sits at the same
-height even when one visual's own data spans less.
+Visuals side by side whose tiers must line up (a month chart and its Total) list their ids in
+"alignTiers": [["monthly", "total"]] and get the same visual top and categoryLabelPx (template knob:
+the category-label band; months with a year line need 28 at font 12). For every tier both have, the
+script takes the union of their PX extents (each member at its own px per unit: the Total's base and
+Δ tiers on its own scale, the pins on the shared pinPxPerUnit), widens each member's tier range to
+it and prints the knobs that reserve it ("setParams": yMax for the base tier, varMin/varMax in
+display units, pinMin/pinMax as fractions), so baselines and tier axes sit at the same y and both
+visuals get the same height. Under filters bind the matching fields (YMax, VarMin, VarMax, PinMin,
+PinMax) to measures computed the same way instead of the fixed knobs.
 
 Optional per template member (the docs' extra paddings, so nothing is cut or squashed):
     "comment": true          Comment markers bound: + ibcsFontSize + 18 px on the first tier's padHigh
@@ -80,11 +85,11 @@ the panel height (set knob panelHeight to it, or pxPerUnit on the visual); give 
 (default 3), optionally "panelTotals": true, to also get the visual height = panel rows × (panel +
 header + axis) + gaps (usermeta.ibcs.layout.container of the template).
 
-A Total / extension visual with its own base scale ("own": true, scaling indicator or footnote)
-keeps its variance tier on the group's scale: `tierPxPerUnit` maps a tier to "group" (the group's
-px per unit) or a number; the other tiers use `basePxPerUnit`. Set the Deneb knobs
-pxPerUnit = basePxPerUnit and varPxPerUnit = the group's px per unit (column-two-tier-variance).
-Members with "own": true never set the group's px per unit.
+A Total / extension visual with its own scale ("own": true, scale band in both visuals and a
+footnote) draws its base AND its Δ tier at `basePxPerUnit` (ibcs-composition: the Total's Δ tiers
+use the Total's scale, like its base). `tierPxPerUnit` can still map a tier to "group" (the group's
+px per unit) or a number, for a page that states that compromise in a footnote. Set the Deneb knob
+pxPerUnit = basePxPerUnit. Members with "own": true never set the group's px per unit.
 
 Template members read `usermeta.ibcs.layout` of the template: fixedPx (padding, category labels,
 marker overflow; measured with the Vega-Lite version Deneb bundles), and per tier the data range
@@ -173,6 +178,9 @@ def member_parts(m: dict, tdir: Path, group_ppu: float | None = None) -> dict:
     fixed = float(lay["fixedPx"] if labels else lay.get("fixedPxNoCategoryLabels", lay["fixedPx"]))
     if labels and params.get("periodLabel") == "month" and "fixedPxMonthLabels" in lay:
         fixed = float(lay["fixedPxMonthLabels"])   # second label line with the year
+    band = params.get("categoryLabelPx") or 0
+    if labels and band and "fixedPxCategoryBandBase" in lay:
+        fixed = float(lay["fixedPxCategoryBandBase"]) + float(band)   # explicit label band (months + Total)
     if "fixedPxNoPlanFootnote" in lay and (params.get("showPL") is False or m.get("planFootnote") is False):
         fixed = float(lay["fixedPxNoPlanFootnote"])   # line chart without the plan footnote
     if "plusCategoryLabels" in lay and labels:
@@ -258,6 +266,59 @@ def member_parts(m: dict, tdir: Path, group_ppu: float | None = None) -> dict:
     return out
 
 
+def tier_ppu(m: dict, tier: dict, params: dict, group_ppu: float) -> float:
+    """px per unit of one tier of a member (the same resolution as member_parts)."""
+    tppu = m.get("tierPxPerUnit", {}).get(tier["id"])
+    if tppu == "group":
+        return group_ppu
+    if tppu is not None:
+        return float(tppu)
+    if tier.get("pxPerUnitParam"):
+        return float(params.get(tier["pxPerUnitParam"]) or 0)
+    if m.get("own"):
+        return float(m.get("basePxPerUnit") or 0)
+    return group_ppu
+
+
+TIER_KNOBS = {"base": (None, "yMax"), "variance": ("varMin", "varMax"), "pins": ("pinMin", "pinMax")}
+
+
+def align_tiers(g: dict, members: list[dict], tdir: Path, ppu: float, set_params: dict) -> None:
+    """Widen the tiers of aligned members to the union of their px extents (alignTiers)."""
+    by_id = {m["id"]: m for m in members}
+    for ids in g.get("alignTiers") or []:
+        group = [by_id[i] for i in ids if i in by_id]
+        if len(group) < 2 or any(m.get("template", "svg") == "svg" for m in group):
+            sys.exit(f"alignTiers {ids}: needs two or more template members")
+        info = []
+        for m in group:
+            t = load_template(m["template"], tdir)
+            params = {**t["params"], **m.get("params", {})}
+            tiers = [tr for tr in t["layout"]["tiers"]
+                     if not tr.get("onlyIf") or params.get(tr["onlyIf"]) is True]
+            info.append((m, params, {tr["id"]: tr for tr in tiers}))
+        common = set.intersection(*(set(i[2]) for i in info))
+        for tid in common:
+            px = []
+            for m, params, tiers in info:
+                lo, hi = m["tiers"][tid]
+                k = tier_ppu(m, tiers[tid], params, ppu)
+                px.append((min(lo, 0.0) * k, max(hi, 0.0) * k, k))
+            plo, phi = min(x[0] for x in px), max(x[1] for x in px)
+            for (m, params, tiers), (_, _, k) in zip(info, px):
+                if not k:
+                    continue
+                lo, hi = plo / k, phi / k
+                m["tiers"][tid] = [lo, hi]
+                kn_lo, kn_hi = TIER_KNOBS.get(tid, (None, None))
+                scale = 0.01 if tid == "pins" else 1.0   # pin knobs are fractions, tiers in points
+                sp = set_params.setdefault(m["id"], {})
+                if kn_lo and lo < 0:
+                    sp[kn_lo] = round(lo * scale, 6)
+                if kn_hi:
+                    sp[kn_hi] = round(hi * scale, 6)
+
+
 def floor_sig(x: float, sig: int = 3) -> float:
     if x <= 0:
         return x
@@ -302,6 +363,7 @@ def main() -> int:
         if ppu <= 0:
             sys.exit("the available extent does not even hold the fixed px of the largest member")
 
+    align_tiers(g, members, tdir, ppu, set_params)                   # months + Total: same tier px
     parts = {m["id"]: member_parts(m, tdir, ppu) for m in members}  # resolve "group" tiers
     rows = []
     for m in members:

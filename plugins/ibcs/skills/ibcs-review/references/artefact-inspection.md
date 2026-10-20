@@ -122,7 +122,7 @@ components. Useful read-only searches (`Grep`, case-insensitive):
 | `domain=\{\[\s*['"]auto\|zero:\s*false\|scale.*log\|scaleLog` | non-zero / log axes | G1, G2 |
 | `#[0-9a-fA-F]{6}\|rgb\(\|hsl\(` outside the token module | hard-coded colours | A5 |
 | `schemeCategory\|tableau10\|category10\|interpolate` | categorical palettes | A5 |
-| `box-shadow\|drop-shadow\|linear-gradient\|border-radius` on chart containers | chrome | A4 |
+| `box-shadow\|drop-shadow\|linear-gradient\|border-radius` on chart containers or marks (not on the page-shell card surface: radius 8, 1 px ring, soft shadow are allowed there) | chrome | A4 |
 | `animation\|transition\|framer-motion\|animate` | motion | A3 |
 | `labelAngle\|rotate\(\|angle=` | rotated labels | C12 |
 | `Math.abs\(.*(PY\|PL\|prior\|plan)` in variance code | ABS in relative variance | E12, E14 |

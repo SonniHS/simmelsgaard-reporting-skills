@@ -57,6 +57,13 @@ Subtitles (multi-visual pages): one line, only the differing identifiers —
 
 Footnote marker for qualifiers: `**Net sales*** in mEUR` + footnote "*without intercompany sales".
 
+**Plain sums.** When the reporting unit's figures are a plain sum of its entities (no
+consolidation: no intercompany eliminations, no currency or ownership adjustments), line 1 says so:
+`{Group}, sum of {n} {entities} (not consolidated)` (e.g. "ABC Group, sum of six companies (not
+consolidated)"). The group name alone reads as a consolidated figure. A filtered line 1 keeps the
+qualifier for the remaining members ("ABC Group, sum of two companies (not consolidated): A, B"),
+and the footnote that defines the measure repeats it.
+
 Forbidden in titles: evaluation ("strong", "below expectations"), "Total", "Sum of", "Full
 year", obvious terms ("analysis", "overview", "report", "dashboard", "chart", "table",
 "development", "trend", "statistics", "structure", "comment"), units in brackets "[mEUR]",

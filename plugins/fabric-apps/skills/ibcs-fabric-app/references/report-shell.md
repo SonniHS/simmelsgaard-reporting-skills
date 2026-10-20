@@ -171,8 +171,10 @@ behaviour contract §10). The shell adds:
 - One row of equal cards (`repeat(auto-fit, minmax(168px, 1fr))`), each on a card surface.
 - Centred inside: **name** (semi-bold) with an **(i)** button at the top right; the **unit line**
   ("in mEUR", "in %", "ratio", "in mEUR, month end"); the **value** large (≈ 24 px, weight 650,
-  tabular); then one Δ line per comparison, relative before absolute, then the code
-  (`+5.8%  +8.3 ΔPY`).
+  tabular); then one Δ line per comparison: the two numbers, then the code. The visual spec sets
+  the order of Δ and Δ% (`deltaOrder`); without it follow the page's reference design, else
+  absolute first (`+8.3  +5.8%  ΔPY`), one order per page (behaviour contract §11). A Δ that rounds
+  to 0 is printed unsigned and black (`0.00 ΔPY`, never `+0.00`; zero-variance rule, ibcs-notation).
 - **(i)** opens a popover with the measure's definition and a link to its footnote. Definitions
   live in one glossary object, the same text as the footnote.
 - **Highlight ring** (the highlight marker token, UN 5.1) around the Δ number the headline cites,
@@ -192,15 +194,20 @@ behaviour contract §10). The shell adds:
   columns fill 2/3 of their category, the reporting month (or the clicked month) gets an assisting
   area behind its full category band through all tiers, the AC → FC switch gets a tick, FC hatched.
 - **Total column** in its own narrow cell at the right, after a thin vertical rule, on its own
-  scale; a scale band at the same round value (e.g. 10 mEUR) in the months and in the Total shows
-  the factor (CH 4.3, UN 5.2), and a footnote says so. Its variance tiers align with the months'.
+  scale: base **and** Δ tiers at the Total's px per unit (ibcs-composition); a scale band at the
+  same round value (e.g. 10 mEUR) in the months and in the Total shows the factor (CH 4.3, UN 5.2),
+  and a footnote says so. Its base and tiers align with the months' by px extent (same base cell
+  height, each tier the union of both px extents, same label band: chart-layer.md "Total next to
+  the months"). A Δ that is tiny on the Total's scale (1–2 px) is still drawn, at least 1 px and
+  never inflated, with its label; the series names right of the Total follow the end-legend rule.
 - **Series labels** (PY, BU, AC&FC) at the **end** of the series: right of the last month, before
-  the Total rule, stacked in the order of the marks they name (`ibcs-web-charts` behaviour
-  contract §1, §2). Never a legend box, never at both ends.
+  the Total rule, each at its mark's y (PY at the triangle tip, BU at the outline middle, AC/FC at
+  the bar middle; "AC" alone when the last column is AC) with a collision shift of at least font
+  size + 2 px (`ibcs-web-charts` behaviour contract §2). Never a legend box, never at both ends.
 - Optional **difference marker** (UN 5.1) right of the last month: a bracket from the first to the
   last month with Δ and Δ%; shift-click two months to choose them.
 - **Company bars** (structure chart with ΔBU and ΔBU% tiers): sorted, the cited company ringed in
-  its Δ tier, scenario names once at the top bar, the name legend ("E1 Company name · E2 …") as one
+  its Δ tier, scenario names once at the top bar (≥ 1 em apart, clear of its markers), the name legend ("E1 Company name · E2 …") as one
   muted line under the chart. Bars use the same px per mEUR as the month columns.
 - Clicking a company sets the entity filter, clicking a month sets the reporting month; both
   through the URL, so Back undoes them.
@@ -228,8 +235,9 @@ IBCS token CSS** (colours from the tokens via `color-mix`, never hex here). Valu
 | `--shell-canvas` | text-primary 5 % mixed into the page background | page background behind the cards |
 | `--shell-surface` | page background | cards, header row, filter bar |
 | `--shell-line` | the light table-rule colour | dividers, control borders |
-| `--shell-radius`, `--shell-radius-sm` | 10 px, 8 px (controls 6 px) | cards, popovers |
-| `--shell-elev-1` | `0 1px 2px` ink 7 % plus `0 0 0 1px` ink 4 % | cards |
+| `--shell-radius`, `--shell-radius-sm` | 8 px (controls 6 px) | cards, popovers |
+| `--shell-ring` | `0 0 0 1px` ink 10 % | cards (the 1 px ring) |
+| `--shell-shadow` | `0 2px 4px` ink 12 % (Power BI: distance 2, blur 4, transparency 88) | cards |
 | Header row | padding 10 × 28 px, logo 26 px high, area name 15 px semi-bold | sticky at the top |
 | Tabs | padding 7 × 9 px, radius 6 px, gap 2 px | |
 | Filter bar | padding 8–14 × 28 px, gaps 8–14 px, field labels 11 px uppercase | |
@@ -237,11 +245,18 @@ IBCS token CSS** (colours from the tokens via `color-mix`, never hex here). Valu
 | Headline | 18 px, weight 650, line height 1.35, 1.5 px ink rule, 8 px below | |
 | Title lines | 12 px, line height 1.45 | |
 | Chips | 11.5 px, padding 3 × 10 px, fully rounded | |
-| Grid | 12 columns `minmax(0, 1fr)`, gap 16 px, each card as tall as its content | |
-| Card | padding 18 × 20 × 20 px; title 13.5 px; subtitle 12 px muted; `position: relative; overflow-x: auto; min-width: 0` | |
+| Grid | 12 columns `minmax(0, 1fr)`, gap 16 px, `align-items: stretch`: cards in one row share the row height, content top-aligned; a row is as tall as its tallest card's content + padding | |
+| Card | padding 16 px; title 13.5 px; subtitle 12 px muted; `position: relative; overflow-x: auto; min-width: 0`; `box-shadow: var(--shell-ring), var(--shell-shadow); border-radius: var(--shell-radius)` | |
 | KPI card | padding 14 × 16 px; value 24 px weight 650; Δ lines 12.5 px; row gap 12 px | |
 | Footer | 11.5 px muted, 22 px above, a rule on top | |
 | Base text | 13 px, token font stack | |
+
+**Card shape.** Default: rounded cards (the tokens above), the same values as the Power BI shell
+(`ibcs-power-bi` references/page-shell.md §1): canvas 5 % ink over the page, card white, ring
+1 px at 10 % ink, radius 8, shadow 2 / 4 px at 12 % ink, padding 16, gap 16. Option: square cards
+(`data-card-style="square"`: radius 0, no ring, no shadow). The card is chrome outside the content
+(house style, ours, not stated by IBCS): charts, tables and text inside it never get frames,
+shadows, radius or colour.
 
 **Card geometry.** Every card is `position: relative` with `overflow-x: auto` and `min-width: 0`:
 a visually hidden data table is absolutely positioned and, without a positioned card around it,
@@ -250,11 +265,11 @@ the chart fitting the card. A chart gets the width of its card's content box, me
 (`ResizeObserver`) or computed for n cards in one row:
 
 ```
-cardInner = (pageInner + 2·cardPad − (n − 1)·gap) / n − 2·cardPad
+cardInner = (pageInner − (n − 1)·gap) / n − 2·cardPad
 pageInner = min(viewport, maxWidth) − 2·pagePadX
 ```
 
-(1280 px, 2 cards: pageInner = 1224, cardPad 20, gap 16 → (1224 + 40 − 16) / 2 − 40 = 584 px.) The
+(1280 px, 2 cards: pageInner = 1224, cardPad 16, gap 16 → (1224 − 16) / 2 − 32 = 572 px.) The
 layout function receives that width, never the viewport, and sizes its label rooms inside it.
 
 ## 10. Breakpoints
@@ -263,7 +278,7 @@ layout function receives that width, never the viewport, and sizes its label roo
 |---|---|
 | ≥ 1280 px | Tabs and tools on one header line, all filters on one line, five KPI cards in one row, month chart and Total side by side |
 | ≈ 1050 px (Fabric portal content width) | Compact tools: icon buttons without text, selects ≈ 112–136 px, tab padding 5 px; the tab row stays one line. Filters may wrap to a second row (never cut a control). KPI cards may wrap 3 + 2. Charts redraw for their width (label thinning by measured width, `ibcs-web-charts`) |
-| ≤ 760 px (phone; test at 390) | Header in two rows: brand, then a page select with the tools (tools wrap, never cut). The filter bar collapses to one toggle with a summary of the active filters. Page padding 14 × 12 px, one grid column, 12 px gap, card padding 12 px, headline 15.5 px. KPI cards two per row, a lone last card spans the row. The Total moves under the months as a Total-only chart (same scale band; chart-layer.md, phone layouts); structure tiers stack under the bars (behaviour contract §4). Label density: shorten Δ% labels to 0 decimals before thinning any label; keep one decimal down to a category step of ≈ 40 px at 11 px type; below that thin by measured width; never scroll the month chart sideways |
+| ≤ 760 px (phone; test at 390) | Header in two rows: brand, then a page select with the tools (tools wrap, never cut). The filter bar collapses to one toggle with a summary of the active filters. Page padding 14 × 12 px, one grid column, 12 px gap, card padding 12 px, headline 15.5 px. KPI cards two per row, a lone last card spans the row. The Total moves under the months as a Total-only chart (same scale band; chart-layer.md, phone layouts); structure tiers stack under the bars (behaviour contract §4). Label density: shorten Δ% labels to 0 decimals before thinning any label; keep one decimal down to a category step of ≈ 40 px at 11 px type; below that thin by measured width; never scroll the month chart sideways. Every value label is tested against the neighbouring bars (shift or drop, never over a bar); long names are cut from the end or wrapped to two lines, never a middle ellipsis |
 | Print | Header row, filter bar, tools and the canvas tint hidden; title lines show the state; cards do not break across pages |
 
 ## 11. Recipe: the Key figures page from scratch

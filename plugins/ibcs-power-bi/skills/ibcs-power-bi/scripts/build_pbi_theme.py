@@ -6,12 +6,20 @@
     python3 -I scripts/build_pbi_theme.py --check --out-dir ./theme   # exit 1 if the files are stale (CI)
     python3 -I scripts/build_pbi_theme.py --theme-overrides my-theme-fragment.json
     python3 scripts/build_pbi_theme.py --validate --schema reportThemeSchema-2.157.json   # needs jsonschema
-    python3 -I scripts/build_pbi_theme.py --shell cards           # page shell: grey canvas, white cards
+    python3 -I scripts/build_pbi_theme.py --shell                 # page shell: rounded cards (fluent-cards)
+    python3 -I scripts/build_pbi_theme.py --shell cards           # page shell, square cards
 
---shell cards (references/page-shell.md): the page background becomes a neutral light canvas
-(--canvas, default #F3F3F3) and every visual gets a white background (color.background.page) with
---card-padding px left and right (default 12; top/bottom 0 so the visuals of one card stack
-seamlessly). Still no borders, shadows or rounded corners: the cards are a layout grouping only.
+Page shell (references/page-shell.md). Both modes: the page background becomes a neutral light
+canvas and every visual gets --card-padding px left and right (default 16; top/bottom 0 so the
+visuals of one card stack seamlessly).
+--shell fluent-cards (the default when --shell has no value): canvas = 5 % ink (color.text.primary)
+  over the page colour. One `shape` visual per card, behind its content (z below the content), is
+  the card: white fill, a 1 px ring at 10 % ink, radius 8, soft shadow (distance 2, blur 4,
+  transparency 88). Content visuals have no background, so the ring and corners show; shapes
+  are the only visuals with an outline or shadow (house style for the chrome outside the content,
+  ours, not stated by IBCS; every content rule holds inside the card).
+--shell cards: square cards: canvas --canvas (default #F3F3F3), every visual white
+  (color.background.page), no borders, shadows or rounded corners.
 
 Paths to this script are relative to the ibcs-power-bi skill; run it from your project directory.
 --tokens defaults to the token file bundled with the sibling ibcs-deneb skill
@@ -61,7 +69,16 @@ def solid(color: str) -> dict:
 
 
 CANVAS = "#F3F3F3"      # page shell canvas: neutral (no hue), light enough to read as "paper" behind white cards
-CARD_PADDING_PX = 12
+CARD_PADDING_PX = 16
+FLUENT = {"canvasInk": 0.05, "ringInk": 0.10, "radius": 8, "shadowDistance": 2, "shadowBlur": 4,
+          "shadowTransparency": 88}   # fluent-cards shell: chrome tokens (page-shell.md §1)
+
+
+def mix(ink: str, paper: str, share: float) -> str:
+    """`share` of ink over paper, as #RRGGBB (neutral when both are greys)."""
+    a = [int(ink[i:i + 2], 16) for i in (1, 3, 5)]
+    b = [int(paper[i:i + 2], 16) for i in (1, 3, 5)]
+    return "#" + "".join(f"{round(x * share + y * (1 - share)):02X}" for x, y in zip(a, b))
 
 
 def build_theme(t: dict, variant: str = "standard", file_name: str | None = None,
@@ -95,12 +112,15 @@ def build_theme(t: dict, variant: str = "standard", file_name: str | None = None
     line_px = g(t, "stroke.line.absolutePx")
     marker = max(2, round(line_px * g(t, "stroke.line.markerToLineRatio") / 2))
     row_px = g(t, "layout.table.rowHeightPx")
-    canvas = (shell or {}).get("canvas", page_bg)
+    fluent = (shell or {}).get("mode") == "fluent-cards"
+    canvas = mix(text, page_bg, FLUENT["canvasInk"]) if fluent else (shell or {}).get("canvas", page_bg)
     pad = (shell or {}).get("padding", 0)
 
     card = shell is not None
+    white_visuals = card and not fluent   # fluent: the card shape is the white sheet, content is transparent
     no_chrome = {
-        "background": [{"show": True, "color": solid(page_bg), "transparency": 0}] if card else [{"show": False}],
+        "background": [{"show": True, "color": solid(page_bg), "transparency": 0}] if white_visuals
+        else [{"show": False}],
         "border": [{"show": False}],
         "dropShadow": [{"show": False}],
     }
@@ -172,11 +192,28 @@ def build_theme(t: dict, variant: str = "standard", file_name: str | None = None
             }],
             "categoryAxis": [{"innerPadding": abs_pad}],
         }},
-        "pivotTable": {"*": _table_styles(t, fam_regular, fam_emph, text, rule, rule_light, row_px, matrix=True, card=card)},
-        "tableEx": {"*": _table_styles(t, fam_regular, fam_emph, text, rule, rule_light, row_px, matrix=False, card=card)},
+        "pivotTable": {"*": _table_styles(t, fam_regular, fam_emph, text, rule, rule_light, row_px, matrix=True,
+                                          card=white_visuals)},
+        "tableEx": {"*": _table_styles(t, fam_regular, fam_emph, text, rule, rule_light, row_px, matrix=False,
+                                       card=white_visuals)},
         "textbox": {"*": {**no_chrome}},
         "cardVisual": {"*": {**no_chrome}},
     }
+    if fluent:
+        ring = mix(text, page_bg, FLUENT["ringInk"])
+        card_shape = {
+            "background": [{"show": False}],
+            "padding": [{"top": 0, "bottom": 0, "left": 0, "right": 0}],
+            "fill": [{"fillColor": solid(page_bg), "transparency": 0}],
+            "outline": [{"show": True, "lineColor": solid(ring), "weight": 1}],
+            "shape": [{"tileShape": "rectangleRounded", "roundEdge": FLUENT["radius"]}],
+            "border": [{"show": False}],
+            "dropShadow": [{"show": True, "preset": "Custom", "position": "Outer", "color": solid(text),
+                            "transparency": FLUENT["shadowTransparency"], "shadowDistance": FLUENT["shadowDistance"],
+                            "shadowBlur": FLUENT["shadowBlur"], "shadowSpread": 0, "angle": 90}],
+        }
+        visual_styles["shape"] = {"*": card_shape}
+        visual_styles["basicShape"] = {"*": card_shape}
 
     theme = {
         "$schema": SCHEMA_URL,
@@ -259,7 +296,8 @@ REQUIRED_TOP = ["name", "dataColors", "good", "bad", "neutral", "foreground", "b
                 "textClasses", "visualStyles"]
 
 
-def key_check(theme: dict, shell: bool = False) -> list[str]:
+def key_check(theme: dict, shell: bool | str = False) -> list[str]:
+    """shell: False, "cards" (or True) or "fluent-cards"."""
     errs: list[str] = []
     for k in REQUIRED_TOP:
         if k not in theme:
@@ -282,7 +320,8 @@ def key_check(theme: dict, shell: bool = False) -> list[str]:
         ("categoryAxis", "gridlineShow"): False,
         ("labels", "show"): True,
         ("labels", "labelDisplayUnits"): 1,  # 1 = None; 0 would be Auto ("K"/"M" suffixes)
-        ("background", "show"): shell,   # page shell: white cards; otherwise no backgrounds
+        # square shell: white visuals; fluent shell: the card shape is white, content transparent
+        ("background", "show"): bool(shell) and shell != "fluent-cards",
         ("border", "show"): False,
         ("dropShadow", "show"): False,
     }
@@ -290,6 +329,11 @@ def key_check(theme: dict, shell: bool = False) -> list[str]:
         got = (star.get(obj) or [{}])[0].get(prop)
         if type(got) is not type(want) or got != want:
             errs.append(f"visualStyles.*.*.{obj}.{prop} should be {want}, is {got}")
+    if shell == "fluent-cards":
+        sh = (theme.get("visualStyles", {}).get("shape", {}).get("*", {}))
+        if (sh.get("dropShadow") or [{}])[0].get("show") is not True or \
+                (sh.get("outline") or [{}])[0].get("show") is not True:
+            errs.append("fluent-cards: visualStyles.shape needs the ring (outline) and the soft shadow")
     for name, tc in theme.get("textClasses", {}).items():
         if not tc.get("fontFace") or not isinstance(tc.get("fontSize"), (int, float)):
             errs.append(f"textClasses.{name} needs fontFace + numeric fontSize")
@@ -366,11 +410,13 @@ def main() -> int:
     ap.add_argument("--name", default="ibcs-pbi-theme",
                     help="file stem (default ibcs-pbi-theme); the theme's \"name\" is set to the file name")
     ap.add_argument("--variants", default="standard,cvd", help="comma list of standard,cvd,bw")
-    ap.add_argument("--shell", choices=["none", "cards"], default="none",
-                    help="cards = page shell: neutral canvas, white visual backgrounds (references/page-shell.md)")
+    ap.add_argument("--shell", nargs="?", const="fluent-cards", choices=["none", "fluent-cards", "cards"],
+                    default="none",
+                    help="page shell (references/page-shell.md): fluent-cards (default when given without a value) = "
+                         "rounded card shapes behind transparent content; cards = square white visuals")
     ap.add_argument("--canvas", default=CANVAS, help=f"--shell cards: page canvas colour (default {CANVAS})")
     ap.add_argument("--card-padding", type=int, default=CARD_PADDING_PX,
-                    help=f"--shell cards: left/right padding of every visual in px (default {CARD_PADDING_PX})")
+                    help=f"page shell: left/right padding of every visual in px (default {CARD_PADDING_PX})")
     ap.add_argument("--check", action="store_true", help="exit 1 if generated files are stale")
     ap.add_argument("--validate", action="store_true", help="validate against the theme JSON schema")
     ap.add_argument("--schema", default=SCHEMA_URL, help="schema path or URL for --validate")
@@ -382,10 +428,10 @@ def main() -> int:
     variants = [v.strip() for v in a.variants.split(",") if v.strip()]
 
     shell = None
-    if a.shell == "cards":
+    if a.shell in ("cards", "fluent-cards"):
         if not HEX.match(a.canvas):
             sys.exit(f"--canvas must be #RRGGBB, is {a.canvas}")
-        shell = {"canvas": a.canvas, "padding": a.card_padding}
+        shell = {"canvas": a.canvas, "padding": a.card_padding, "mode": a.shell}
     out_dir = Path(a.out_dir)
     status = 0
     for variant in variants:
@@ -395,7 +441,7 @@ def main() -> int:
         if frag:
             theme = deep_merge(theme, frag)
             theme["name"] = path.name  # a fragment must not break the name = file name rule
-        errs = key_check(theme, shell is not None)
+        errs = key_check(theme, a.shell if shell is not None else False)
         if a.validate:
             errs += [f"schema: {e}" for e in schema_validate(theme, a.schema)]
         body = json.dumps(theme, indent=2, ensure_ascii=False) + "\n"

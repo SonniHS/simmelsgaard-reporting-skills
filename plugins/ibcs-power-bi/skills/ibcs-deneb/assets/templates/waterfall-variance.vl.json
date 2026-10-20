@@ -32,7 +32,7 @@
           "TotalValue"
         ]
       ],
-      "notes": "Value is the contribution to the total, not necessarily the source measure delta: for a cost line in a margin bridge bind −ΔCOS with Polarity +1. A cost increase therefore contributes a negative step (unfavourable), and a cost reduction contributes a positive step (favourable). Polarity changes only impact colour; geometry always follows the contribution sign. Include a remainder row (e.g. Rest) so base + Σ contribution = total. If they do not reconcile, the arrow label shows the difference with a '!'. Two waterfalls of one unit: the same pxPerUnit and labelWidth, and each visual's width sized to its own range (usermeta.ibcs.layout). Rounded-zero rule: abs(value) × 10^decimals < 0.5 is labelled 0 without sign and gets no impact colour. Input formats: (1) explicit Kind rows, with base/total values in Value; (2) one model row per element, Value as the signed contribution, optional Kind omitted, and BaseValue/TotalValue measures repeated on element rows. The template uses the first non-null value of each anchor independently in visual row order, creates each missing anchor once, and keeps explicit base/total rows when present. baseLabel/totalLabel name only the synthesized bars. Repeated anchor measures must be constant in the current filter context. Blank categories and rows whose Value, BaseValue and TotalValue are all null are dropped; zero is a value, and an anchor-only row is retained. PxPerUnit alone do not retain an unknown N/A member. Scale band (CH 4.3): set scaleBand (or bind ScaleBand) to the same round value in every chart of the unit whose scales differ (e.g. a waterfall by month next to one by entity at another px per unit). Highlight (UN 5.1): knob highlight = the row label, or field Highlight = 1 on that row, draws the blue ellipse around its value label; one highlighted value per chart, the one the key message names. With pxPerUnit = 0 the scale leaves room for the widest label (measured like bar-structure-variance) beyond the 34 px right padding, so labels are never cut at the visual edge. Short bars (small values under a fixed pxPerUnit): a base or total label that does not fit inside its bar sits right of the bar in the text colour, and a negative variance label that would come closer than valueLabelGap px to the category axis moves to the far (right) end of its bar, so value labels never run into the category labels.",
+      "notes": "Value is the contribution to the total, not necessarily the source measure delta: for a cost line in a margin bridge bind −ΔCOS with Polarity +1. A cost increase therefore contributes a negative step (unfavourable), and a cost reduction contributes a positive step (favourable). Polarity changes only impact colour; geometry always follows the contribution sign. Include a remainder row (e.g. Rest) so base + Σ contribution = total. If they do not reconcile, the arrow label shows the difference with a '!'. Two waterfalls of one unit: the same pxPerUnit and labelWidth, and each visual's width sized to its own range (usermeta.ibcs.layout). Rounded-zero rule: abs(value) × 10^decimals < 0.5 is labelled 0 without sign and gets no impact colour. Input formats: (1) explicit Kind rows, with base/total values in Value; (2) one model row per element, Value as the signed contribution, optional Kind omitted, and BaseValue/TotalValue measures repeated on element rows. The template uses the first non-null value of each anchor independently in visual row order, creates each missing anchor once, and keeps explicit base/total rows when present. baseLabel/totalLabel name only the synthesized bars. Repeated anchor measures must be constant in the current filter context. Blank categories and rows whose Value, BaseValue and TotalValue are all null are dropped; zero is a value, and an anchor-only row is retained. PxPerUnit alone do not retain an unknown N/A member. Scale band (CH 4.3): set scaleBand (or bind ScaleBand) to the same round value in every chart of the unit whose scales differ (e.g. a waterfall by month next to one by entity at another px per unit). Highlight (UN 5.1): knob highlight = the row label, or field Highlight = 1 on that row, draws the blue ellipse around its value label; one highlighted value per chart, the one the key message names. With pxPerUnit = 0 the scale leaves room for the widest label (measured like bar-structure-variance) beyond the 34 px right padding, so labels are never cut at the visual edge. Short bars (small values under a fixed pxPerUnit): a base or total label that does not fit inside its bar sits right of the bar in the text colour, and a negative variance label that would come closer than valueLabelGap px to the category axis moves to the far (right) end of its bar, so value labels never run into the category labels. Scenario names: the base and total bars are named once. When their row label (Category) already contains the scenario code (refScenario / minuend as a word, e.g. 'PY', 'AC 2026'), the extra legend text at the bar is left out; with neutral labels ('Start', 'Result') it is drawn.",
       "knobs": [
         "refScenario",
         "minuend",
@@ -1076,10 +1076,13 @@
       }
     },
     {
-      "description": "legend: reference scenario above the base bar",
+      "description": "legend: reference scenario above the base bar (only when the row label does not already name it, e.g. 'PY' or 'PY 2025': one name per bar)",
       "transform": [
         {
           "filter": "datum._k == 'base'"
+        },
+        {
+          "filter": "!test(regexp('(^|[^A-Za-z])' + refScenario + '([^A-Za-z]|$)'), toString(datum['Category']))"
         },
         {
           "calculate": "datum._x1 / 2",
@@ -1121,10 +1124,13 @@
       }
     },
     {
-      "description": "legend: primary scenario below the total bar",
+      "description": "legend: primary scenario below the total bar (only when the row label does not already name it)",
       "transform": [
         {
           "filter": "datum._k == 'total'"
+        },
+        {
+          "filter": "!test(regexp('(^|[^A-Za-z])' + minuend + '([^A-Za-z]|$)'), toString(datum['Category']))"
         },
         {
           "calculate": "datum._x1 / 2",

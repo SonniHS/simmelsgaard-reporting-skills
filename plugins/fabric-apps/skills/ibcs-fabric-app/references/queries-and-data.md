@@ -189,9 +189,27 @@ test ran the raw file (seen 2026-10).
 if (/^\s*VAR __Months\b.*\/\/ @period\s*$/.test(line)) return `    VAR __Months = ${months} // @period`;
 ```
 
-- Test the **factory output**, not the `.dax` file: write `factory(selection).query` to a temp
-  file and run `npx fabric-app-data query <alias> --file <tmp>.dax` for a default and a
-  non-default selection.
+- Test the **factory output**, not the `.dax` file. The factories import their `.dax` with Vite's
+  `?raw`, so plain Node cannot load them: dump the queries from a vitest spec that is skipped by
+  default, then run each dump against the model:
+
+  ```ts
+  // src/queries/dump.spec.ts — run with DUMP_QUERIES=1 npx vitest run src/queries/dump.spec.ts
+  import { writeFileSync, mkdirSync } from "node:fs";
+  import { describe, it } from "vitest";
+  import { keyFiguresQueries } from "./key-figures";
+  describe.skipIf(!process.env.DUMP_QUERIES)("dump factory queries", () => {
+    it("writes default and non-default selections", () => {
+      mkdirSync("tmp/queries", { recursive: true });
+      for (const [name, sel] of [["default", {}], ["e1-q2", { entity: "E1", period: "2026-Q2" }]] as const)
+        for (const [q, f] of Object.entries(keyFiguresQueries))
+          writeFileSync(`tmp/queries/${q}-${name}.dax`, f(sel).query);
+    });
+  });
+  ```
+
+  then `npx fabric-app-data query <alias> --file tmp/queries/<file>.dax` for each file (keep
+  `tmp/` in `.gitignore`).
 - Unit-test that a comment mentioning the tag survives unchanged, that the tagged `VAR` occurs
   once and after `DEFINE`, and that equal selections give identical text (cache hits).
 

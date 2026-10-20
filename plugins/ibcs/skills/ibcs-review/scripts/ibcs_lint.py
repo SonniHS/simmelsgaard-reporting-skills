@@ -405,8 +405,10 @@ def lint_theme(theme: dict, loc, tokens=None):
                     add("A8", "SI 3.1", "S", "check", where, f"{ax}.gridlineShow = true as default",
                         "Default gridlines off; keep them only where helpful (small multiples, dense charts).")
             for obj in ("border", "dropShadow"):
-                if tprop(obj, "show") is True:
-                    add("A4", "SI 2.1", "S", "fail", where, f"{obj}.show = true", "No frames or shadows.")
+                # card chrome (page shell, fluent-cards): shapes behind the content may carry ring and shadow
+                if tprop(obj, "show") is True and vtype.lower() not in BACKGROUND_TYPES:
+                    add("A4", "SI 2.1", "S", "fail", where, f"{obj}.show = true",
+                        "No frames or shadows on content visuals (card chrome belongs on the card shape behind it).")
             if tprop("background", "show") is True:
                 add("A2", "SI 1.2", "S", "check", where, "visual background on", "Visual backgrounds off or white.")
             if tprop("labels", "labelDisplayUnits") == 0:
@@ -1005,6 +1007,64 @@ def lint_truncation(vfile: dict, v: dict, vt: str, vloc: str, objects: dict, vco
                 f"chips or a footnote. Fits about {int((float(width) - 16) // CHAR_PX)} characters.")
 
 
+TEXT_TYPES = {"textbox", "card", "cardvisual", "multirowcard"}
+BACKGROUND_TYPES = {"shape", "basicshape"}
+RHYTHM_GAP_PX = 12        # page shell: ≥ 12 px between the last title line and the slicer labels
+EMPTY_BOTTOM_PX = 24      # page shell: more empty space than this at a card's bottom is a hole
+
+
+def visual_box(vfile: dict, vtl: str, vloc: str, vco: dict) -> dict:
+    """Position and own padding of one visual (padding set in the theme only is not visible here)."""
+    pos = vfile.get("position") or {}
+    pad = {k: obj_prop(vco, "padding", k) for k in ("top", "bottom", "left", "right")}
+    pad = {k: float(v) if is_number(v) else 0.0 for k, v in pad.items()}
+    num = {k: float(pos[k]) if is_number(pos.get(k)) else None for k in ("x", "y", "width", "height")}
+    return {"type": vtl, "loc": vloc, "pad": pad, **num}
+
+
+def lint_page_geometry(boxes: list[dict]):
+    """Page-shell rhythm: slicer labels clear of the title lines; no empty bottom inside a card."""
+    ok = [b for b in boxes if None not in (b["x"], b["y"], b["width"], b["height"])]
+    shapes = [b for b in ok if b["type"] in BACKGROUND_TYPES]
+
+    def within(c, bg):
+        return c["x"] >= bg["x"] - 1 and c["y"] >= bg["y"] - 1 and \
+            c["x"] + c["width"] <= bg["x"] + bg["width"] + 1 and c["y"] + c["height"] <= bg["y"] + bg["height"] + 1
+
+    for b in (b for b in boxes if b.get("needsCard")):
+        if not any(None not in (b["x"], b["y"]) and within(b, s) for s in shapes):
+            add("A2", "SI 1.2", "S", "fail", b["loc"], "visual without a white background on a grey canvas",
+                "Page shell: content sits on a white card: a card shape behind it (--shell fluent-cards) or a white "
+                "visual background (--shell cards), so data never sits on grey.")
+
+    def overlap_x(a, b):
+        return min(a["x"] + a["width"], b["x"] + b["width"]) - max(a["x"], b["x"]) > 0
+
+    for s in (b for b in ok if b["type"] == "slicer"):
+        top = s["y"] + s["pad"]["top"]
+        above = [t for t in ok if t["type"] in TEXT_TYPES and overlap_x(t, s)
+                 and t["y"] + t["height"] - t["pad"]["bottom"] <= top + 1 and t["y"] < s["y"]]
+        if not above:
+            continue
+        t = max(above, key=lambda b: b["y"] + b["height"] - b["pad"]["bottom"])
+        gap = top - (t["y"] + t["height"] - t["pad"]["bottom"])
+        if gap < RHYTHM_GAP_PX:
+            add("LINT", "UN 2.2", "S", "fail", s["loc"],
+                f"slicer labels {gap:g} px below the title text box above ({t['loc'].split(' / ')[-1]})",
+                f"Header rhythm: message, 12 px, three title lines, at least {RHYTHM_GAP_PX} px, slicer labels "
+                "(page-shell.md §3): give the slicer padding top 12 or move it down.")
+    for bg in shapes:
+        inside = [c for c in ok if c is not bg and c["type"] not in BACKGROUND_TYPES and within(c, bg)]
+        if len(inside) < 2:
+            continue
+        empty = bg["y"] + bg["height"] - max(c["y"] + c["height"] for c in inside)
+        if empty > EMPTY_BOTTOM_PX:
+            add("LINT", "SI 1.2", "S", "fail", bg["loc"],
+                f"card background ends {empty:g} px below its last visual",
+                "Card height = content + its bottom padding (page-shell.md §5): shorten the card background, "
+                f"or the visuals' own bottom padding takes the space (more than {EMPTY_BOTTOM_PX} px is a hole).")
+
+
 def lint_pbir(path: Path, tokens=None, layouts=None):
     d = find_definition(path)
     if d is None:
@@ -1059,6 +1119,7 @@ def lint_pbir(path: Path, tokens=None, layouts=None):
                         "White page, or a neutral light canvas behind white cards (page shell); no wallpaper.")
         deneb_infos: dict[str, dict] = {}
         has_text = False
+        boxes: list[dict] = []
         for vj in sorted(page_json.parent.glob("visuals/*/visual.json")):
             vfile = load_json(vj)
             v = vfile.get("visual") or {}
@@ -1069,6 +1130,7 @@ def lint_pbir(path: Path, tokens=None, layouts=None):
             vco = v.get("visualContainerObjects") or vfile.get("visualContainerObjects") or {}
             if not vt:
                 continue
+            boxes.append(visual_box(vfile, vtl, vloc, vco))
             lint_visual_bindings(vfile, v, vloc, report_measures)
             lint_truncation(vfile, v, vtl, vloc, objects, vco)
             if canvas and vtl not in ("shape", "basicshape", "image", "actionbutton"):
@@ -1076,9 +1138,7 @@ def lint_pbir(path: Path, tokens=None, layouts=None):
                 bg_col = obj_prop(vco, "background", "color")
                 white = bg_show is True and (not isinstance(bg_col, str) or is_white(bg_col)) or \
                     (bg_show is None and theme_card)
-                if not white:
-                    add("A2", "SI 1.2", "S", "fail", vloc, "visual without a white background on a grey canvas",
-                        "Page shell: white background on every visual (theme --shell cards), so data never sits on grey.")
+                boxes[-1]["needsCard"] = not white   # fine only on a card shape (checked per page below)
             if vtl == "textbox":
                 has_text = True
                 txt = textbox_text(v)
@@ -1152,10 +1212,11 @@ def lint_pbir(path: Path, tokens=None, layouts=None):
                         "Linear axis, unless growth over orders of magnitude, labelled 'log', audience familiar.")
                 if obj_prop(objects, "labels", "labelDisplayUnits") == 0:
                     add("A14", "SI 5.2", "M", "check", vloc, "display units Auto", "Fix display units per scale group.")
-            # container chrome
+            # container chrome (card shapes of the page shell may have ring and shadow: they are not content)
             for obj in ("border", "dropShadow"):
-                if obj_prop(vco, obj, "show") is True:
-                    add("A4", "SI 2.1", "S", "fail", vloc, f"{obj}.show = true", "No frames/shadows.")
+                if obj_prop(vco, obj, "show") is True and vtl not in BACKGROUND_TYPES:
+                    add("A4", "SI 2.1", "S", "fail", vloc, f"{obj}.show = true",
+                        "No frames/shadows on content visuals; card chrome goes on the card shape behind them.")
             if obj_prop(vco, "background", "show") is True:
                 col = obj_prop(vco, "background", "color")
                 transp = obj_prop(vco, "background", "transparency") or 0
@@ -1196,6 +1257,7 @@ def lint_pbir(path: Path, tokens=None, layouts=None):
                         add("LINT", "-", "I", "check", vloc, "Deneb spec not parseable JSON", "Review the spec manually.")
         if not has_text:
             add("C2", "UN 2.2", "M", "check", ploc, "no text box or visual title found", "Add the three-line page title (who / what / when).")
+        lint_page_geometry(boxes)
         lint_scale_groups(deneb_infos, ploc, {n: r for n, r in layout_rows.items() if n in deneb_infos})
         for n in deneb_infos:
             if n in layout_rows:

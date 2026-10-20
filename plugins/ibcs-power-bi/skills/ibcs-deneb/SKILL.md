@@ -97,10 +97,14 @@ Fields, knobs and notes per template are in each file's `usermeta.ibcs` and in
   smaller chart with the larger chart's max at the same height wastes its plot).
 - **Total / extension column:** not part of a template. Put it in a separate visual next to the
   chart (`periodType: year`); when it fits, give it the same `pxPerUnit`. When its base needs its
-  own scale (a year next to its months), give it its own `pxPerUnit` and a scaling indicator or
-  footnote, and keep its variance tier on the months' scale with `varPxPerUnit` = the months'
-  px per unit (`column-two-tier-variance`; `scale_layout.py` member `"own": true` with
-  `tierPxPerUnit`). Bind the year's actual-plus-forecast as `FC` so it is hatched and set
+  own scale (a year next to its months), give it its own `pxPerUnit`: its base **and** its Δ tiers
+  use that scale (ibcs-composition), shown by `scaleBand` in both visuals and a footnote. Align it
+  with the months by px extent: the same visual top, height and `categoryLabelPx`, and the tier
+  ranges from `scale_layout.py` `alignTiers` (knobs `yMax`, `varMin`/`varMax`, `pinMin`/`pinMax`,
+  or under filters the fields `YMax`, `VarMin`/`VarMax`, `PinMin`/`PinMax` from union measures,
+  `column-two-tier-variance` notes). A tiny Δ on the Total's scale is drawn at its true height with
+  its label. `varPxPerUnit` (the Δ tier on the months' scale) remains only for a page that states
+  that compromise in a footnote. Bind the year's actual-plus-forecast as `FC` so it is hatched and set
   `fcLabel: AC&FC` for its legend name.
 - **Blank categories and unknown members:** every template drops rows whose category field is
   blank, so a constant field (a scale measure such as `PxPerUnit` or `YMax`) cannot add a blank

@@ -106,6 +106,18 @@ Data: period rows `{ period, period2?, closed?, AC?, FC?, PY?, PL?, BU? }`.
 - Height follows the data at the page's px per unit; small multiples may switch this off to keep
   frames aligned.
 - A positive label sits above the taller of the column and the reference behind it.
+- **End legend** (the series names right of the last column, and right of a Total): each name at
+  its mark's y, never a fixed list: PY at the triangle tip (or the PY column's middle), an outlined
+  reference (BU, PL) at the middle of its outline, AC or FC at the middle of the last bar; "AC&FC"
+  only when the series runs from AC into FC, plain "AC" when the last column is AC. Collision
+  shift: names at least font size + 2 px apart (centre to centre), kept inside the base tier,
+  each with a short leader when moved far from its mark. One rule for web charts and the Deneb
+  template (`column-two-tier-variance` legendSide "end").
+- **Narrow steps** (phone, 390 px): test each value label's box against the neighbouring bars and
+  labels; shift a colliding label (above the bar end, or to the free side) or drop it by the
+  thinning order (keep first, last, selected, extremes), never draw it over the next bar.
+  Category names are cut from the end with an ellipsis or wrapped to two lines, never a middle
+  ellipsis.
 
 ## 3. Variance chart (absolute bars, relative pins)
 
@@ -147,6 +159,10 @@ Data: structure rows `{ category, AC?, FC?, PY?, PL?, BU?, variances?, impact?/i
   **same** px per unit as the base bars, then relative (ΔPL%) pins on the `"%"` scale. Tier names
   above each tier. Model-supplied variances win over computed ones; a key present with `null` is
   N/A.
+- Scenario names (AC, PY, BU) once, at the first row's marks (PY at its triangle, BU at the end of
+  its outline, AC at the bar), never a crowded header line: at least 1 em between names and clear
+  of the first row's markers; when they would collide, apply the end-legend collision shift (§2)
+  or name AC below the last bar.
 - With FC as reference the tiers are ΔFC and ΔFC% on a hatched axis, and the primary is AC only.
 - Optional, all off by default: per-row polarity (rows of different nature, e.g. absence types),
   grouping brackets (UN 5.1 assisting lines) with a label such as "Top 3 = 62%", a scale band
@@ -204,6 +220,11 @@ computes it as total − base (the data contract forbids client-side variances).
   overview.
   Without room for a panel, keep the page scale and rely on the step labels; never enlarge steps
   inside the overview (two scales in one plot).
+  Labels and the magnifier: the base and total labels and the end-bar labels never sit on the
+  zoom box's corner or on a connector line; reserve their label room outside the box (or place
+  them above it) and route the connectors around labels. Test: no label box intersects the zoom
+  box outline or a connector.
+- Hatched FC steps in impact colours: one pattern per stripe colour, ids unique per chart.
 
 ## 7. Line chart
 
@@ -284,14 +305,17 @@ Data: measure rows `{ label, unit, value, format, variances: [{ code, scenario, 
 relative, kind, polarity?, impact? }], series? }`.
 
 - Label, unit line ("in mEUR", "in %", "ratio"), the AC value in the key-message size or larger,
-  then one line per comparison with the scenario code, relative before absolute
-  (`ΔPY% +5.8%  ΔPY +8.3`); a % measure shows pp only; a variance the measure lacks is left out
+  then one line per comparison with the scenario code. **Order of Δ and Δ%:** the visual spec
+  decides (`deltaOrder`: `absolute-first` | `relative-first`); without a spec setting follow the
+  page's reference design, and only when neither says otherwise use absolute first
+  (`+8.3  +5.8%  ΔPY`: the absolute Δ is the number the message usually cites). One order per page.
+  A % measure shows pp only; a variance the measure lacks is left out
   (no "N/A" line).
 - Formats per measure from the spec (`display`): decimals fixed per measure row, plain ratios
   with `number.format.plainRatio`, one-decimal Δ% with `number.format.relativeVariance1`.
 - Variance numbers coloured by impact (model impact, else sign × polarity) with the text tokens
   `color.variance.*Text`; Δ = 0, Δ that rounds to zero at the displayed decimals, and N/A are
-  unsigned/uncoloured. Never the graphic `color.variance.good` on a number (2.4:1 — the most
+  unsigned/uncoloured (the zero-variance rule of ibcs-notation: `0.00`, never `+0.00`). Never the graphic `color.variance.good` on a number (2.4:1 — the most
   common slip); the graphic colours are for bars, pins and markers only. Render the number with
   `data-role="variance-label"` and `data-impact` so the ibcs-review `dom` lint can check it.
 - Cards in a responsive row (e.g. 4–5 per row on desktop, 2 on a phone); equal card widths; no

@@ -37,9 +37,13 @@
 - No logo, background band, frame or shadow inside the page's content; branding belongs to the
   app shell. *(ours)* A **page shell** is allowed as the page's frame: a neutral light canvas
   (grey without hue) with the content on white cards (header, KPI row, one card per chart block,
-  footnotes), the cards edge-free (no border, shadow, radius or colour), 12 px apart, and at most
-  one logo in the header card's corner. Inside a card the white-page rules hold; data never sits
-  on the canvas. Power BI: `ibcs-power-bi` references/page-shell.md; web: the app's layout
+  footnotes), 16 px apart, and at most one logo in the header card's corner. Default card shape
+  (house style, ours, not stated by IBCS): rounded cards with a 1 px ring and a soft shadow
+  (radius 8, ring 10 % ink, shadow 2 / 4 / 88 % transparency, canvas 5 % ink); square cards
+  without ring or shadow are the option. The card shape is chrome outside the content: inside a
+  card the white-page rules hold (no frames, shadows or colour on charts, tables or text), and data
+  never sits on the canvas. Cards in one row have equal heights (content top-aligned); a card is
+  as tall as its content plus its padding. Power BI: `ibcs-power-bi` references/page-shell.md; web: the app's layout
   component.
 - **Footnotes** *(ours, UN 2.5)*: full width under the charts, in their own block (the footnote
   card), the block sized to its text: never a scroll box (not printed, not read). One short line

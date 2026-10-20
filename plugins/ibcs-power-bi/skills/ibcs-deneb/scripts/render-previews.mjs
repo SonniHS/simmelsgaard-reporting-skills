@@ -27,7 +27,7 @@
 //   rows.json: the executeQueries response of the visual's fields (raw, or as `fab api` prints it),
 //   or a plain list of row objects. Columns "Table[Column]" / "[Measure]" are mapped to the names
 //   Deneb exposes (the projection's displayName, else its nativeQueryRef). The container size is
-//   the visual's position.width/height. Several --visual pairs render one composite at their page
+//   the visual's position.width/height minus its own padding (visualContainerObjects.padding). Several --visual pairs render one composite at their page
 //   positions (scale groups, tiers stacked across visuals). Query the fields in the same filter
 //   context as the page (slicer defaults, visual filters), e.g. SUMMARIZECOLUMNS over the category.
 
@@ -212,6 +212,11 @@ function rowsOf(file) {
   return res.tables[0].rows;
 }
 
+function unLiteralOr(prop) {
+  // a PBIR literal {"expr": {"Literal": {"Value": "12D"}}} or a plain value
+  return prop?.expr?.Literal?.Value ?? prop ?? "";
+}
+
 async function renderVisual(pair) {
   const [vPath, dPath] = pair.split("=");
   if (!dPath) throw new Error(`--visual ${pair}: give <visual.json>=<rows.json>`);
@@ -241,7 +246,14 @@ async function renderVisual(pair) {
   })));
   const missing = wanted.filter((n) => !values.length || !(n in values[0]));
   if (missing.length) console.warn(`WARN ${basename(dirname(vPath))}: no column for ${missing.join(", ")}`);
-  const { width, height, x = 0, y = 0 } = container.position;
+  // the visual's own padding (visualContainerObjects.padding) is inside its position: Deneb gets
+  // position minus padding, offset by the left/top padding (a theme-level padding is not in the file)
+  const padObj = (v.visualContainerObjects ?? container.visualContainerObjects)?.padding?.[0]?.properties ?? {};
+  const pad = (k) => { const n = parseFloat(String(unLiteralOr(padObj[k])).replace(/D$/, "")); return Number.isFinite(n) ? n : 0; };
+  const { x: px = 0, y: py = 0 } = container.position;
+  const width = container.position.width - pad("left") - pad("right");
+  const height = container.position.height - pad("top") - pad("bottom");
+  const x = px + pad("left"), y = py + pad("top");
   patterns.clear();
   replaceContainer(spec, width, height);
   injectData(spec, values, isVega);

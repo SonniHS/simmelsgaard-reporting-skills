@@ -97,7 +97,7 @@ Full table, `visual.json` properties and licensing: [references/card-routes.md](
 
 Layout logic comes from `ibcs-composition`. Power BI specifics (values from the `layout.*` tokens).
 For a finished look, build the page in the **page shell** ([references/page-shell.md](references/page-shell.md)):
-theme `--shell cards`, header card, one card per KPI, chart cards with the title inside, a
+theme `--shell` (rounded fluent cards; `--shell cards` for square ones), header card, one card per KPI, chart cards with the title inside, a
 footnote card sized to its text. Without the shell the page is white and the bands below apply.
 
 - Canvas 1280×720 (16:9) by default; a taller page (e.g. 1280×1120, `displayOption`
@@ -109,7 +109,7 @@ footnote card sized to its text. Without the shell the page is white and the ban
   the **title block** (UN 2.2) as a text box or dynamic-title measure: line 1 who (unit and
   filters), line 2 what (**measure in bold** + unit), line 3 when (period, scenarios,
   variances). The title is descriptive only.
-- Grid: margin 16 px, gutter 12 px; visuals snapped to it; tiers of one chart aligned and the same
+- Grid: margin 16 px, gap 16 px (page shell: card padding 16); visuals snapped to it; tiers of one chart aligned and the same
   width (or one Deneb visual).
 - Footer: footnotes (definitions, `*` notes, compromises such as "FC not hatched"), **source**,
   and **data as of** (a measure on the model's refresh/as-of table, ISO 8601 `YYYY-MM-DD hh:mm`).
@@ -263,12 +263,13 @@ skill (plugin `fabric-apps`). What matters for the report builder:
       indicators where that is not sensible; sizes from `scale_layout.py --json`, lint `--layout` clean.
 - [ ] Value labels fit (scale_layout `longestValueLabel`, no `warnings`); slicer headers and
       titles not cut; image columns ≥ `imageWidth` + 20 px (no stray "." marks).
-- [ ] Page shell (when used): canvas neutral, every visual white, cards edge to edge inside and
-      12 px apart, header card with message + title (+ logo), one visual per KPI card, footnote
+- [ ] Page shell (when used): canvas neutral, content on a white card (a card shape behind it, or
+      white visuals in the square mode), cards edge to edge inside and 16 px apart, equal heights in
+      a row, no empty card bottom, header card with message + title (+ logo), one visual per KPI card, footnote
       card sized to its text (page-shell.md).
 - [ ] Bar width 2/3 (absolute) and 1/3 (relative); category width fixed per period type on the page.
 - [ ] Title block (who / what / when), separate key message, footnotes, source, data as of.
-- [ ] No legend boxes, value axes, 3-D, shadows or decorative colour; gridlines only where they
+- [ ] No legend boxes, value axes, 3-D, shadows (except the card shapes) or decorative colour; gridlines only where they
       help (dense charts, small multiples).
 - [ ] Numbers: token formats, digit limits, units in the title.
 - [ ] Every compromise footnoted and listed under `deviations`; report measures footnoted and

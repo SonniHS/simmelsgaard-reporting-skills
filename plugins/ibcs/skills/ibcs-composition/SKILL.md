@@ -114,6 +114,12 @@ or, in an app, without clicking (tooltips and drill add depth only). Then:
 
 5. Verify integrity: one scale per unit across the page (scale groups), scale bands where scales
    must differ, outlier markers only for irrelevant relative outliers.
+   **Total / year column next to its months:** when it needs its own scale, the whole column block
+   uses it: its base AND its Δ tiers (ΔPY, ΔBU) are drawn at the Total's px per unit, never its Δ
+   on the months' scale. A scale band in the months and in the Total shows the two scales, and a
+   footnote says "the Total has its own scale". Tier heights and baselines still line up with the
+   months' (the same px extent per tier); a Δ that is tiny on the Total's scale (1–2 px) is drawn at
+   its true height with its label (never inflated: the label carries the value).
 
 Choose each visual from the [chart catalogue](../ibcs-notation/references/chart-catalogue.md)
 (cards A-n) and [table catalogue](../ibcs-notation/references/table-catalogue.md) (cards B-…).

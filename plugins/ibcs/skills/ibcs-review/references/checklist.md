@@ -26,9 +26,9 @@
 | ID | Pass if … | Rule | Sev | Detect | Exceptions / notes |
 |---|---|---|---|---|---|
 | A1 | no logos, pictures, decorative shapes/bands | SI 1.1 | S | lint(image/shape), img | branding in the app shell is fine; one logo in the corner of a page shell's header card *(ours)* |
-| A2 | white page and visual backgrounds; no coloured headers, banded rows, cell fills | SI 1.2 | S | lint, img | light-gray fill on totals/result rows & columns is allowed (pp. 121–128); light assisting areas with meaning; a page shell *(ours)*: neutral light canvas between white cards, every visual white (lint fails a visual without a white background on the canvas) |
+| A2 | white page and visual backgrounds; no coloured headers, banded rows, cell fills | SI 1.2 | S | lint, img | light-gray fill on totals/result rows & columns is allowed (pp. 121–128); light assisting areas with meaning; a page shell *(ours)*: neutral light canvas between white cards (a card shape behind the content, or white visuals in the square mode; lint fails content on the canvas outside a card) |
 | A3 | no meaningless animation, play axes, transitions | SI 1.3 | S | lint(Play), meta | animation that *is* the analysis |
-| A4 | no frames, shadows, rounded containers, gradients, pseudo-3D | SI 2.1 | S | lint, img | PL outlines are notation, not frames |
+| A4 | no frames, shadows, rounded containers, gradients, pseudo-3D on content (charts, tables, text) | SI 2.1 | S | lint, img | PL outlines are notation, not frames; page-shell card chrome *(ours, house style)*: the card shape behind the content may have radius 8, a 1 px ring and a soft shadow (lint exempts shapes) |
 | A5 | every colour has analytical meaning; no per-category palette | SI 2.2 | M | lint, img | one highlight colour for the element the message is about |
 | A6 | one plain sans-serif family | SI 2.3 | S | lint(theme), img | serif for multi-line flow text |
 | A7 | bold/italic only for semantics (measure in title, totals, defined rows) | SI 2.3 | S | img | totals may be distinguished by bold **or** a light-gray fill (pp. 121, 128) |
