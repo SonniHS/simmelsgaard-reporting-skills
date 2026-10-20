@@ -56,6 +56,8 @@
         "pinPxPerUnit",
         "pinShare",
         "pinDecimals",
+        "pinMin",
+        "pinMax",
         "naOnNegativeRef"
       ],
       "layout": {
@@ -166,6 +168,21 @@
           "note": "pxPerUnit 10 and pinPxPerUnit 2 in a container taller than the data needs: the spare space stays above the pin tier, the three tiers stay together."
         },
         {
+          "suffix": "-pins-range",
+          "params": {
+            "pinTier": true,
+            "pxPerUnit": 10,
+            "pinPxPerUnit": 2,
+            "pinMin": -0.3,
+            "pinMax": 0.3
+          },
+          "preview": {
+            "width": 420,
+            "height": 460
+          },
+          "note": "pinMin -30% / pinMax +30%: the pin tier reserves this range whatever the data, so a Total or a second chart with the same values gets its pin axis at the same height."
+        },
+        {
           "suffix": "-variance-only",
           "params": {
             "showBase": false
@@ -218,7 +235,7 @@
           "note": "The same with legendSide 'start': AC and the reference name left of the first column keep a minimum vertical gap."
         }
       ],
-      "notes": "Same unit, same scale (CH 4.1) means the same px per unit, not the same domain: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field from one DAX measure) and size each visual's height to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill computes it), so a chart with smaller values is shorter (CH 4.2). yMax, varMin, varMax only share a domain: use them for visuals of the same height that must show the same range, never to align a smaller chart with a larger one. A Total / extension column (e.g. the year next to its months) is a separate visual with periodType 'year'; when its values need another scale, mark it with a scaling indicator or a footnote. Same column width across visuals (e.g. the month chart and its total): set barPx. Values are drawn as delivered: bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Period or no value in AC, FC, PY, PL, BU, refScenario or triangleScenario are dropped, even if constant scale measures are present; reference-only periods remain. The integrated reference legend names the first period with a nonblank reference value, including zero. periodLabel: auto preserves category labels unchanged; month formats YYYY-MM as Jan..Dec with the year below the first visible month of each year and a thin separator at subsequent year boundaries; short formats YYYY-MM as mm. Other category formats are left unchanged. When showCategoryLabels is false, year labels and year separators are hidden too. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Comment markers (UN 2.4): bind Comment (e.g. a DAX SWITCH returning 1, 2 … for the periods the comments explain) and print the same numbers in circles in the comment text box; the marker sits above the value label, so keep ibcsTierGapPx large enough when a variance tier is stacked above. Variance-only tier (showBase false): only the variance axis, variance columns and labels and the tier label are drawn; stack it above a chart that shows the base, with showCategoryLabels false when the visual below shows them. Pin tier (pinTier true): ΔX% = (AC&FC − REF) / REF with the signed reference, N/A when REF is blank or 0, or negative while naOnNegativeRef is true; drawn as pins above the absolute variance tier in the same view, so base, ΔX and ΔX% always share the category axis and stay together when a filter changes the data (separate stacked visuals each anchor their own plot and drift apart). The pins have their own % scale: pinPxPerUnit px per percentage point (the same on every pin tier and pin chart of the page), else pinShare of the base tier. Outlier clipping (clipPct) exists only in pin-relative-variance. Integrated legend (legendSide, default 'end'): the scenario names sit right of the last column at their own marks (triangle tip, upper part of the reference column, middle of the AC/FC column), spread at least ibcsFontSize + 2 px apart and kept inside the base tier; a series of AC months followed by FC months is named AC&FC; the right padding (46 px) holds 'AC&FC'. legendSide 'start' keeps AC and the reference left of the first column and FC right of the last; the names left of the first column are spread at least ibcsFontSize + 2 px apart too, so tiny columns under a fixed pxPerUnit never stack them. Names are taken from the last row: a scenario without a value in the last period is not named.",
+      "notes": "Same unit, same scale (CH 4.1) means the same px per unit, not the same domain: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field from one DAX measure) and size each visual's height to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill computes it), so a chart with smaller values is shorter (CH 4.2). yMax, varMin, varMax only share a domain: use them for visuals of the same height that must show the same range, never to align a smaller chart with a larger one. A Total / extension column (e.g. the year next to its months) is a separate visual with periodType 'year'; when its values need another scale, mark it with a scaling indicator or a footnote. Same column width across visuals (e.g. the month chart and its total): set barPx. Values are drawn as delivered: bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Period or no value in AC, FC, PY, PL, BU, refScenario or triangleScenario are dropped, even if constant scale measures are present; reference-only periods remain. The integrated reference legend names the first period with a nonblank reference value, including zero. periodLabel: auto preserves category labels unchanged; month formats YYYY-MM as Jan..Dec with the year below the first visible month of each year and a thin separator at subsequent year boundaries; short formats YYYY-MM as mm. Other category formats are left unchanged. When showCategoryLabels is false, year labels and year separators are hidden too. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Comment markers (UN 2.4): bind Comment (e.g. a DAX SWITCH returning 1, 2 … for the periods the comments explain) and print the same numbers in circles in the comment text box; the marker sits above the value label, so keep ibcsTierGapPx large enough when a variance tier is stacked above. Variance-only tier (showBase false): only the variance axis, variance columns and labels and the tier label are drawn; stack it above a chart that shows the base, with showCategoryLabels false when the visual below shows them. Pin tier (pinTier true): ΔX% = (AC&FC − REF) / REF with the signed reference, N/A when REF is blank or 0, or negative while naOnNegativeRef is true; drawn as pins above the absolute variance tier in the same view, so base, ΔX and ΔX% always share the category axis and stay together when a filter changes the data (separate stacked visuals each anchor their own plot and drift apart). The pins have their own % scale: pinPxPerUnit px per percentage point (the same on every pin tier and pin chart of the page), else pinShare of the base tier. Outlier clipping (clipPct) exists only in pin-relative-variance. Integrated legend (legendSide, default 'end'): the scenario names sit right of the last column at their own marks (triangle tip, upper part of the reference column, middle of the AC/FC column), spread at least ibcsFontSize + 2 px apart and kept inside the base tier; a series of AC months followed by FC months is named AC&FC; the right padding (46 px) holds 'AC&FC'. legendSide 'start' keeps AC and the reference left of the first column and FC right of the last; the names left of the first column are spread at least ibcsFontSize + 2 px apart too, so tiny columns under a fixed pxPerUnit never stack them. Names are taken from the last row: a scenario without a value in the last period is not named. With legendSide 'end' the scale-band label sits left of the first column (the right end belongs to the legend names). Pin tiers of visuals side by side (months and Total) align only with the same pinMin/pinMax (like varMin/varMax for the Δ tier) and the same pinPxPerUnit.",
       "previewGroups": [
         {
           "suffix": "-scale-group",
@@ -374,6 +391,16 @@
       "name": "pinDecimals",
       "value": 0,
       "description": "decimals of the pin labels (percent)"
+    },
+    {
+      "name": "pinMin",
+      "value": 0,
+      "description": "lowest relative variance the pin tier must show, as a fraction (-0.1 = -10%); 0 = from the data. Set the same pinMin/pinMax on every pin tier of a row of visuals (e.g. the months and their Total) so their pin axes sit at the same height"
+    },
+    {
+      "name": "pinMax",
+      "value": 0,
+      "description": "highest relative variance the pin tier must show, as a fraction (0.15 = +15%); 0 = from the data"
     },
     {
       "name": "naOnNegativeRef",
@@ -800,11 +827,11 @@
       ]
     },
     {
-      "calculate": "max(isValid(datum._pMaxF) ? datum._pMaxF : 0, 0) * 100",
+      "calculate": "max(isValid(datum._pMaxF) ? datum._pMaxF : 0, pinMax, 0) * 100",
       "as": "_pHi"
     },
     {
-      "calculate": "min(isValid(datum._pMinF) ? datum._pMinF : 0, 0) * 100",
+      "calculate": "min(isValid(datum._pMinF) ? datum._pMinF : 0, pinMin, 0) * 100",
       "as": "_pLo"
     },
     {
@@ -1941,7 +1968,7 @@
       }
     },
     {
-      "description": "scale band label, right end above the line",
+      "description": "scale band label: right end above the line (legendSide 'start'); left of the first column, at the band value, when the end legend uses the right end",
       "transform": [
         {
           "filter": "showBase"
@@ -1953,8 +1980,12 @@
       "mark": {
         "type": "text",
         "align": "right",
-        "baseline": "bottom",
-        "dy": -2,
+        "baseline": {
+          "expr": "legendSide == 'end' ? 'middle' : 'bottom'"
+        },
+        "dy": {
+          "expr": "legendSide == 'end' ? 0 : -2"
+        },
         "fontSize": {
           "expr": "ibcsFontSize"
         },
@@ -1965,7 +1996,7 @@
       "encoding": {
         "x": {
           "value": {
-            "expr": "width"
+            "expr": "legendSide == 'end' ? -4 : width"
           }
         },
         "y": {

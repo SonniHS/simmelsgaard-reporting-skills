@@ -3,7 +3,7 @@
 
     python3 -I report_measures.py <Report folder> --check     # list problems, exit 1 if any
     python3 -I report_measures.py <Report folder> --fix       # write the fixes, then re-check
-        [--model <SemanticModel>/definition/tables]           # model measures for `references`
+        [--model <name>.SemanticModel]                        # model measures for `references`
 
 What the service needs (found in an end-to-end test, as of 2026-10):
   1. Every binding of a report measure in a visual (projections, sort, filters, conditional
@@ -40,6 +40,14 @@ def model_measures(tables: Path | None) -> dict[str, str]:
         for name in re.findall(r"^\s*measure\s+'?([^'=\n]+?)'?\s*=", f.read_text(encoding="utf-8"), re.M):
             found.setdefault(name.strip(), f.stem)
     return found
+
+
+def resolve_tables(path: Path) -> Path | None:
+    """The TMDL tables folder from the model root, its definition/ folder or the tables folder."""
+    for cand in (path, path / "tables", path / "definition" / "tables"):
+        if cand.is_dir() and any(cand.glob("*.tmdl")) and cand.name == "tables":
+            return cand
+    return None
 
 
 DAX_NOISE = re.compile(r'"(?:[^"]|"")*"|--[^\n]*|//[^\n]*|/\*.*?\*/', re.S)  # strings, comments
@@ -131,7 +139,8 @@ def run(report: Path, model: dict[str, str], fix: bool) -> list[str]:
 def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument("report", help="the <name>.Report folder")
-    ap.add_argument("--model", help="<model>.SemanticModel/definition/tables (TMDL), for model measure references")
+    ap.add_argument("--model", help="<model>.SemanticModel (or its definition/ or definition/tables folder), "
+                    "TMDL, for model measure references; an error if no measures are found")
     mode = ap.add_mutually_exclusive_group(required=True)
     mode.add_argument("--check", action="store_true")
     mode.add_argument("--fix", action="store_true")
@@ -140,7 +149,18 @@ def main() -> int:
     if not (report / "definition").is_dir():
         print(f"{report}: no definition/ folder (pass the .Report folder)", file=sys.stderr)
         return 2
-    model = model_measures(Path(a.model) if a.model else None)
+    model = {}
+    if a.model:
+        tables = resolve_tables(Path(a.model))
+        if tables is None:
+            print(f"{a.model}: no TMDL tables found (pass <model>.SemanticModel, its definition/ or "
+                  "definition/tables folder)", file=sys.stderr)
+            return 2
+        model = model_measures(tables)
+        if not model:
+            print(f"{tables}: no measures found in the TMDL tables; model references cannot be checked",
+                  file=sys.stderr)
+            return 2
     problems = run(report, model, a.fix)
     for p in problems:
         print(("fixed: " if a.fix else "") + p)

@@ -117,7 +117,7 @@ When the shared model must not change, the report carries its own measures:
   `Missing_References` (found in an end-to-end test, as of 2026-10). `queryRef` and `columnWidth`
   / `dataPoint` selector `metadata` stay `"<table>.<measure>"`. `ibcs-deneb/scripts/to_pbir.py`
   writes it for Deneb fields; for everything else run
-  `python3 -I "${CLAUDE_SKILL_DIR}/scripts/report_measures.py" <name>.Report --fix [--model <model>/definition/tables]`
+  `python3 -I "${CLAUDE_SKILL_DIR}/scripts/report_measures.py" <name>.Report --fix [--model <model>.SemanticModel]` (the model root, its `definition/` or `definition/tables`; no TMDL measures found = an error, never a silent "ok")
   after editing visuals and `--check` before publishing. It also writes each measure's
   `references` (the measures it uses, report measures with `"schema": "extension"`, as Desktop
   saves them), removes `hidden` flags and stray `active` flags.

@@ -891,8 +891,14 @@ def deneb_info(vfile: dict, spec: dict, dataset_fields: list) -> dict:
     domains += [f"{k}={params[k]:g}" for k in DOMAIN_KNOBS if is_number(params.get(k)) and params[k] != 0]
     ppu = params.get("pxPerUnit") if is_number(params.get("pxPerUnit")) and params.get("pxPerUnit") else None
     ppu_field = next((f"{e}[{p}]" for lbl, e, p in dataset_fields if (lbl or "").lower() == "pxperunit"), None)
+    # the visual's own padding (visualContainerObjects.padding) is inside its position: the Deneb
+    # container is position minus padding (a theme-level padding is not visible here)
+    vco = ((vfile.get("visual") or {}).get("visualContainerObjects")) or {}
+    padv = {k: obj_prop(vco, "padding", k) for k in ("top", "bottom", "left", "right")}
+    padv = {k: float(v) if is_number(v) else 0.0 for k, v in padv.items()}
     return {"template": str(ibcs.get("template") or ""), "params": params,
             "height": pos.get("height"), "width": pos.get("width"), "domains": domains,
+            "padH": padv["top"] + padv["bottom"], "padW": padv["left"] + padv["right"],
             "ppu": ppu, "ppuField": ppu_field,
             "own": params.get("periodType") == "year" or bool(params.get("scaleBand"))}
 
@@ -954,11 +960,14 @@ def lint_scale_groups(infos: dict, ploc: str, layout_rows: dict):
         dim = row.get("dimension")
         dim = "height" if dim in ("height", "panelHeight") and "visualHeightPx" not in row else dim
         want = row.get("visualHeightPx") or row.get("containerPx")
-        have = i.get("height") if dim in ("height", "panelHeight") else i.get("width")
-        if is_number(want) and is_number(have) and abs(float(have) - float(want)) > SIZE_TOLERANCE_PX:
+        is_h = dim in ("height", "panelHeight")
+        have = i.get("height") if is_h else i.get("width")
+        pad = (i.get("padH") if is_h else i.get("padW")) or 0
+        if is_number(want) and is_number(have) and abs(float(have) - pad - float(want)) > SIZE_TOLERANCE_PX:
+            shown = f"{dim} {have:g} px" + (f" − padding {pad:g} = {float(have) - pad:g} px" if pad else "")
             add("G8", "CH 4.1, CH 4.2", "M", "fail", f"{ploc} / {n}",
-                f"{dim} {have:g} px, scale_layout.py computed {want:g} px",
-                "Set the visual's position to the computed size (to_pbir.py --pos), or recompute the group.")
+                f"{shown}, scale_layout.py computed {want:g} px",
+                "Set the visual's position to the computed size + its padding (to_pbir.py --pos), or recompute the group.")
         lppu = row.get("_pxPerUnit")
         if lppu and not row.get("own") and i["ppu"] and abs(float(i["ppu"]) - float(lppu)) > 1e-6:
             add("G8", "CH 4.1", "M", "fail", f"{ploc} / {n}", f"pxPerUnit {i['ppu']:g}, the group's is {lppu:g}",

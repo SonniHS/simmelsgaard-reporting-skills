@@ -37,6 +37,11 @@ pinPxPerUnit px per point (the tier's own scale), e.g.
          "params": {"pinTier": true, "pinPxPerUnit": 2},
          "tiers": {"base": [0, 23], "variance": [-2.1, 3.4], "pins": [-12, 20]}}
 
+Visuals side by side whose tiers must line up (a month chart and its Total) need the SAME variance and
+pin ranges: give both members the union range here and set it as varMin/varMax (display units) and
+pinMin/pinMax (fractions: -0.12 for -12 points) on both visuals, so each tier's axis sits at the same
+height even when one visual's own data spans less.
+
 Optional per template member (the docs' extra paddings, so nothing is cut or squashed):
     "comment": true          Comment markers bound: + ibcsFontSize + 18 px on the first tier's padHigh
     "clipPct": true          pin outliers cut (clipPct / ClipPct): + ibcsFontSize + ibcsPinHeadMax + 6 px

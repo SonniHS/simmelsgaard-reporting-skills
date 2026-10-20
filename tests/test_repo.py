@@ -340,6 +340,24 @@ class PowerBiScripts(unittest.TestCase):
             self.assertEqual(fixed.returncode, 0, fixed.stdout + fixed.stderr)
             self.assertEqual(run_script(script, rep, "--check").returncode, 0)
 
+    def test_report_measures_model_path_resolved_or_rejected(self):
+        script = PBI_SKILLS / "ibcs-power-bi/scripts/report_measures.py"
+        with tempfile.TemporaryDirectory() as tmp:
+            rep = Path(tmp) / "Sample.Report"
+            shutil.copytree(ROOT / "tests/fixtures/ibcs_lint/pbir-bindings/Sample.Report", rep)
+            model = Path(tmp) / "Sample.SemanticModel"
+            (model / "definition" / "tables").mkdir(parents=True)
+            # a folder without TMDL tables is an error, never a silent "ok" without model references
+            empty = run_script(script, rep, "--check", "--model", model)
+            self.assertEqual(empty.returncode, 2, empty.stdout + empty.stderr)
+            self.assertIn("no TMDL tables", empty.stderr)
+            (model / "definition" / "tables" / "Sales.tmdl").write_text(
+                "table Sales\n\tmeasure Revenue = SUM ( Sales[Amount] )\n", encoding="utf-8")
+            for arg in (model, model / "definition", model / "definition" / "tables"):
+                res = run_script(script, rep, "--check", "--model", arg)
+                self.assertNotIn("no TMDL tables", res.stderr, arg)
+                self.assertIn(res.returncode, (0, 1), res.stdout + res.stderr)
+
     def test_to_pbir_marks_report_measures_as_extension(self):
         script = PBI_SKILLS / "ibcs-deneb/scripts/to_pbir.py"
         template = PBI_SKILLS / "ibcs-deneb/assets/templates/column-two-tier-variance.vl.json"

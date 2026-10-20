@@ -9,7 +9,8 @@ Starting points, not a library. Test status per skeleton (as of 2026-10):
 | 3 AC/FC columns (slicer or card) | written for illustration; **untested** |
 | 4 KPI card (absolute, percentage-point and ratio variants, highlight ellipse) | ran against a live model and rendered in the Power BI service in an end-to-end test |
 | 5 AC bar, BU outlined behind, PY triangle | SVG markup render-checked with sample values; the same pattern ran against a live model in an end-to-end test |
-| 7 Key message (bold, impact-coloured numbers, two lines) | SVG markup render-checked with sample values (one line, two lines, overflow); **not yet run in the service** (the data-URI-in-`tableEx` route is the one skeleton 4 proved) |
+| 7 Key message (bold, impact-coloured numbers, two lines) | Rendered in the service in a page-shell header (2026-10, PDF export), two lines, coloured numbers |
+| 8 Category row with all tiers (bars, Δ bar, Δ% pin) + header row | Rendered in the service as a company block (2026-10, PDF export): six rows, shared px per unit with the month chart, highlight ellipse |
 
 "Render-checked" means: the string the DAX builds was reproduced with literal sample values and
 drawn with `scripts/svg_preview.py` in headless Chrome. Before use, evaluate each measure against
@@ -48,6 +49,7 @@ Shared conventions:
 - [5. AC bar in front of an outlined BU bar, PY triangle](#5-ac-bar-in-front-of-an-outlined-bu-bar-py-triangle)
 - [6. Budget progress bar (BAC, budget to date, AC to date)](#6-budget-progress-bar-bac-budget-to-date-ac-to-date)
 - [7. Key message with impact-coloured numbers](#7-key-message-with-impact-coloured-numbers)
+- [8. One row per category with all tiers, plus a header row](#8-one-row-per-category-with-all-tiers-plus-a-header-row)
 - [Shared row geometry (GEOM) and px per unit](#shared-row-geometry-geom-and-px-per-unit)
 - [Preview harness](#preview-harness)
 
@@ -227,7 +229,7 @@ Power BI route: one SVG measure per card, all cards as image columns of one `tab
 row, `grid.imageWidth` / `imageHeight` = the card size, column headers off or the measure name),
 so the cards share one visual, one font and one baseline. In the page shell
 ([page-shell.md](../../ibcs-power-bi/references/page-shell.md) §4) each card is its own `tableEx`
-on its own white card instead (SVG 210 × 104, coordinates there), so the canvas shows between them.
+on its own white card instead (SVG 200 × 104, coordinates there), so the canvas shows between them.
 
 ```dax
 SVG KPI Card Revenue =
@@ -455,7 +457,9 @@ UN 2.1 wants at most two lines). Placement and size: the header card of
 
 Parts are the template slots of the message (`ibcs-composition`): text parts in `_Text`, each
 signed variance its own part with `_Imp ( Δ )`. Line breaks happen only between parts, so keep a
-number and its unit in one part. A part that starts a new line loses its leading space.
+number and its unit in one part. A part that starts a new line loses its leading space. A part
+that starts with `)`, `,`, `.` or `;` never starts a line (it stays on the line it closes, even if
+that line runs a few characters over `_Budget`): a line must not begin with punctuation.
 
 ```dax
 SVG Key Message =
@@ -463,7 +467,7 @@ SVG Key Message =
 VAR _Text = "#000000"  VAR _GoodT = "#5A7A00"  VAR _BadT = "#D00000"  VAR _NeutralT = "#0064FF"   -- *Text variants
 VAR _FontEm = "Segoe UI Semibold"
 -- CONFIG
-VAR _W = 1032  VAR _Size = 17  VAR _Lines = 2    -- width px, key message 13 pt ≈ 17 px, max lines (UN 2.1)
+VAR _W = 1010  VAR _Size = 17  VAR _Lines = 2    -- width px, key message 13 pt ≈ 17 px, max lines (UN 2.1)
 VAR _LineH = ROUND ( _Size * 1.3, 0 )
 VAR _Budget = INT ( _W / ( _Size * 0.58 ) )      -- characters per line (Segoe UI Semibold ≈ 0.58 em per char)
 VAR _Pol = 1  VAR _Div = 1E6  VAR _Fmt = "#,0.0"  VAR _Dec = 1
@@ -483,22 +487,22 @@ VAR _T5 = ")."                                       VAR _C5 = _Text
 VAR _E1 = SUBSTITUTE ( SUBSTITUTE ( _T1, "&", "&amp;" ), "<", "&lt;" )
 VAR _L1 = LEN ( _T1 )  VAR _N1 = 1
 VAR _X1 = "<tspan fill='" & _Text & "'>" & _E1 & "</tspan>"
-VAR _B2 = _L1 + LEN ( _T2 ) > _Budget
+VAR _B2 = _L1 + LEN ( _T2 ) > _Budget && NOT ( LEFT ( _T2, 1 ) IN { ")", ",", ".", ";" } )
 VAR _S2 = IF ( _B2 && LEFT ( _T2, 1 ) = " ", MID ( _T2, 2, 999 ), _T2 )
 VAR _L2 = IF ( _B2, 0, _L1 ) + LEN ( _S2 )  VAR _N2 = _N1 + IF ( _B2, 1 )
 VAR _X2 = IF ( _N2 <= _Lines, IF ( _B2, "<tspan x='0' dy='" & _LineH & "'", "<tspan" ) & " fill='" & _C2 & "'>"
     & SUBSTITUTE ( SUBSTITUTE ( _S2, "&", "&amp;" ), "<", "&lt;" ) & "</tspan>" )
-VAR _B3 = _L2 + LEN ( _T3 ) > _Budget
+VAR _B3 = _L2 + LEN ( _T3 ) > _Budget && NOT ( LEFT ( _T3, 1 ) IN { ")", ",", ".", ";" } )
 VAR _S3 = IF ( _B3 && LEFT ( _T3, 1 ) = " ", MID ( _T3, 2, 999 ), _T3 )
 VAR _L3 = IF ( _B3, 0, _L2 ) + LEN ( _S3 )  VAR _N3 = _N2 + IF ( _B3, 1 )
 VAR _X3 = IF ( _N3 <= _Lines, IF ( _B3, "<tspan x='0' dy='" & _LineH & "'", "<tspan" ) & " fill='" & _C3 & "'>"
     & SUBSTITUTE ( SUBSTITUTE ( _S3, "&", "&amp;" ), "<", "&lt;" ) & "</tspan>" )
-VAR _B4 = _L3 + LEN ( _T4 ) > _Budget
+VAR _B4 = _L3 + LEN ( _T4 ) > _Budget && NOT ( LEFT ( _T4, 1 ) IN { ")", ",", ".", ";" } )
 VAR _S4 = IF ( _B4 && LEFT ( _T4, 1 ) = " ", MID ( _T4, 2, 999 ), _T4 )
 VAR _L4 = IF ( _B4, 0, _L3 ) + LEN ( _S4 )  VAR _N4 = _N3 + IF ( _B4, 1 )
 VAR _X4 = IF ( _N4 <= _Lines, IF ( _B4, "<tspan x='0' dy='" & _LineH & "'", "<tspan" ) & " fill='" & _C4 & "'>"
     & SUBSTITUTE ( SUBSTITUTE ( _S4, "&", "&amp;" ), "<", "&lt;" ) & "</tspan>" )
-VAR _B5 = _L4 + LEN ( _T5 ) > _Budget
+VAR _B5 = _L4 + LEN ( _T5 ) > _Budget && NOT ( LEFT ( _T5, 1 ) IN { ")", ",", ".", ";" } )
 VAR _S5 = IF ( _B5 && LEFT ( _T5, 1 ) = " ", MID ( _T5, 2, 999 ), _T5 )
 VAR _N5 = _N4 + IF ( _B5, 1 )
 VAR _X5 = IF ( _N5 <= _Lines, IF ( _B5, "<tspan x='0' dy='" & _LineH & "'", "<tspan" ) & " fill='" & _C5 & "'>"
@@ -526,6 +530,122 @@ RETURN
   `value.bold` true ([pbir-skeleton.md](../../ibcs-power-bi/references/pbir-skeleton.md) §6):
   bold, but every number black.
 
+## 8. One row per category with all tiers, plus a header row
+
+A structure block "by company" (or product, region) as **one SVG per row** that draws every tier
+side by side: AC bar in front of the outlined BU bar with a PY triangle (skeleton 5), the ΔBU bar
+at the **same px per unit** (skeleton 1), and the ΔBU% pin on its own % scale (skeleton 2), plus a
+highlight ellipse on the row the key message names. A second measure draws the header row: tier
+names and the integrated legend (AC, BU, PY) at the first row's marks. Both share one GEOM block,
+so every row and the header agree on the x offsets of the tiers. Why one SVG per row: every image
+column of a `tableEx` shares `imageWidth`, so tiers in separate columns cannot get their own widths.
+
+Power BI route:
+- Two `tableEx` visuals stacked edge to edge in one chart card (page-shell.md §5): the header table
+  (one row, columns: a blank text measure as wide as the category column + `SVG Rows Header`) and
+  the rows table (columns: the category + `SVG Row`, sorted by `SVG Row`, which leads with a sortable
+  `<desc>` holding AC).
+- `grid.imageWidth` = `_W`, `imageHeight` = `_H` (rows) / 30 (header); image column width = `_W` + 20;
+  no rules (page-shell.md §3); the rows table's height = 28 + rows × (`_H` + 2) + 24.
+- `_S` = the page scale group's px per unit (`scale_layout.py`, the same value as the Deneb month
+  chart's `pxPerUnit`), so a company bar of 10 mEUR is as long as a month column of 10 mEUR is high.
+
+```dax
+-- GEOM (identical in SVG Row and SVG Rows Header)
+VAR _S = 9  VAR _SP = 3  VAR _W = 1000  VAR _H = 28      -- px per unit, px per pp, SVG size
+VAR _T = _H * 0.5  VAR _Off = _T * 0.25                   -- bar thickness, BU outline offset
+VAR _Tri = MIN ( MAX ( 0.33 * _T, 6 ), 12 )  VAR _Top = _Tri + 1  VAR _Yc = _Top + _Off + _T / 2
+VAR _All = FILTER (
+    ADDCOLUMNS ( ALLSELECTED ( 'Company'[Company] ),
+        "@ac", [Revenue] / 1E6, "@bu", [Revenue BU] / 1E6, "@py", [Revenue PY] / 1E6,
+        "@d", IF ( NOT ISBLANK ( [Revenue] ) && NOT ISBLANK ( [Revenue BU] ), ( [Revenue] - [Revenue BU] ) / 1E6 ),
+        "@p", IF ( NOT ISBLANK ( [Revenue] ) && [Revenue BU] > 0, DIVIDE ( [Revenue] - [Revenue BU], [Revenue BU] ) * 100 ) ),
+    NOT ISBLANK ( [@ac] ) || NOT ISBLANK ( [@bu] ) )
+VAR _BMax = MAXX ( _All, MAX ( MAX ( COALESCE ( [@ac], 0 ), COALESCE ( [@bu], 0 ) ), COALESCE ( [@py], 0 ) ) )
+VAR _DNeg = MAXX ( _All, MAX ( 0, - [@d] ) )  VAR _DPos = MAXX ( _All, MAX ( 0, [@d] ) )
+VAR _PNeg = MAXX ( _All, MAX ( 0, - [@p] ) )
+VAR _LabV = 46  VAR _LabD = 44  VAR _LabP = 56  VAR _Gap = 20     -- label room per tier (7 px/char + 6), gap between tiers
+VAR _X2 = 1 + _BMax * _S + _LabV + _Gap + _DNeg * _S + _LabD     -- ΔBU axis
+VAR _X3 = _X2 + _DPos * _S + _LabD + _Gap + _PNeg * _SP + _LabP  -- ΔBU% axis
+VAR _GapRow = MAXX ( TOPN ( 1, FILTER ( _All, NOT ISBLANK ( [@d] ) ), ABS ( [@d] ), DESC, 'Company'[Company], ASC ), 'Company'[Company] )
+```
+
+`SVG Row` (one row; tokens as in skeletons 1, 2, 5):
+
+```dax
+SVG Row =
+-- TOKENS
+VAR _ACc = "#404040"  VAR _PYc = "#A6A6A6"  VAR _PLFill = "#FFFFFF"  VAR _PLStroke = "#404040"
+VAR _Good = "#8CB400"  VAR _Bad = "#FF0000"  VAR _Neutral = "#0064FF"  VAR _HL = "#0064FF"
+VAR _Text = "#000000"  VAR _Font = "Segoe UI"
+-- GEOM (block above)
+VAR _AC = [Revenue] / 1E6  VAR _BU = [Revenue BU] / 1E6  VAR _PY = [Revenue PY] / 1E6  VAR _Pol = 1
+VAR _D = IF ( NOT ISBLANK ( _AC ) && NOT ISBLANK ( _BU ), _AC - _BU )  VAR _R = ROUND ( _D, 1 )
+VAR _P = IF ( NOT ISBLANK ( _AC ) && _BU > 0, DIVIDE ( _AC - _BU, _BU ) * 100 )  VAR _RP = ROUND ( _P, 1 )
+VAR _KD = SWITCH ( TRUE (), _R = 0, _Text, _Pol = 0, _Neutral, _D * _Pol > 0, _Good, _Bad )
+VAR _KP = SWITCH ( TRUE (), _RP = 0, _Text, _Pol = 0, _Neutral, _P * _Pol > 0, _Good, _Bad )
+VAR _DLen = ABS ( _D ) * _S  VAR _DX = IF ( _D >= 0, _X2, _X2 - _DLen )
+VAR _DL = IF ( _R = 0, "0.0", FORMAT ( _R, "+0.0;-0.0", "en-US" ) )
+VAR _DLX = IF ( _D >= 0, _X2 + _DLen + 4, _X2 - _DLen - 4 )
+VAR _PLen = ABS ( _P ) * _SP  VAR _PE = IF ( _P >= 0, _X3 + _PLen, _X3 - _PLen )
+VAR _PL = IF ( _RP = 0, "0.0%", FORMAT ( _RP / 100, "+0.0%;-0.0%", "en-US" ) )
+VAR _IsGap = COUNTROWS ( _All ) > 1 && SELECTEDVALUE ( 'Company'[Company] ) = _GapRow
+VAR _EW = LEN ( _DL ) * 3.4 + 6                                  -- ellipse half-width around the Δ label
+RETURN
+IF ( HASONEVALUE ( 'Company'[Company] ) && ( NOT ISBLANK ( _AC ) || NOT ISBLANK ( _BU ) ),
+    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='" & _W & "' height='" & _H & "' viewBox='0 0 " & _W & " " & _H & "'>"
+    & "<desc>" & FORMAT ( COALESCE ( _AC, 0 ) + 1E9, "0000000000.000", "en-US" ) & "</desc>"   -- sort key
+    & "<g font-family='" & _Font & "' font-size='11'>"
+    -- tier 1: BU outlined bar behind, AC bar, PY triangle (skeleton 5), value label right of max(AC, BU)
+    & IF ( NOT ISBLANK ( _BU ), "<rect x='1' y='" & FORMAT ( _Top, "0.0", "en-US" ) & "' width='" & FORMAT ( _BU * _S, "0.0", "en-US" )
+        & "' height='" & FORMAT ( _T, "0.0", "en-US" ) & "' fill='" & _PLFill & "' stroke='" & _PLStroke & "' stroke-width='1'/>" )
+    & IF ( NOT ISBLANK ( _AC ), "<rect x='1' y='" & FORMAT ( _Top + _Off, "0.0", "en-US" ) & "' width='" & FORMAT ( _AC * _S, "0.0", "en-US" )
+        & "' height='" & FORMAT ( _T, "0.0", "en-US" ) & "' fill='" & _ACc & "'/>" )
+    & IF ( NOT ISBLANK ( _PY ), "<path d='M" & FORMAT ( _PY * _S + 1 - _Tri * 0.575, "0.0", "en-US" ) & " " & FORMAT ( _Top - 1 - _Tri, "0.0", "en-US" )
+        & " L" & FORMAT ( _PY * _S + 1 + _Tri * 0.575, "0.0", "en-US" ) & " " & FORMAT ( _Top - 1 - _Tri, "0.0", "en-US" )
+        & " L" & FORMAT ( _PY * _S + 1, "0.0", "en-US" ) & " " & FORMAT ( _Top - 1, "0.0", "en-US" ) & " Z' fill='" & _PYc & "'/>" )
+    & "<line x1='0.5' y1='0' x2='0.5' y2='" & _H & "' stroke='" & _ACc & "' stroke-width='1'/>"
+    & IF ( NOT ISBLANK ( _AC ), "<text x='" & FORMAT ( MAX ( COALESCE ( _AC, 0 ), COALESCE ( _BU, 0 ) ) * _S + 5, "0.0", "en-US" )
+        & "' y='" & FORMAT ( _Yc + 4, "0.0", "en-US" ) & "' fill='" & _Text & "'>" & FORMAT ( _AC, "#,0.0", "en-US" ) & "</text>" )
+    -- tier 2: ΔBU bar at the same px per unit, plan-notation axis (double line), highlight ellipse
+    & "<rect x='" & FORMAT ( _X2 - 2.5, "0.0", "en-US" ) & "' y='0' width='1' height='" & _H & "' fill='" & _PLStroke & "'/>"
+    & "<rect x='" & FORMAT ( _X2 + 1.5, "0.0", "en-US" ) & "' y='0' width='1' height='" & _H & "' fill='" & _PLStroke & "'/>"
+    & IF ( NOT ISBLANK ( _D ),
+        IF ( _R <> 0, "<rect x='" & FORMAT ( _DX, "0.0", "en-US" ) & "' y='" & FORMAT ( _Top + _Off, "0.0", "en-US" ) & "' width='" & FORMAT ( _DLen, "0.0", "en-US" )
+            & "' height='" & FORMAT ( _T, "0.0", "en-US" ) & "' fill='" & _KD & "'/>" )
+        & "<text x='" & FORMAT ( _DLX, "0.0", "en-US" ) & "' y='" & FORMAT ( _Yc + 4, "0.0", "en-US" ) & "' text-anchor='" & IF ( _D >= 0, "start", "end" )
+            & "' fill='" & _Text & "'>" & _DL & "</text>"
+        & IF ( _IsGap, "<ellipse cx='" & FORMAT ( IF ( _D >= 0, _DLX + _EW - 6, _DLX - _EW + 6 ), "0.0", "en-US" ) & "' cy='" & FORMAT ( _Yc, "0.0", "en-US" )
+            & "' rx='" & FORMAT ( _EW, "0.0", "en-US" ) & "' ry='9' fill='none' stroke='" & _HL & "' stroke-width='1.5'/>" ) )
+    -- tier 3: ΔBU% pin on its own % scale, N/A when BU <= 0 or blank
+    & "<rect x='" & FORMAT ( _X3 - 2.5, "0.0", "en-US" ) & "' y='0' width='1' height='" & _H & "' fill='" & _PLStroke & "'/>"
+    & "<rect x='" & FORMAT ( _X3 + 1.5, "0.0", "en-US" ) & "' y='0' width='1' height='" & _H & "' fill='" & _PLStroke & "'/>"
+    & IF ( ISBLANK ( _P ),
+        "<text x='" & FORMAT ( _X3 + 8, "0.0", "en-US" ) & "' y='" & FORMAT ( _Yc + 4, "0.0", "en-US" ) & "' fill='" & _Text & "'>N/A</text>",
+        IF ( _RP <> 0, "<rect x='" & FORMAT ( MIN ( _X3, _PE ), "0.0", "en-US" ) & "' y='" & FORMAT ( _Yc - 1, "0.0", "en-US" ) & "' width='" & FORMAT ( _PLen, "0.0", "en-US" )
+            & "' height='2' fill='" & _KP & "'/>"
+            & "<rect x='" & FORMAT ( _PE - 3, "0.0", "en-US" ) & "' y='" & FORMAT ( _Yc - 3, "0.0", "en-US" ) & "' width='6' height='6' fill='" & _ACc & "'/>" )
+        & "<text x='" & FORMAT ( IF ( _P >= 0, _PE + 7, _PE - 7 ), "0.0", "en-US" ) & "' y='" & FORMAT ( _Yc + 4, "0.0", "en-US" ) & "' text-anchor='"
+            & IF ( _P >= 0, "start", "end" ) & "' fill='" & _Text & "'>" & _PL & "</text>" )
+    & "</g></svg>" )
+```
+
+`SVG Rows Header` (one row, height 30): `AC` at x 1 (y 26); `BU` right-aligned at the first
+(largest) row's BU end and `PY` centred above its triangle (y 14; move it 26 px left when the two
+would touch); `ΔBU` centred on `_X2` and `ΔBU%` on `_X3` in the semibold font. No separate legend
+line ("BU □ PY ▼ AC ■"): the names sit at the marks they explain.
+
+Rules:
+- One GEOM in both measures; extents come from `ALLSELECTED` over the category, so every row of
+  the current filter context uses the same tier offsets and the header matches the rows.
+- Label room per tier is part of the x offsets (`_LabV`, `_LabD`, `_LabP` ≈ 7 px per character of
+  the longest label + 6): a label never runs into the next tier and never leaves the SVG. Check
+  `_X3 + _PPos × _SP + _LabP ≤ _W` once with the largest positive Δ% (add `_PPos` like `_PNeg`), and
+  widen `_W` (and `imageWidth`) rather than shrinking `_S`.
+- `_S` is the page's px per unit, never a per-measure `MAXX` fit: the block must read on the same
+  scale as the month chart (UN 4.1). Δ% pins have their own scale `_SP` (one per page).
+- Rows sort by AC descending via the `<desc>` sort key (`sort_measure` in the table recipe).
+
 ## Shared row geometry (GEOM) and px per unit
 
 Every SVG column of one table row (skeletons 1, 2, 5, and any further bar column) uses one GEOM
@@ -548,8 +668,8 @@ VAR _Room = 46                      -- label room beyond the longest bar
 - **Several tiers per row** (bars + Δ bars + Δ% pins, card 26): one SVG measure per row that draws
   all tiers side by side (x offsets per tier inside the SVG, one GEOM block) is more robust than
   one image column per tier, because every image column of a table shares `imageWidth`. The tier
-  names and the integrated legend go into a static header image (SVG in `RegisteredResources`,
-  an `image` visual above the table at the image column's x, as wide as the SVG).
+  names and the integrated legend go into a header row drawn by a second measure with the same
+  GEOM (skeleton 8).
 - The table's image column must be at least ~20 px wider than `imageWidth`: narrower, the cell
   clips the image and the service shows a stray truncation mark (".") at the right end of each
   row (end-to-end test, as of 2026-10).

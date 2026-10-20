@@ -142,6 +142,27 @@ class ScaleGroups(unittest.TestCase):
             # the Total keeps its own scale but must be marked
             self.assertEqual([x["status"] for x in rows(f, "F6", "total")], ["check"])
 
+    def test_layout_size_excludes_the_visual_padding(self):
+        """page-shell.md §1: position = computed size + padding; the check compares the inner size."""
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            name, months = deneb("months", "column-two-tier-variance", (16, 300, 1000, 466), {"pxPerUnit": 9})
+            months["visual"]["visualContainerObjects"] = {"padding": [{"properties": {
+                "top": lit("0D"), "bottom": lit("12D"), "left": lit("12D"), "right": lit("0D")}}]}
+            r = report(tmp, {"p1": [textbox("title", "Sales in mEUR"), (name, months)]})
+            layout = tmp / "layout.json"
+            layout.write_text(json.dumps({"pxPerUnit": 9, "members": [
+                {"id": "m", "visual": "months", "dimension": "height", "containerPx": 454}]}))
+            _, f, _ = lint(r, "--layout", layout)
+            self.assertEqual([x for x in rows(f, "G8", "months") if x["sev"] == "M"], [])
+            # without the padding the same position is 12 px too tall
+            layout.write_text(json.dumps({"pxPerUnit": 9, "members": [
+                {"id": "m", "visual": "months", "dimension": "height", "containerPx": 440}]}))
+            _, f, _ = lint(r, "--layout", layout)
+            must = [x for x in rows(f, "G8", "months") if x["sev"] == "M"]
+            self.assertEqual(len(must), 1, rows(f, "G8"))
+            self.assertIn("padding 12 = 454 px", must[0]["evidence"])
+
     def test_unknown_layout_visual_is_reported(self):
         with tempfile.TemporaryDirectory() as tmp:
             tmp = Path(tmp)

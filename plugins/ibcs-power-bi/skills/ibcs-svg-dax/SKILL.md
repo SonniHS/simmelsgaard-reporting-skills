@@ -59,6 +59,7 @@ own SVG document, so `<defs>` ids such as `url(#h)` never clash between cells.
 | Indexed sparkline on a shared scale | CO 4.4: omit sparklines that are not scaled properly |
 | Scenario header marker (thick light / thick dark / double / hatched rule) | EX 1.2 column headers |
 | Key message with impact-coloured numbers (skeleton 7): bold sentence, variance numbers in the text impact colours, ≤ 2 lines | UN 2.1, SA 4.3; a text box cannot colour a value by its sign |
+| Structure block, one SVG row per category with all tiers (skeleton 8): AC/BU/PY bars, Δ bar on the same px per unit, Δ% pin, highlight ellipse, plus a header row with tier names and the integrated legend | UN 4.1 same scale across the page; one GEOM so the tiers line up; EX 1.1 cards 24, 26 |
 
 ## Preview harness
 
