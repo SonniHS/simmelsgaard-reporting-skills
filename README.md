@@ -3,7 +3,7 @@
 A public Claude Code plugin marketplace with skills and agents for business reporting: IBCS®-style notation,
 report and dashboard design, Power BI, Microsoft Fabric Apps, semantic models and the SQL behind them.
 
-Status: in preparation, not yet published.
+Status: early release (0.1). Tested against a Power BI report and a Fabric App; issues and feedback are welcome.
 
 ## Install
 

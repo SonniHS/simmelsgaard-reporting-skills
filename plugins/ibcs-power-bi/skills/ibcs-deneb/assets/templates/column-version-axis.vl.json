@@ -23,7 +23,7 @@
         "Scenario",
         "Value"
       ],
-      "notes": "Follows the IBCS® Standards. Values compare versions of ONE full period, not successive monthly amounts. deltaBase 'previous' subtracts the immediately preceding version (including a blank one); 'first' subtracts the first version, e.g. PL/BU. The first version has no delta. Absolute Δ = Value − reference remains valid for negative or zero references. Relative Δ% (tooltip only) = (Value − reference) / reference using the SIGNED reference, never ABS; reference <= 0 or blank (or blank Value) gives null and the ibcsNA label, with no relative mark. Variance-axis segments use the subtrahend's Scenario: PL/BU two thin lines, PY solid light, FC/AC one thin line without hatch. The minuend's Scenario determines FC hatch on delta bars. A delta rounding to 0 at decimals gets no colour, no hatch and a signless zero label. Polarity changes colour only. Values and deltas share one view and one scale, including negative values. Set the same pxPerUnit on all members of a scale group and size each visual to its own ranges (layout; scale_layout.py in the ibcs-power-bi skill); a too-small container lets data win. Unit goes in the title. Use the synced Deneb config for font family and number locale; SVG render mode for pbiPatternSVG. One unique Version per row is required; aggregate duplicates upstream. No multi-period grouping or automatic placement of AC; query order / VersionOrder must express the desired chronology. Labels do not automatically de-overlap. Render-checked outside Power BI; not yet verified in Desktop.",
+      "notes": "Follows the IBCS® Standards. Values compare versions of ONE full period, not successive monthly amounts. deltaBase 'previous' subtracts the immediately preceding version (including a blank one); 'first' subtracts the first version, e.g. PL/BU. The first version has no delta. Absolute Δ = Value − reference remains valid for negative or zero references. Relative Δ% (tooltip only) = (Value − reference) / reference using the SIGNED reference, never ABS; reference <= 0 or blank (or blank Value) gives null and the ibcsNA label, with no relative mark. Variance-axis segments use the subtrahend's Scenario: PL/BU two thin lines, PY solid light, FC/AC one thin line without hatch. The minuend's Scenario determines FC hatch on delta bars. A delta rounding to 0 at decimals gets no colour, no hatch and a signless zero label. Polarity changes colour only. Values and deltas share one view and one scale, including negative values. Set the same pxPerUnit on all members of a scale group and size each visual to its own ranges (layout; scale_layout.py in the ibcs-power-bi skill); a too-small container lets data win. Unit goes in the title. Use the synced Deneb config for font family and number locale; SVG render mode for pbiPatternSVG. One unique Version per row is required; aggregate duplicates upstream. No multi-period grouping or automatic placement of AC; query order / VersionOrder must express the desired chronology. Labels do not automatically de-overlap. Render-checked outside Power BI; not yet verified in Desktop. Columns fill 2/3 of their slot; same column width across visuals (e.g. the month chart and its total): set barPx.",
       "knobs": [
         "deltaBase",
         "polarity",
@@ -31,6 +31,7 @@
         "unitDivisor",
         "periodType",
         "stepScale",
+        "barPx",
         "pxPerUnit",
         "showCategoryLabels",
         "labelPad",
@@ -115,6 +116,11 @@
       "name": "stepScale",
       "value": 1.5,
       "description": "screen scaling of the token category step; keep it identical on every page"
+    },
+    {
+      "name": "barPx",
+      "value": 0,
+      "description": "column width in px; 0 = 2/3 of the category slot. Set the same value in every visual of one period type on a page (e.g. 2/3 of the month slot) so their columns have the same width"
     },
     {
       "name": "pxPerUnit",
@@ -267,8 +273,8 @@
     },
     {
       "name": "bw",
-      "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)",
-      "description": "column width: 2/3 of the category, capped at the token step so every chart of this period type has the same width"
+      "expr": "barPx > 0 ? min(bandwidth('x'), barPx) : bandwidth('x')",
+      "description": "column width: 2/3 of the category slot, space 1/3; barPx gives every visual of one period type the same width"
     }
   ],
   "transform": [

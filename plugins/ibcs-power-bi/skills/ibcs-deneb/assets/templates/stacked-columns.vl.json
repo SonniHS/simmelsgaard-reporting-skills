@@ -23,12 +23,13 @@
         "Segment",
         "Value"
       ],
-      "notes": "Follows the IBCS® Standards. The first drawable structure element per period in the global SegmentOrder (or Segment name order) carries the column scenario in the stack: AC solid dark, PY light, PL/BU outlined, FC hatched. The five upper shades interpolate between the existing ibcsGray2 and ibcsAssistArea tokens; no independent palette. Thin white separators use ibcsBackground (the default page background). SegmentOrder and Scenario must be consistent; aggregate duplicate Period/Segment rows upstream. Negative segment values stack below the baseline independently of positives, in the same segment order (the first element remains at zero); totals are the signed net sum and sit above the positive stack, or below an all-negative stack. Null Value is omitted, not converted to zero; totals sum available values, and entirely blank periods are dropped. This composition template has no reference comparison, relative variance or polarity colours; the PY sample periods exercise negative, zero and null inputs without division. Rows with a blank Period or Segment, or no valid Value, are dropped; Scenario and PxPerUnit alone do not retain unknown members. FC inside labels have an ibcsBackground halo over the hatch. Inside labels need at least minLabelPx of actual rendered height; very narrow columns may need fewer decimals, scaled measures or a larger stepScale/container. The integrated legend connects the last period’s segment midpoints to names separated by at least max(legendGapPx, ibcsFontSize + 2) pixels; legendOffsetPx reserves horizontal leader room. Supply every segment in the last period; zero/blank segments there cannot be labelled. Reserve enough plot height for the legend names at this gap. One value scale spans both signs: equal pxPerUnit across visuals plus container heights sized to each visual's own signed stack range (CH 4.1/4.2); an undersized container shrinks the scale without clipping. stepScale defaults to 1.5, matching the other column templates; keep it identical across the page. Font family and number locale come from the synced Deneb config. SVG rendering is required for FC. stacked bars: use structure orientation later. Desktop interaction and hatch rendering still need verification in Deneb.",
+      "notes": "Follows the IBCS® Standards. The first drawable structure element per period in the global SegmentOrder (or Segment name order) carries the column scenario in the stack: AC solid dark, PY light, PL/BU outlined, FC hatched. The five upper shades interpolate between the existing ibcsGray2 and ibcsAssistArea tokens; no independent palette. Thin white separators use ibcsBackground (the default page background). SegmentOrder and Scenario must be consistent; aggregate duplicate Period/Segment rows upstream. Negative segment values stack below the baseline independently of positives, in the same segment order (the first element remains at zero); totals are the signed net sum and sit above the positive stack, or below an all-negative stack. Null Value is omitted, not converted to zero; totals sum available values, and entirely blank periods are dropped. This composition template has no reference comparison, relative variance or polarity colours; the PY sample periods exercise negative, zero and null inputs without division. Rows with a blank Period or Segment, or no valid Value, are dropped; Scenario and PxPerUnit alone do not retain unknown members. FC inside labels have an ibcsBackground halo over the hatch. Inside labels need at least minLabelPx of actual rendered height; very narrow columns may need fewer decimals, scaled measures or a larger stepScale/container. The integrated legend connects the last period’s segment midpoints to names separated by at least max(legendGapPx, ibcsFontSize + 2) pixels; legendOffsetPx reserves horizontal leader room. Supply every segment in the last period; zero/blank segments there cannot be labelled. Reserve enough plot height for the legend names at this gap. One value scale spans both signs: equal pxPerUnit across visuals plus container heights sized to each visual's own signed stack range (CH 4.1/4.2); an undersized container shrinks the scale without clipping. stepScale defaults to 1.5, matching the other column templates; keep it identical across the page. Font family and number locale come from the synced Deneb config. SVG rendering is required for FC. stacked bars: use structure orientation later. Desktop interaction and hatch rendering still need verification in Deneb. Columns fill 2/3 of their slot; same column width across visuals (e.g. the month chart and its total): set barPx.",
       "knobs": [
         "decimals",
         "unitDivisor",
         "periodType",
         "stepScale",
+        "barPx",
         "pxPerUnit",
         "minLabelPx",
         "labelPad",
@@ -53,7 +54,7 @@
             ]
           }
         ],
-        "rule": "container height = fixedPx + (hi − lo) × pxPerUnit + labelPx (+ labelPx again when lo < 0); fixedPx measured with Vega-Lite 6.4.3 at ibcsFontSize 12; use fixedPxNoCategoryLabels when showCategoryLabels = false; stepScale = 1.5 by default (month column width ≈ 24 px); reserve right padding for legendOffsetPx + 4 px + the widest segment name, and plot height at least ibcsFontSize + (visible legend names − 1) × max(legendGapPx, ibcsFontSize + 2)"
+        "rule": "container height = fixedPx + (hi − lo) × pxPerUnit + labelPx (+ labelPx again when lo < 0); fixedPx measured with Vega-Lite 6.4.3 at ibcsFontSize 12; use fixedPxNoCategoryLabels when showCategoryLabels = false; stepScale = 1.5 by default; columns fill 2/3 of their slot (barPx for one width across visuals); reserve right padding for legendOffsetPx + 4 px + the widest segment name, and plot height at least ibcsFontSize + (visible legend names − 1) × max(legendGapPx, ibcsFontSize + 2)"
       },
       "sampleData": "stacked-columns.json",
       "preview": {
@@ -104,6 +105,11 @@
       "name": "stepScale",
       "value": 1.5,
       "description": "screen scaling of the token category step; default 1.5 matches the other column templates; keep identical across the page"
+    },
+    {
+      "name": "barPx",
+      "value": 0,
+      "description": "column width in px; 0 = 2/3 of the category slot. Set the same value in every visual of one period type on a page (e.g. 2/3 of the month slot) so their columns have the same width"
     },
     {
       "name": "pxPerUnit",
@@ -589,7 +595,7 @@
       "mark": {
         "type": "bar",
         "width": {
-          "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)"
+          "expr": "barPx > 0 ? min(bandwidth('x'), barPx) : bandwidth('x')"
         },
         "fill": {
           "expr": "ibcsFCGround"
@@ -618,7 +624,7 @@
       "mark": {
         "type": "bar",
         "width": {
-          "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)"
+          "expr": "barPx > 0 ? min(bandwidth('x'), barPx) : bandwidth('x')"
         },
         "fill": {
           "expr": "datum.Scenario == 'FC' ? pbiPatternSVG(ibcsHatch, ibcsFCStripe, ibcsFCGround) : datum.Scenario == 'PY' ? ibcsPY : (datum.Scenario == 'PL' || datum.Scenario == 'BU') ? ibcsPLFill : ibcsAC"
@@ -676,7 +682,7 @@
       "mark": {
         "type": "bar",
         "width": {
-          "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)"
+          "expr": "barPx > 0 ? min(bandwidth('x'), barPx) : bandwidth('x')"
         },
         "opacity": 1
       },
@@ -748,10 +754,10 @@
           "expr": "ibcsOutline"
         },
         "xOffset": {
-          "expr": "-(min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)) / 2"
+          "expr": "-((barPx > 0 ? min(bandwidth('x'), barPx) : bandwidth('x'))) / 2"
         },
         "x2Offset": {
-          "expr": "(min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)) / 2"
+          "expr": "((barPx > 0 ? min(bandwidth('x'), barPx) : bandwidth('x'))) / 2"
         }
       },
       "encoding": {
@@ -952,12 +958,12 @@
           "encoding": {
             "x": {
               "value": {
-                "expr": "scale('x', datum.Period) + bandwidth('x') / 2 + min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio) / 2 + 2"
+                "expr": "scale('x', datum.Period) + bandwidth('x') / 2 + (barPx > 0 ? min(bandwidth('x'), barPx) : bandwidth('x')) / 2 + 2"
               }
             },
             "x2": {
               "value": {
-                "expr": "scale('x', datum.Period) + bandwidth('x') / 2 + min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio) / 2 + max(legendOffsetPx, 4)"
+                "expr": "scale('x', datum.Period) + bandwidth('x') / 2 + (barPx > 0 ? min(bandwidth('x'), barPx) : bandwidth('x')) / 2 + max(legendOffsetPx, 4)"
               }
             },
             "y": {
@@ -978,7 +984,7 @@
             "align": "left",
             "baseline": "middle",
             "xOffset": {
-              "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio) / 2 + max(legendOffsetPx, 4) + 4"
+              "expr": "(barPx > 0 ? min(bandwidth('x'), barPx) : bandwidth('x')) / 2 + max(legendOffsetPx, 4) + 4"
             },
             "fontSize": {
               "expr": "ibcsFontSize"

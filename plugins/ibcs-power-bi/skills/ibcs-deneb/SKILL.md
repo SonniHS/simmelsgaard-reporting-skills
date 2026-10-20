@@ -64,7 +64,8 @@ Fields, knobs and notes per template are in each file's `usermeta.ibcs` and in
 - **Category width per period type.** Bar width = 2/3 of the band, capped at
   `geometry.categoryStepPx[periodType] × stepScale`, so every chart of a period type on a page has
   the same column width (UN 3.3). Keep `stepScale` identical across a page.
-  Exception: `column-two-tier-variance` fills 2/3 of its slot (space 1/3), because a Power BI
+  Exception: the column templates (`column-two-tier-variance`, `stacked-columns`,
+  `column-version-axis`) fill 2/3 of their slot (space 1/3), because a Power BI
   visual is usually wider than the token layout and the cap left the columns at a third of their
   slot. For the same width across visuals of one period type, pass the same `barPx`; markers beside
   the columns keep the token size via `tokBw`.
