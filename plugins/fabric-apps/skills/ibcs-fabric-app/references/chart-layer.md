@@ -69,6 +69,9 @@ Rules:
   width it needs; a line chart's end value label is inside the returned width, never past it. The
   card hands in its content width ([report-shell.md](report-shell.md) §9); when the chart needs
   more, it shortens labels first and reports a warning, it does not overflow.
+  The measured text sets the **margins**, never the plot width: the plot fills the content width
+  the card hands in (minus those margins), for line charts as for columns. A line chart sized to
+  its labels alone used about 40 % of its card in the portal and left the rest empty.
 
 ### Interaction: selectable categories
 

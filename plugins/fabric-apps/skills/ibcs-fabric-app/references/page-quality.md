@@ -64,6 +64,8 @@ The frame of [report-shell.md](report-shell.md), at 390, ≈ 1050 and 1280 px:
       with its own scale and a scale band; series labels at the end of the series, once.
 - [ ] Footer full width: every footnote complete (no scroll box, no ellipsis), source, data as
       of, last closed month.
+- [ ] In the portal (not only the harness): footnote numbers are visible as text; a tab change
+      opens the new page at the top; every chart fills its card's content width.
 - [ ] Theme, card style and density survive a reload (viewer preference); a copied link
       reproduces page, entity, period and comparison.
 - [ ] Phone: header in two rows, filters behind one toggle with a summary, KPI cards two per

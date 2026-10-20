@@ -94,6 +94,10 @@ drop the canvas tint (white page, cards as plain blocks).
 - **Reset filters** sets entity, period and comparison back to the defaults; it keeps the route,
   the variant and the viewer preferences.
 - Changing the page keeps entity, period and comparison (tab links carry them).
+- A route change scrolls to the top of the page (`window.scrollTo(0, 0)`, or the headline into view)
+  and moves focus to the headline. The document does not reset on a hash change, so without this
+  the new page opens at the old scroll position (in the portal: at the bottom). A footnote jump
+  (§5) is not a route change and keeps its own scroll.
 
 ## 4. Header row and filter bar
 
@@ -207,6 +211,10 @@ behaviour contract §10). The shell adds:
   tables>. Data as of <date>; last closed month <month>." and the diagnostics link. Each note is an
   `<li id="note-n" tabIndex={-1}>` so the chip reference (§5) can scroll to and focus it. Every footnote
   shows its whole text: no scroll box, no ellipsis, no footnote column squeezed beside a chart.
+- Write each note's number as text (`<li …><span class="fn-no">1.</span> …`, with `list-style: none`),
+  never rely on `<ol>` markers: in the portal frame the markers did not render (outside markers are
+  clipped by the card's overflow, and the host CSS may reset them), so the chips ①–⑧ pointed to
+  unnumbered notes. A local harness can show them while the portal does not: check in the portal.
 - Long or many notes go into the How-to-read popover or a details page, with a one-line pointer.
 
 ## 9. Layout tokens
