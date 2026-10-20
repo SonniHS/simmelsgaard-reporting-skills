@@ -1,0 +1,86 @@
+[
+  {
+    "Period": "Jan",
+    "AC": 17.8,
+    "FC": null,
+    "PY": 17.3,
+    "PL": 18.2
+  },
+  {
+    "Period": "Feb",
+    "AC": 18.2,
+    "FC": null,
+    "PY": 17.745,
+    "PL": 18.565
+  },
+  {
+    "Period": "Mar",
+    "AC": 17.9,
+    "FC": null,
+    "PY": 17.491,
+    "PL": 18.229
+  },
+  {
+    "Period": "Apr",
+    "AC": 18.5,
+    "FC": null,
+    "PY": 18.136,
+    "PL": 18.794
+  },
+  {
+    "Period": "May",
+    "AC": 18.1,
+    "FC": null,
+    "PY": 17.782,
+    "PL": 18.358
+  },
+  {
+    "Period": "Jun",
+    "AC": 18.4,
+    "FC": null,
+    "PY": 18.127,
+    "PL": 18.623
+  },
+  {
+    "Period": "Jul",
+    "AC": 18.9,
+    "FC": null,
+    "PY": 18.673,
+    "PL": 19.087
+  },
+  {
+    "Period": "Aug",
+    "AC": 18.5,
+    "FC": null,
+    "PY": 18.318,
+    "PL": 18.652
+  },
+  {
+    "Period": "Sep",
+    "AC": 18.4,
+    "FC": null,
+    "PY": 18.264,
+    "PL": 18.516
+  },
+  {
+    "Period": "Oct",
+    "AC": null,
+    "FC": 18.5,
+    "PY": 18.409,
+    "PL": 18.581
+  },
+  {
+    "Period": "Nov",
+    "AC": null,
+    "FC": 18.7,
+    "PY": 18.655,
+    "PL": 18.745
+  },
+  {
+    "Period": "Dec",
+    "AC": null,
+    "FC": 18.6,
+    "PY": 18.6,
+    "PL": 18.61
+  }
+]

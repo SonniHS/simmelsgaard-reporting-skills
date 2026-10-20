@@ -1,0 +1,172 @@
+{
+ "ibcsVisualSpec": "1.0",
+ "page": {
+  "id": "sales",
+  "name": "Sales",
+  "kind": "message",
+  "media": [
+   "web-app"
+  ],
+  "context": {
+   "slicers": [
+    {
+     "id": "period",
+     "field": "'Date'[Month]",
+     "titleLine": 3
+    }
+   ],
+   "period": {
+    "type": "month"
+   }
+  },
+  "message": {
+   "type": "explanation",
+   "source": "template",
+   "text": "Sales look strong",
+   "highlights": [
+    {
+     "kind": "ellipse",
+     "target": {
+      "visual": "k1",
+      "row": "Net sales",
+      "variance": "dpy"
+     }
+    },
+    {
+     "kind": "ellipse",
+     "target": {
+      "visual": "v9"
+     }
+    }
+   ]
+  },
+  "title": {
+   "who": "ABC Group",
+   "what": [
+    {
+     "measure": "Net sales",
+     "unit": "mEUR"
+    }
+   ],
+   "when": "PY and AC"
+  },
+  "footer": {
+   "sources": [
+    "ERP"
+   ]
+  }
+ },
+ "scaleGroups": [
+  {
+   "id": "meur",
+   "unit": "mEUR",
+   "kind": "absolute",
+   "members": [
+    "v2.base",
+    "v2.dbu"
+   ]
+  },
+  {
+   "id": "pct",
+   "unit": "%",
+   "kind": "relative",
+   "members": [
+    "v2.dbup"
+   ]
+  }
+ ],
+ "visuals": [
+  {
+   "id": "k1",
+   "type": "kpi-cards",
+   "data": {
+    "rows": [
+     {
+      "line": "Net sales",
+      "type": "measure",
+      "measure": "ns",
+      "variances": [
+       "dpy",
+       "dxx"
+      ]
+     }
+    ],
+    "measures": [
+     {
+      "id": "ns",
+      "kind": "absolute",
+      "polarity": 1
+     }
+    ],
+    "variances": [
+     {
+      "id": "dpy",
+      "code": "ΔPY",
+      "measure": "ns",
+      "minuend": "AC",
+      "subtrahend": "PY",
+      "kind": "absolute"
+     }
+    ]
+   }
+  },
+  {
+   "id": "v2",
+   "type": "grouped-bar",
+   "data": {
+    "category": {
+     "field": "'Date'[Month]",
+     "kind": "time"
+    },
+    "measures": [
+     {
+      "id": "ns",
+      "kind": "absolute",
+      "polarity": 1
+     }
+    ],
+    "variances": [
+     {
+      "id": "dpy",
+      "code": "ΔBU",
+      "measure": "ns",
+      "minuend": "AC&FC",
+      "kind": "absolute"
+     }
+    ]
+   },
+   "tiers": [
+    {
+     "id": "base",
+     "type": "grouped-column",
+     "values": [
+      "ns.BU",
+      "ns.AC&FC",
+      "ns.PY"
+     ],
+     "scaleGroup": "meur",
+     "position": "base"
+    },
+    {
+     "id": "dbu",
+     "type": "variance-column",
+     "values": [
+      "dbu-fc"
+     ],
+     "scaleGroup": "pct",
+     "position": "above"
+    }
+   ],
+   "markers": []
+  }
+ ],
+ "deviations": [
+  {
+   "rule": "CH 4.1",
+   "what": "own scale",
+   "reason": "size",
+   "acceptedBy": "TBD"
+  }
+ ],
+ "openQuestions": []
+}

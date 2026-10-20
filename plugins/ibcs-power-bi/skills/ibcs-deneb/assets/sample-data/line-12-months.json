@@ -1,0 +1,86 @@
+[
+ {
+  "Period": "Jan",
+  "AC": 447,
+  "FC": null,
+  "PY": 431,
+  "PL": 455
+ },
+ {
+  "Period": "Feb",
+  "AC": 515,
+  "FC": null,
+  "PY": 470,
+  "PL": 490
+ },
+ {
+  "Period": "Mar",
+  "AC": 479,
+  "FC": null,
+  "PY": 465,
+  "PL": 500
+ },
+ {
+  "Period": "Apr",
+  "AC": 531,
+  "FC": null,
+  "PY": 490,
+  "PL": 505
+ },
+ {
+  "Period": "May",
+  "AC": 488,
+  "FC": null,
+  "PY": 472,
+  "PL": 500
+ },
+ {
+  "Period": "Jun",
+  "AC": 502,
+  "FC": null,
+  "PY": 481,
+  "PL": 510
+ },
+ {
+  "Period": "Jul",
+  "AC": 544,
+  "FC": null,
+  "PY": 500,
+  "PL": 530
+ },
+ {
+  "Period": "Aug",
+  "AC": 571,
+  "FC": null,
+  "PY": 512,
+  "PL": 550
+ },
+ {
+  "Period": "Sep",
+  "AC": 526,
+  "FC": null,
+  "PY": 497,
+  "PL": 540
+ },
+ {
+  "Period": "Oct",
+  "AC": null,
+  "FC": 548,
+  "PY": 515,
+  "PL": 555
+ },
+ {
+  "Period": "Nov",
+  "AC": null,
+  "FC": 561,
+  "PY": 530,
+  "PL": 570
+ },
+ {
+  "Period": "Dec",
+  "AC": null,
+  "FC": 590,
+  "PY": 549,
+  "PL": 585
+ }
+]

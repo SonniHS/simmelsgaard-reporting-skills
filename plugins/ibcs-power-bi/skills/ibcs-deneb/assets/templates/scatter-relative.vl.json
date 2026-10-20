@@ -1,0 +1,957 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "IBCS scatter of two supplied relative measures (G5 / portfolio; cards 32, 33), with one percentage scale on both axes, zero-crossing axes, a 45-degree diagonal and a tolerance band. Follows the IBCS® Standards.",
+  "usermeta": {
+    "ibcs": {
+      "template": "scatter-relative",
+      "cards": [
+        "G5",
+        "EX 1.1 card 32",
+        "EX 1.1 card 33",
+        "UN 4.1",
+        "CH 4.1"
+      ],
+      "fields": {
+        "Element": "text, element name; blank/null/whitespace categories are dropped by the first transform. Rows with X, Y and Size all blank/null are also dropped; constant control measures do not keep them.",
+        "X": "measure, relative measure 1; fraction by default (0.05 = 5%). Compute upstream as (AC - REF) / REF using the SIGNED reference; return BLANK/null when REF <= 0 or blank. No raw reference fields are needed.",
+        "Y": "measure, relative measure 2, same input units as X and same signed-reference/N/A rule. A blank or nonnumeric X or Y drops the point and contributes once to the n not shown note.",
+        "Size": "optional non-negative measure, proportional bubble AREA; missing/negative/nonnumeric uses a fixed dot. Zero has zero bubble area; maximum area is sizeMaxPx square pixels. Also ranks labels when labelTop > 0.",
+        "Polarity": "optional measure 1/-1/0, wins over polarity: impact colour of y - x only in colourMode = polarity; never changes coordinates. Zero stays neutral.",
+        "Scenario": "optional text AC (default), FC (hatched), PY (solid light), PL/BU (outlined). Inside-band points use muted grey tokens; outside-band scenario fills are preserved, with any polarity colour on non-AC outlines.",
+        "PxPerUnit": "optional positive measure, same value on every row: pixels per displayed percentage point on both axes; wins over pxPerPoint and pxPerUnit. If inconsistent, the largest value is used.",
+        "XRef": "optional provenance only, present in the sample to demonstrate negative/zero/blank references; not read by this template. X must already be BLANK/null when its reference is not positive.",
+        "YRef": "optional provenance only; not read by this template. Y must already be BLANK/null when its reference is not positive."
+      },
+      "requiredFields": [
+        "Element",
+        "X",
+        "Y"
+      ],
+      "notes": "X and Y are supplied relative measures, not raw actual/reference amounts. Compute (AC - REF) / REF upstream with the signed REF, never abs(REF), and return BLANK/null (N/A, no mark) for REF <= 0 or blank. After the blank-category filter, drop rows with X, Y and Size all blank/null, ignoring constant control measures. Retained rows missing either coordinate count once in the corner note, including rows with only one coordinate or Size; the note still renders when every retained row is N/A. Fractions are preferred; unitDivisor = 100 accepts percentage-point inputs. Both axes include zero explicitly, share the same symmetric linear domain and have a square physical range; rectangular containers add space around the square. The band is abs(y - x) <= tolerance pp, clipped to that square. Default colourMode = neutral highlights outside-band AC points in ibcsAC and mutes inside-band points with ibcsPY. Only explicit colourMode = polarity permits good/bad impact colours outside the band, using y - x and row Polarity or polarity; polarity 0 and differences rounding to zero at decimals remain uncoloured. Geometry never depends on polarity. FC hatch uses Deneb pbiPatternSVG and requires SVG render mode. Only outside-band points are labelled, subject to labelTop. Labels for nearby consecutive points in vertical order are spread vertically by rank away from the diagonal, with an extra nudge near the horizontal zero axis; this is a simple local nudge, not a general collision solver for dense clusters or long names. Size is an independent area measure and is not divided by unitDivisor. No Power BI Desktop validation is claimed.",
+      "knobs": [
+        "polarity",
+        "decimals",
+        "unitDivisor",
+        "tolerance",
+        "colourMode",
+        "sizeMaxPx",
+        "labelTop",
+        "labelRoomPx",
+        "pxPerPoint",
+        "pxPerUnit",
+        "xTitle",
+        "yTitle"
+      ],
+      "layout": {
+        "valueAxis": "height",
+        "unit": "percentage point",
+        "fixedPx": 24,
+        "tiers": [
+          {
+            "id": "portfolio",
+            "range": "-max(abs(X / unitDivisor), abs(Y / unitDivisor), tolerance / 100, 0.01) … +max(...) on BOTH axes; includes 0 explicitly with zero: true",
+            "padHigh": [
+              "labelRoomPx"
+            ],
+            "padLow": [
+              "labelRoomPx"
+            ]
+          }
+        ],
+        "rule": "Both axes use the same symmetric domain and a square range of side min(width, height) after Vega autosize fitting. For target p pixels per displayed percentage point, allow container width and height >= fixedPx + 200 * extent * p + 2 * max(labelRoomPx, sqrt(sizeMaxPx) / 2 + ibcsOutline), where extent is max(abs(X / unitDivisor), abs(Y / unitDivisor), tolerance / 100, 0.01). fixedPx = 24 conservatively covers container padding and tick-label overhang at ibcsFontSize = 12. PxPerUnit > pxPerPoint > pxPerUnit; absent a target, derive p from the container. If the target cannot fit, reduce both scales together. This square layout needs explicit container sizing; the generic one-axis scale_layout.py does not compute portfolio bounds."
+      },
+      "sampleData": "scatter-relative.json",
+      "preview": {
+        "width": 560,
+        "height": 500
+      },
+      "previewVariants": [
+        {
+          "suffix": "-close-outlier",
+          "sampleData": "scatter-relative-close-outlier.json",
+          "params": {
+            "xTitle": "ΔPY%",
+            "yTitle": "ΔBU%"
+          }
+        },
+        {
+          "suffix": "-close-outlier-polarity",
+          "sampleData": "scatter-relative-close-outlier.json",
+          "params": {
+            "colourMode": "polarity",
+            "xTitle": "ΔPY%",
+            "yTitle": "ΔBU%"
+          }
+        },
+        {
+          "suffix": "-close-outlier-lower-better",
+          "sampleData": "scatter-relative-close-outlier.json",
+          "params": {
+            "colourMode": "polarity",
+            "polarity": -1,
+            "xTitle": "ΔPY%",
+            "yTitle": "ΔBU%"
+          }
+        },
+        {
+          "suffix": "-rounded-zero",
+          "sampleData": "scatter-relative-close-outlier.json",
+          "params": {
+            "colourMode": "polarity",
+            "tolerance": 0.1,
+            "decimals": 0,
+            "xTitle": "ΔPY%",
+            "yTitle": "ΔBU%"
+          }
+        }
+      ]
+    }
+  },
+  "data": {
+    "name": "dataset"
+  },
+  "width": "container",
+  "height": "container",
+  "autosize": {
+    "type": "fit",
+    "contains": "padding"
+  },
+  "padding": 4,
+  "params": [
+    {
+      "name": "polarity",
+      "value": 1,
+      "description": "Fallback impact polarity: 1 higher is better, -1 lower is better, 0 neutral; a row Polarity of 1/-1/0 wins. Changes colour only, never X/Y geometry."
+    },
+    {
+      "name": "decimals",
+      "value": 0,
+      "description": "Decimal places for percentage axes, percentage tooltips and Size labels; a y - x difference rounding to zero percentage points has no impact colour."
+    },
+    {
+      "name": "unitDivisor",
+      "value": 1,
+      "description": "Positive divisor for X and Y before drawing and formatting: 1 for fractions (0.05 = 5%, preferred), 100 for inputs in percentage points (5 = 5%). Size is independent and is not divided. Tolerance and pixel scales always use displayed percentage points."
+    },
+    {
+      "name": "tolerance",
+      "value": 2,
+      "description": "Half-width of the diagonal band in displayed percentage points: abs(y - x) <= tolerance / 100. Non-negative; default 2 pp. This is a vertical/horizontal difference, not perpendicular distance."
+    },
+    {
+      "name": "colourMode",
+      "value": "neutral",
+      "description": "Point highlighting: 'neutral' (default) uses AC dark outside the tolerance band and muted grey inside. 'polarity' explicitly enables good/bad colour for outside-band y - x, using row Polarity or polarity. Polarity 0 and rounded-zero differences remain uncoloured; scenario fills are preserved."
+    },
+    {
+      "name": "sizeMaxPx",
+      "value": 600,
+      "description": "Maximum bubble area in square pixels (Vega symbol size), proportional to Size with a zero origin. Missing, negative or nonnumeric Size uses a fixed dot; Size = 0 has zero area."
+    },
+    {
+      "name": "labelTop",
+      "value": 0,
+      "description": "0 labels every outside-band point; positive N labels the N largest outside-band Size values, ties broken by input order. Missing/invalid Size sorts last; if no outside-band Size exists, label all outside-band points. Nearby labels receive a vertical rank nudge."
+    },
+    {
+      "name": "labelRoomPx",
+      "value": 18,
+      "description": "Pixel room beyond data bounds on each side of the square, before fitting. At least the largest bubble radius is also reserved. Nearby labels receive a simple vertical rank nudge; dense clusters or long names can still need more room."
+    },
+    {
+      "name": "pxPerPoint",
+      "value": 0,
+      "description": "Pixels per displayed percentage point on BOTH axes; 0 derives the scale from the square plot. PxPerUnit wins, then pxPerPoint, then the pxPerUnit alias. Too-small containers reduce both scales together so data and point radii fit."
+    },
+    {
+      "name": "pxPerUnit",
+      "value": 0,
+      "description": "Compatibility alias for the scale-group convention: pixels per displayed percentage point. Used only when neither PxPerUnit nor pxPerPoint is positive; layout requires a square value plot."
+    },
+    {
+      "name": "xTitle",
+      "value": "X (%)",
+      "description": "Short name of relative measure 1, e.g. ΔPY%; rename for the bound measure."
+    },
+    {
+      "name": "yTitle",
+      "value": "Y (%)",
+      "description": "Short name of relative measure 2, e.g. ΔBU%; rename for the bound measure."
+    },
+    {
+      "name": "ibcsAC",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsPY",
+      "value": "#A6A6A6"
+    },
+    {
+      "name": "ibcsPLFill",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsPLStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCStripe",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCGround",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsFCStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsGood",
+      "value": "#8CB400"
+    },
+    {
+      "name": "ibcsBad",
+      "value": "#FF0000"
+    },
+    {
+      "name": "ibcsNeutral",
+      "value": "#0064FF"
+    },
+    {
+      "name": "ibcsText",
+      "value": "#000000"
+    },
+    {
+      "name": "ibcsTextSecondary",
+      "value": "#595959"
+    },
+    {
+      "name": "ibcsAxis",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsAssist",
+      "value": "#808080"
+    },
+    {
+      "name": "ibcsAssistArea",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "ibcsLineRel",
+      "value": 1.5
+    },
+    {
+      "name": "ibcsMarkerRatio",
+      "value": 2.5
+    },
+    {
+      "name": "ibcsOutline",
+      "value": 1
+    },
+    {
+      "name": "ibcsAxisWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsAssistWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsFontSize",
+      "value": 12
+    },
+    {
+      "name": "ibcsFmtAbs",
+      "value": ",.1f"
+    },
+    {
+      "name": "ibcsFmtRelVar",
+      "value": "+.0%"
+    },
+    {
+      "name": "ibcsNA",
+      "value": "N/A"
+    },
+    {
+      "name": "ibcsHatch",
+      "value": "diagonal-stripe-3"
+    }
+  ],
+  "transform": [
+    {
+      "filter": "isValid(datum['Element']) && datum['Element'] !== '' && (!isString(datum['Element']) || trim(datum['Element']) !== '')"
+    },
+    {
+      "filter": "isValid(datum['X']) || isValid(datum['Y']) || isValid(datum['Size'])"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_i"
+        }
+      ]
+    },
+    {
+      "calculate": "isNumber(datum['X']) && isFinite(datum['X']) && isNumber(datum['Y']) && isFinite(datum['Y'])",
+      "as": "_ok"
+    },
+    {
+      "calculate": "datum._ok ? 0 : 1",
+      "as": "_missing"
+    },
+    {
+      "calculate": "datum._ok ? datum['X'] / (unitDivisor > 0 ? unitDivisor : 1) : null",
+      "as": "_x"
+    },
+    {
+      "calculate": "datum._ok ? datum['Y'] / (unitDivisor > 0 ? unitDivisor : 1) : null",
+      "as": "_y"
+    },
+    {
+      "calculate": "datum._ok && isNumber(datum['Size']) && isFinite(datum['Size']) && datum['Size'] >= 0 ? datum['Size'] : null",
+      "as": "_size"
+    },
+    {
+      "calculate": "isValid(datum._size) ? datum._size : -1",
+      "as": "_sizeRank"
+    },
+    {
+      "calculate": "datum['Polarity'] === 1 || datum['Polarity'] === -1 || datum['Polarity'] === 0 ? datum['Polarity'] : polarity",
+      "as": "_pol"
+    },
+    {
+      "calculate": "isValid(datum['Scenario']) && datum['Scenario'] !== '' ? datum['Scenario'] : 'AC'",
+      "as": "_scenario"
+    },
+    {
+      "calculate": "isNumber(datum['PxPerUnit']) && datum['PxPerUnit'] > 0 ? datum['PxPerUnit'] : (pxPerPoint > 0 ? pxPerPoint : pxPerUnit)",
+      "as": "_ppuRow"
+    },
+    {
+      "calculate": "datum._ok ? max(abs(datum._x), abs(datum._y)) : 0",
+      "as": "_extent"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_extent",
+          "as": "_maxExtent"
+        },
+        {
+          "op": "max",
+          "field": "_size",
+          "as": "_maxSize"
+        },
+        {
+          "op": "max",
+          "field": "_ppuRow",
+          "as": "_ppu"
+        }
+      ]
+    },
+    {
+      "calculate": "min(width, height)",
+      "as": "_side"
+    },
+    {
+      "calculate": "max(labelRoomPx, sqrt(max(sizeMaxPx, 0)) / 2 + ibcsOutline)",
+      "as": "_pad"
+    },
+    {
+      "calculate": "max(datum._maxExtent, max(tolerance, 0) / 100, 0.01) / max(0.1, 1 - 2 * datum._pad / max(datum._side, 1))",
+      "as": "_fit"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? max(datum._fit, datum._side / (200 * datum._ppu)) : datum._fit",
+      "as": "_hi"
+    },
+    {
+      "calculate": "-datum._hi",
+      "as": "_lo"
+    },
+    {
+      "calculate": "clamp(datum._lo + max(tolerance, 0) / 100, datum._lo, datum._hi)",
+      "as": "_bandLo"
+    },
+    {
+      "calculate": "clamp(datum._hi - max(tolerance, 0) / 100, datum._lo, datum._hi)",
+      "as": "_bandHi"
+    },
+    {
+      "calculate": "datum._ok ? datum._y - datum._x : null",
+      "as": "_d"
+    },
+    {
+      "calculate": "datum._ok && abs(datum._d) - max(tolerance, 0) / 100 > 1e-12 * max(1, abs(datum._x), abs(datum._y))",
+      "as": "_outside"
+    },
+    {
+      "calculate": "!datum._outside || colourMode !== 'polarity' || datum._pol == 0 || abs(datum._d) * 100 * pow(10, decimals) < 0.5 ? null : (datum._d * datum._pol > 0 ? ibcsGood : ibcsBad)",
+      "as": "_c"
+    },
+    {
+      "calculate": "isValid(datum._size) ? (datum._maxSize > 0 ? datum._size / datum._maxSize * max(sizeMaxPx, 0) : 0) : pow(ibcsLineRel * ibcsMarkerRatio, 2)",
+      "as": "_area"
+    },
+    {
+      "calculate": "datum._ok ? (abs(datum._x) * 100 * pow(10, decimals) < 0.5 ? format(0, replace(replace(ibcsFmtRelVar, '+', ''), /[.][0-9]+/, '.' + decimals)) : format(datum._x, replace(ibcsFmtRelVar, /[.][0-9]+/, '.' + decimals))) : ibcsNA",
+      "as": "_xLabel"
+    },
+    {
+      "calculate": "datum._ok ? (abs(datum._y) * 100 * pow(10, decimals) < 0.5 ? format(0, replace(replace(ibcsFmtRelVar, '+', ''), /[.][0-9]+/, '.' + decimals)) : format(datum._y, replace(ibcsFmtRelVar, /[.][0-9]+/, '.' + decimals))) : ibcsNA",
+      "as": "_yLabel"
+    },
+    {
+      "calculate": "isValid(datum._size) ? format(datum._size, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : ibcsNA",
+      "as": "_sizeLabel"
+    }
+  ],
+  "encoding": {
+    "x": {
+      "field": "_x",
+      "type": "quantitative",
+      "scale": {
+        "type": "linear",
+        "nice": false,
+        "zero": true,
+        "rangeMin": {
+          "expr": "(width - min(width, height)) / 2"
+        },
+        "rangeMax": {
+          "expr": "(width + min(width, height)) / 2"
+        }
+      },
+      "axis": {
+        "title": null,
+        "grid": false,
+        "ticks": false,
+        "domain": true,
+        "domainColor": {
+          "expr": "ibcsAxis"
+        },
+        "domainWidth": {
+          "expr": "ibcsAxisWidth"
+        },
+        "labelColor": {
+          "expr": "ibcsText"
+        },
+        "labelFontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "labelPadding": 4,
+        "labelFlush": false,
+        "labelOverlap": true,
+        "tickCount": 5,
+        "offset": {
+          "expr": "-height / 2"
+        },
+        "translate": 0,
+        "labelExpr": "abs(datum.value) * 100 * pow(10, decimals) < 0.5 ? format(0, replace(replace(ibcsFmtRelVar, '+', ''), /[.][0-9]+/, '.' + decimals)) : format(datum.value, replace(ibcsFmtRelVar, /[.][0-9]+/, '.' + decimals))",
+        "zindex": 1
+      }
+    },
+    "y": {
+      "field": "_y",
+      "type": "quantitative",
+      "scale": {
+        "type": "linear",
+        "nice": false,
+        "zero": true,
+        "rangeMin": {
+          "expr": "(height + min(width, height)) / 2"
+        },
+        "rangeMax": {
+          "expr": "(height - min(width, height)) / 2"
+        }
+      },
+      "axis": {
+        "title": null,
+        "grid": false,
+        "ticks": false,
+        "domain": true,
+        "domainColor": {
+          "expr": "ibcsAxis"
+        },
+        "domainWidth": {
+          "expr": "ibcsAxisWidth"
+        },
+        "labelColor": {
+          "expr": "ibcsText"
+        },
+        "labelFontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "labelPadding": 4,
+        "labelFlush": false,
+        "labelOverlap": true,
+        "tickCount": 5,
+        "offset": {
+          "expr": "-width / 2"
+        },
+        "translate": 0,
+        "labelExpr": "datum.value == 0 ? '' : (abs(datum.value) * 100 * pow(10, decimals) < 0.5 ? format(0, replace(replace(ibcsFmtRelVar, '+', ''), /[.][0-9]+/, '.' + decimals)) : format(datum.value, replace(ibcsFmtRelVar, /[.][0-9]+/, '.' + decimals)))",
+        "zindex": 1
+      }
+    }
+  },
+  "layer": [
+    {
+      "description": "Light assisting area: vertical/horizontal difference within tolerance pp, clipped analytically to the square domain.",
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        },
+        {
+          "fold": [
+            "_lo",
+            "_bandLo",
+            "_bandHi",
+            "_hi"
+          ],
+          "as": [
+            "_bandEdge",
+            "_bandX"
+          ]
+        },
+        {
+          "calculate": "clamp(datum._bandX + max(tolerance, 0) / 100, datum._lo, datum._hi)",
+          "as": "_bandTop"
+        },
+        {
+          "calculate": "clamp(datum._bandX - max(tolerance, 0) / 100, datum._lo, datum._hi)",
+          "as": "_bandBottom"
+        }
+      ],
+      "mark": {
+        "type": "area",
+        "fill": {
+          "expr": "ibcsAssistArea"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "x": {
+          "field": "_bandX",
+          "type": "quantitative",
+          "sort": "ascending"
+        },
+        "y": {
+          "field": "_bandTop",
+          "type": "quantitative"
+        },
+        "y2": {
+          "field": "_bandBottom"
+        }
+      }
+    },
+    {
+      "description": "Calibration diagonal x = y. The equal x/y pixel scale makes this exactly 45 degrees; dash lengths derive from the assisting stroke token.",
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAssist"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAssistWidth"
+        },
+        "strokeDash": {
+          "expr": "[4 * ibcsAssistWidth, 3 * ibcsAssistWidth]"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "_lo",
+          "type": "quantitative"
+        },
+        "y": {
+          "field": "_lo",
+          "type": "quantitative"
+        },
+        "x2": {
+          "field": "_hi"
+        },
+        "y2": {
+          "field": "_hi"
+        }
+      }
+    },
+    {
+      "description": "Point area is proportional to Size; dots when Size is absent. Coordinates always follow arithmetic X/Y, independently of polarity.",
+      "transform": [
+        {
+          "filter": "datum._ok"
+        }
+      ],
+      "mark": {
+        "type": "circle",
+        "filled": true,
+        "fill": {
+          "expr": "datum._scenario == 'FC' ? pbiPatternSVG(ibcsHatch, datum._outside ? ibcsFCStripe : ibcsPY, ibcsFCGround) : datum._scenario == 'PY' ? ibcsPY : datum._scenario == 'PL' || datum._scenario == 'BU' ? ibcsPLFill : (!datum._outside ? ibcsPY : isValid(datum._c) ? datum._c : ibcsAC)"
+        },
+        "stroke": {
+          "expr": "!datum._outside ? ibcsPY : isValid(datum._c) ? datum._c : datum._scenario == 'FC' ? ibcsFCStroke : datum._scenario == 'PY' ? ibcsPY : datum._scenario == 'PL' || datum._scenario == 'BU' ? ibcsPLStroke : ibcsAC"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "opacity": 1,
+        "size": {
+          "expr": "datum._area"
+        }
+      },
+      "encoding": {
+        "tooltip": [
+          {
+            "field": "Element",
+            "type": "nominal"
+          },
+          {
+            "field": "_xLabel",
+            "title": "X"
+          },
+          {
+            "field": "_yLabel",
+            "title": "Y"
+          },
+          {
+            "field": "_sizeLabel",
+            "title": "Size"
+          },
+          {
+            "field": "_scenario",
+            "title": "Scenario"
+          }
+        ],
+        "x": {
+          "value": {
+            "expr": "scale('x', datum._x)"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._y)"
+          }
+        }
+      }
+    },
+    {
+      "description": "Outside-band names face inward near edges. Consecutive nearby labels in vertical order form local groups and spread vertically by rank; labelTop ranks only eligible outside-band points, with deterministic ties. Nudges face away from the diagonal and keep labels off the horizontal zero axis.",
+      "transform": [
+        {
+          "filter": "datum._outside"
+        },
+        {
+          "joinaggregate": [
+            {
+              "op": "max",
+              "field": "_size",
+              "as": "_maxLabelSize"
+            }
+          ]
+        },
+        {
+          "window": [
+            {
+              "op": "row_number",
+              "as": "_rank"
+            }
+          ],
+          "sort": [
+            {
+              "field": "_sizeRank",
+              "order": "descending"
+            },
+            {
+              "field": "_i",
+              "order": "ascending"
+            }
+          ]
+        },
+        {
+          "filter": "labelTop <= 0 || !isValid(datum._maxLabelSize) || datum._rank <= labelTop"
+        },
+        {
+          "calculate": "length(toString(datum.Element)) * ibcsFontSize * 0.6 + sqrt(datum._area / PI) + 4",
+          "as": "_labelWidth"
+        },
+        {
+          "window": [
+            {
+              "op": "lag",
+              "field": "_x",
+              "as": "_prevX"
+            },
+            {
+              "op": "lag",
+              "field": "_y",
+              "as": "_prevY"
+            },
+            {
+              "op": "lag",
+              "field": "_labelWidth",
+              "as": "_prevWidth"
+            }
+          ],
+          "sort": [
+            {
+              "field": "_y",
+              "order": "descending"
+            },
+            {
+              "field": "_x",
+              "order": "ascending"
+            },
+            {
+              "field": "_i",
+              "order": "ascending"
+            }
+          ]
+        },
+        {
+          "calculate": "isValid(datum._prevX) && abs(datum._x - datum._prevX) * datum._side / (2 * datum._hi) < max(datum._labelWidth, datum._prevWidth) && abs(datum._y - datum._prevY) * datum._side / (2 * datum._hi) < ibcsFontSize + 4 ? 0 : 1",
+          "as": "_labelBreak"
+        },
+        {
+          "window": [
+            {
+              "op": "sum",
+              "field": "_labelBreak",
+              "as": "_labelGroup"
+            }
+          ],
+          "sort": [
+            {
+              "field": "_y",
+              "order": "descending"
+            },
+            {
+              "field": "_x",
+              "order": "ascending"
+            },
+            {
+              "field": "_i",
+              "order": "ascending"
+            }
+          ],
+          "frame": [
+            null,
+            0
+          ]
+        },
+        {
+          "window": [
+            {
+              "op": "row_number",
+              "as": "_closeRank"
+            },
+            {
+              "op": "count",
+              "as": "_closeCount"
+            }
+          ],
+          "groupby": [
+            "_labelGroup"
+          ],
+          "sort": [
+            {
+              "field": "_y",
+              "order": "descending"
+            },
+            {
+              "field": "_x",
+              "order": "ascending"
+            },
+            {
+              "field": "_i",
+              "order": "ascending"
+            }
+          ],
+          "frame": [
+            null,
+            null
+          ]
+        },
+        {
+          "joinaggregate": [
+            {
+              "op": "mean",
+              "field": "_d",
+              "as": "_labelDirection"
+            }
+          ],
+          "groupby": [
+            "_labelGroup"
+          ]
+        },
+        {
+          "calculate": "(datum._labelDirection >= 0 ? datum._closeRank - datum._closeCount : datum._closeRank - 1) * (ibcsFontSize + 4)",
+          "as": "_labelDy"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": {
+          "expr": "(abs(datum._x) > datum._hi / 2 ? datum._x > 0 : datum._x < 0) ? 'right' : 'left'"
+        },
+        "baseline": "middle",
+        "dx": {
+          "expr": "(abs(datum._x) > datum._hi / 2 ? (datum._x > 0 ? -1 : 1) : (datum._x < 0 ? -1 : 1)) * (sqrt(datum._area / PI) + 4)"
+        },
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "text": {
+          "field": "Element",
+          "type": "nominal"
+        },
+        "x": {
+          "value": {
+            "expr": "scale('x', datum._x)"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "clamp(scale('y', datum._y) + datum._labelDy + (abs(datum._y) * datum._side / (2 * datum._hi) < ibcsFontSize + 4 ? (datum._y >= 0 ? -1 : 1) * (ibcsFontSize + 4) : 0), ibcsFontSize, height - ibcsFontSize)"
+          }
+        }
+      }
+    },
+    {
+      "description": "Relative measure names at the positive ends of the zero-crossing axes.",
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "right",
+        "baseline": "bottom",
+        "dy": -4,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "(width + min(width, height)) / 2"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "height / 2"
+          }
+        },
+        "text": {
+          "value": {
+            "expr": "xTitle"
+          }
+        }
+      }
+    },
+    {
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "baseline": "top",
+        "dx": 4,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "width / 2"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "(height - min(width, height)) / 2"
+          }
+        },
+        "text": {
+          "value": {
+            "expr": "yTitle"
+          }
+        }
+      }
+    },
+    {
+      "description": "Count retained named elements missing either coordinate once, before the point filter, including retained all-N/A rows. Rows with X, Y and Size all null are removed first.",
+      "transform": [
+        {
+          "aggregate": [
+            {
+              "op": "sum",
+              "field": "_missing",
+              "as": "_notShown"
+            }
+          ]
+        },
+        {
+          "filter": "datum._notShown > 0"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "right",
+        "baseline": "bottom",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsTextSecondary"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "width"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "height"
+          }
+        },
+        "text": {
+          "value": {
+            "expr": "format(datum._notShown, replace(ibcsFmtAbs, /[.][0-9]+/, '.0')) + ' not shown'"
+          }
+        }
+      }
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": null
+    }
+  }
+}

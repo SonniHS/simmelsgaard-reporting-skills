@@ -1,0 +1,141 @@
+{
+ "name": "tblBad",
+ "position": {
+  "x": 0,
+  "y": 200,
+  "width": 600,
+  "height": 200
+ },
+ "visual": {
+  "visualType": "tableEx",
+  "query": {
+   "queryState": {
+    "Values": {
+     "projections": [
+      {
+       "field": {
+        "Column": {
+         "Expression": {
+          "SourceRef": {
+           "Entity": "Company"
+          }
+         },
+         "Property": "Code"
+        }
+       },
+       "queryRef": "Company.Code",
+       "nativeQueryRef": "Code",
+       "active": true
+      },
+      {
+       "field": {
+        "Measure": {
+         "Expression": {
+          "SourceRef": {
+           "Entity": "_Measures"
+          }
+         },
+         "Property": "SVG Bar"
+        }
+       },
+       "queryRef": "_Measures.SVG Bar",
+       "nativeQueryRef": "SVG Bar"
+      },
+      {
+       "field": {
+        "Measure": {
+         "Expression": {
+          "SourceRef": {
+           "Schema": "extension",
+           "Entity": "_Measures"
+          }
+         },
+         "Property": "SVG Pin"
+        }
+       },
+       "queryRef": "_Measures.SVG Pin",
+       "nativeQueryRef": "SVG Pin"
+      }
+     ]
+    }
+   },
+   "sortDefinition": {
+    "sort": [
+     {
+      "field": {
+       "Measure": {
+        "Expression": {
+         "SourceRef": {
+          "Entity": "_Measures"
+         }
+        },
+        "Property": "SVG Bar"
+       }
+      },
+      "direction": "Descending"
+     }
+    ]
+   }
+  },
+  "objects": {
+   "grid": [
+    {
+     "properties": {
+      "imageWidth": {
+       "expr": {
+        "Literal": {
+         "Value": "200D"
+        }
+       }
+      }
+     }
+    }
+   ],
+   "columnWidth": [
+    {
+     "properties": {
+      "value": {
+       "expr": {
+        "Literal": {
+         "Value": "210D"
+        }
+       }
+      }
+     },
+     "selector": {
+      "metadata": "_Measures.SVG Bar"
+     }
+    },
+    {
+     "properties": {
+      "value": {
+       "expr": {
+        "Literal": {
+         "Value": "120D"
+        }
+       }
+      }
+     },
+     "selector": {
+      "metadata": "_Measures.SVG Pin"
+     }
+    }
+   ]
+  },
+  "visualContainerObjects": {
+   "title": [
+    {
+     "properties": {
+      "text": {
+       "expr": {
+        "Literal": {
+         "Value": "'Sales by company'"
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ }
+}

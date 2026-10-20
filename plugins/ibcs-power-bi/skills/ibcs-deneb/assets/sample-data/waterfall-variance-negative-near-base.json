@@ -1,0 +1,37 @@
+[
+ {
+  "Category": "PY",
+  "Kind": "base",
+  "Value": 63.3
+ },
+ {
+  "Category": "Price",
+  "Kind": "variance",
+  "Value": 3.0
+ },
+ {
+  "Category": "Volume",
+  "Kind": "variance",
+  "Value": 3.7
+ },
+ {
+  "Category": "Mix",
+  "Kind": "variance",
+  "Value": 0.6
+ },
+ {
+  "Category": "Services",
+  "Kind": "variance",
+  "Value": 0.9
+ },
+ {
+  "Category": "Cost of sales",
+  "Kind": "variance",
+  "Value": -2.4
+ },
+ {
+  "Category": "AC",
+  "Kind": "total",
+  "Value": 69.1
+ }
+]

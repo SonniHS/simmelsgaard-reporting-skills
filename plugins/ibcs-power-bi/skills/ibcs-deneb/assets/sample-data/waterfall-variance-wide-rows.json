@@ -1,0 +1,56 @@
+[
+  {
+    "Category": "Volume",
+    "Value": 3,
+    "BaseValue": null,
+    "TotalValue": 16,
+    "Polarity": 1
+  },
+  {
+    "Category": "Price",
+    "Value": 2,
+    "BaseValue": 10,
+    "TotalValue": 99,
+    "Polarity": 1
+  },
+  {
+    "Category": "Mix",
+    "Value": 1,
+    "BaseValue": 99,
+    "TotalValue": 16,
+    "Polarity": 1
+  },
+  {
+    "Category": "Unallocated",
+    "Value": null,
+    "BaseValue": 10,
+    "TotalValue": 16
+  },
+  {
+    "Category": "Rounding",
+    "Value": -0.01,
+    "BaseValue": 10,
+    "TotalValue": 16,
+    "Polarity": 1
+  },
+  {
+    "Category": "No change",
+    "Value": 0,
+    "BaseValue": 10,
+    "TotalValue": 16,
+    "Polarity": 1
+  },
+  {
+    "Category": "N/A",
+    "Value": null,
+    "BaseValue": null,
+    "TotalValue": null,
+    "PxPerUnit": 0
+  },
+  {
+    "Category": null,
+    "Value": 100,
+    "BaseValue": 100,
+    "TotalValue": 100
+  }
+]

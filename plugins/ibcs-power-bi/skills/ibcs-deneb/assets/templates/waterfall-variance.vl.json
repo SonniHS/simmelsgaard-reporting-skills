@@ -1,0 +1,1129 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "IBCS vertical variance waterfall (EX 1.1 card 29): reference total (PY/PL) at the top from the axis, the variance by structure element as floating bars (impact colour, signed labels outside), the primary total (AC/FC) at the bottom, assisting lines, and the total variance arrow under the result.",
+  "usermeta": {
+    "ibcs": {
+      "template": "waterfall-variance",
+      "cards": [
+        "EX 1.1 card 29",
+        "UN 4.1"
+      ],
+      "fields": {
+        "Category": "text, row label; sort the visual in the intended element/report order (blank labels are dropped)",
+        "Kind": "optional text: base | variance (or element) | total. Omit for element-only input with BaseValue/TotalValue; omitted/blank Kind means variance",
+        "Value": "measure: base = reference value; variance/element = SIGNED CONTRIBUTION to the total; total = primary value. For a cost line in a margin bridge bind −ΔCOS with Polarity +1, not raw ΔCOS",
+        "Polarity": "optional measure 1 / -1 / 0; else the polarity knob",
+        "PxPerUnit": "optional measure, same value on every row: px per display unit for the page's scale group; wins over pxPerUnit",
+        "BaseValue": "optional measure on element rows: starting/reference value; the first non-null value in visual row order synthesizes a base bar unless an explicit Kind base row exists. Values are before unitDivisor",
+        "TotalValue": "optional measure on element rows: primary/result value; the first non-null value in visual row order synthesizes a total bar unless an explicit Kind total row exists. Values are before unitDivisor"
+      },
+      "requiredFields": [
+        "Category",
+        "Value"
+      ],
+      "requiredAnyOf": [
+        [
+          "Kind"
+        ],
+        [
+          "BaseValue",
+          "TotalValue"
+        ]
+      ],
+      "notes": "Value is the contribution to the total, not necessarily the source measure delta: for a cost line in a margin bridge bind −ΔCOS with Polarity +1. A cost increase therefore contributes a negative step (unfavourable), and a cost reduction contributes a positive step (favourable). Polarity changes only impact colour; geometry always follows the contribution sign. Include a remainder row (e.g. Rest) so base + Σ contribution = total. If they do not reconcile, the arrow label shows the difference with a '!'. Two waterfalls of one unit: the same pxPerUnit and labelWidth, and each visual's width sized to its own range (usermeta.ibcs.layout). Rounded-zero rule: abs(value) × 10^decimals < 0.5 is labelled 0 without sign and gets no impact colour. Input formats: (1) explicit Kind rows, with base/total values in Value; (2) one model row per element, Value as the signed contribution, optional Kind omitted, and BaseValue/TotalValue measures repeated on element rows. The template uses the first non-null value of each anchor independently in visual row order, creates each missing anchor once, and keeps explicit base/total rows when present. baseLabel/totalLabel name only the synthesized bars. Repeated anchor measures must be constant in the current filter context. Blank categories and rows whose Value, BaseValue and TotalValue are all null are dropped; zero is a value, and an anchor-only row is retained. PxPerUnit alone do not retain an unknown N/A member.",
+      "knobs": [
+        "refScenario",
+        "minuend",
+        "polarity",
+        "decimals",
+        "labelWidth",
+        "stepScale",
+        "unitDivisor",
+        "xMax",
+        "pxPerUnit",
+        "ibcsLabelPx",
+        "baseLabel",
+        "totalLabel"
+      ],
+      "layout": {
+        "valueAxis": "width",
+        "fixedPx": 37,
+        "plusCategoryLabels": "width of the longest row label in px + 6 (Vega measures the text; about 7 px per character at 12 px Segoe UI); labelWidth does not reserve it",
+        "tiers": [
+          {
+            "id": "waterfall",
+            "range": "0 … max(base, running sum, total)",
+            "padHigh": [
+              "ibcsLabelPx"
+            ]
+          }
+        ],
+        "rule": "container width = fixedPx + row labels + (hi − lo) × pxPerUnit + padHigh; measured with Vega-Lite 6.4.3 at ibcsFontSize 12"
+      },
+      "sampleData": "variance-waterfall.json",
+      "preview": {
+        "width": 360,
+        "height": 260
+      },
+      "previewVariants": [
+        {
+          "suffix": "-wide-rows",
+          "sampleData": "waterfall-variance-wide-rows.json",
+          "params": {
+            "baseLabel": "Margin",
+            "totalLabel": "Margin"
+          },
+          "preview": {
+            "width": 420,
+            "height": 260
+          },
+          "note": "Element-only input: independent first non-null anchors, repeated measures, zero/rounded-zero steps, anchor-only row, blank/unknown category filtering. Later anchor values deliberately differ to verify that the first non-null value wins."
+        },
+        {
+          "suffix": "-cost-contribution",
+          "sampleData": "waterfall-variance-cost-contribution.json",
+          "params": {
+            "baseLabel": "Margin",
+            "totalLabel": "Margin"
+          },
+          "preview": {
+            "width": 420,
+            "height": 230
+          },
+          "note": "Margin bridge: Standard cost is −ΔCOS with Polarity +1, so a cost increase moves left and is unfavourable; a cost reduction moves right and is favourable."
+        },
+        {
+          "suffix": "-negative-near-base",
+          "sampleData": "waterfall-variance-negative-near-base.json",
+          "params": {
+            "pxPerUnit": 3.5
+          },
+          "preview": {
+            "width": 480,
+            "height": 230
+          },
+          "note": "A negative step whose label would sit on the vertical assisting line from the base end: the label moves left of that line."
+        }
+      ]
+    }
+  },
+  "data": {
+    "name": "dataset"
+  },
+  "width": "container",
+  "height": "container",
+  "padding": {
+    "left": {
+      "expr": "labelWidth"
+    },
+    "right": 34,
+    "top": 16,
+    "bottom": 34
+  },
+  "params": [
+    {
+      "name": "baseLabel",
+      "value": "Reference",
+      "description": "row label of the synthesized BaseValue bar; explicit Kind base rows keep their own label"
+    },
+    {
+      "name": "totalLabel",
+      "value": "Total",
+      "description": "row label of the synthesized TotalValue bar; explicit Kind total rows keep their own label"
+    },
+    {
+      "name": "refScenario",
+      "value": "PY",
+      "description": "name and notation of the base bar: 'PY' (solid light) or a plan code such as 'PL' or 'BU' (outlined)"
+    },
+    {
+      "name": "minuend",
+      "value": "AC",
+      "description": "name and notation of the total bar: 'AC' (solid) or 'FC' (hatched)"
+    },
+    {
+      "name": "polarity",
+      "value": 1,
+      "description": "1 higher is better, -1 lower is better, 0 neutral (blue): impact colour only, never the direction (a Polarity field per row wins where the template reads one)"
+    },
+    {
+      "name": "decimals",
+      "value": 1,
+      "description": "decimals of every value label (display units); also the precision of the rounded-zero rule"
+    },
+    {
+      "name": "unitDivisor",
+      "value": 1,
+      "description": "divides every value before drawing and labelling: 1 = the measures are already scaled (preferred, e.g. a scaled measure or a Scale picker), 1000 = thousands, 1000000 = millions. The unit belongs in the title (UN 2.2), never as K/M suffixes"
+    },
+    {
+      "name": "xMax",
+      "value": 0,
+      "description": "right end of the value scale in display units; 0 = from the data. A shared DOMAIN: same xMax gives the same px per unit only on waterfalls of the same width and labelWidth. For a same-unit scale group use pxPerUnit instead"
+    },
+    {
+      "name": "pxPerUnit",
+      "value": 0,
+      "description": "px per display unit (after unitDivisor) on the value axis; 0 = off. When set, the domain is the plot width ÷ pxPerUnit, anchored at the left end (zero), so two waterfalls of one unit show the same px per unit. Size the container to the data (usermeta.ibcs.layout, scripts/scale_layout.py of the ibcs-power-bi skill). If the container is too small, the data wins and the px per unit shrinks: nothing is cut"
+    },
+    {
+      "name": "ibcsLabelPx",
+      "value": 30,
+      "description": "label room in px right of the longest bar (pxPerUnit > 0 only)"
+    },
+    {
+      "name": "labelWidth",
+      "value": 70,
+      "description": "px reserved for the row labels when the container is narrow; the label column is measured from the text, pass its width to scale_layout.py"
+    },
+    {
+      "name": "stepScale",
+      "value": 1.5,
+      "description": "multiplies the category step (ibcsCategoryStep), keep it identical for every chart of the page"
+    },
+    {
+      "name": "ibcsAC",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsPY",
+      "value": "#A6A6A6"
+    },
+    {
+      "name": "ibcsPLFill",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsPLStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCStripe",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCGround",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsFCStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsGood",
+      "value": "#8CB400"
+    },
+    {
+      "name": "ibcsBad",
+      "value": "#FF0000"
+    },
+    {
+      "name": "ibcsNeutral",
+      "value": "#0064FF"
+    },
+    {
+      "name": "ibcsText",
+      "value": "#000000"
+    },
+    {
+      "name": "ibcsTextOnDark",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsBackground",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsAxis",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsAssist",
+      "value": "#808080"
+    },
+    {
+      "name": "ibcsAssistArea",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "ibcsBarRatio",
+      "value": 0.6667
+    },
+    {
+      "name": "ibcsOutline",
+      "value": 1
+    },
+    {
+      "name": "ibcsAxisWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsAssistWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsLineAbs",
+      "value": 3
+    },
+    {
+      "name": "ibcsFontSize",
+      "value": 12
+    },
+    {
+      "name": "ibcsFmtAbs",
+      "value": ",.1f"
+    },
+    {
+      "name": "ibcsFmtVar",
+      "value": "+,.1f"
+    },
+    {
+      "name": "ibcsHatch",
+      "value": "diagonal-stripe-3"
+    },
+    {
+      "name": "ibcsCategoryStep",
+      "value": {
+        "year": 32,
+        "quarter": 28,
+        "month": 24,
+        "week": 16,
+        "day": 12,
+        "structureRow": 20
+      }
+    },
+    {
+      "name": "bw",
+      "expr": "min(bandwidth('y'), ibcsCategoryStep['structureRow'] * stepScale * ibcsBarRatio)"
+    }
+  ],
+  "transform": [
+    {
+      "filter": "isValid(datum['Category']) && datum['Category'] !== ''"
+    },
+    {
+      "filter": "isValid(datum['Value']) || isValid(datum['BaseValue']) || isValid(datum['TotalValue'])"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_inputI"
+        }
+      ]
+    },
+    {
+      "calculate": "!isValid(datum['Kind']) || datum['Kind'] == '' || lower(datum['Kind']) == 'element' ? 'variance' : lower(datum['Kind'])",
+      "as": "_inputKind"
+    },
+    {
+      "calculate": "datum._inputKind == 'variance' && isValid(datum['BaseValue']) ? datum._inputI : null",
+      "as": "_baseI"
+    },
+    {
+      "calculate": "datum._inputKind == 'variance' && isValid(datum['TotalValue']) ? datum._inputI : null",
+      "as": "_totalI"
+    },
+    {
+      "calculate": "datum._inputKind == 'base' ? 1 : 0",
+      "as": "_explicitBase"
+    },
+    {
+      "calculate": "datum._inputKind == 'total' ? 1 : 0",
+      "as": "_explicitTotal"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "min",
+          "field": "_baseI",
+          "as": "_firstBaseI"
+        },
+        {
+          "op": "min",
+          "field": "_totalI",
+          "as": "_firstTotalI"
+        },
+        {
+          "op": "sum",
+          "field": "_explicitBase",
+          "as": "_hasBase"
+        },
+        {
+          "op": "sum",
+          "field": "_explicitTotal",
+          "as": "_hasTotal"
+        },
+        {
+          "op": "max",
+          "field": "_inputI",
+          "as": "_lastInputI"
+        }
+      ]
+    },
+    {
+      "calculate": "[0, datum._hasBase == 0 && datum._inputI == datum._firstBaseI ? 1 : null, datum._hasTotal == 0 && datum._inputI == datum._firstTotalI ? 2 : null]",
+      "as": "_copies"
+    },
+    {
+      "flatten": [
+        "_copies"
+      ],
+      "as": [
+        "_copy"
+      ]
+    },
+    {
+      "filter": "isValid(datum._copy)"
+    },
+    {
+      "calculate": "datum._copy == 1 ? 0 : datum._copy == 2 ? datum._lastInputI + 1 : datum._inputI",
+      "as": "_sortI"
+    },
+    {
+      "calculate": "datum._copy == 1 ? 'base' : datum._copy == 2 ? 'total' : datum._inputKind",
+      "as": "_k"
+    },
+    {
+      "calculate": "datum._copy == 1 ? baseLabel : datum._copy == 2 ? totalLabel : datum['Category']",
+      "as": "Category"
+    },
+    {
+      "calculate": "datum._copy == 1 ? datum['BaseValue'] / unitDivisor : datum._copy == 2 ? datum['TotalValue'] / unitDivisor : isValid(datum['Value']) ? datum['Value'] / unitDivisor : null",
+      "as": "_val"
+    },
+    {
+      "calculate": "datum._copy == 0 ? datum['__selected__'] : null",
+      "as": "__selected__"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_i"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_sortI"
+        }
+      ]
+    },
+    {
+      "calculate": "(datum._i < 10 ? '00' : datum._i < 100 ? '0' : '') + datum._i + '|' + datum['Category']",
+      "as": "_key"
+    },
+    {
+      "window": [
+        {
+          "op": "first_value",
+          "field": "_key",
+          "as": "_firstKey"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_i"
+        }
+      ],
+      "frame": [
+        null,
+        null
+      ]
+    },
+    {
+      "calculate": "datum._k == 'total' ? 0 : datum._val",
+      "as": "_contrib"
+    },
+    {
+      "window": [
+        {
+          "op": "sum",
+          "field": "_contrib",
+          "as": "_cum"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_i"
+        }
+      ],
+      "frame": [
+        null,
+        0
+      ]
+    },
+    {
+      "calculate": "datum._k == 'variance' ? datum._cum - datum._val : 0",
+      "as": "_x0"
+    },
+    {
+      "calculate": "datum._k == 'total' ? datum._val : datum._cum",
+      "as": "_x1"
+    },
+    {
+      "calculate": "isValid(datum['Polarity']) ? datum['Polarity'] : polarity",
+      "as": "_pol"
+    },
+    {
+      "calculate": "!isValid(datum._val) || abs(datum._val) * pow(10, decimals) < 0.5 ? null : datum._pol == 0 ? ibcsNeutral : (datum._val * datum._pol > 0 ? ibcsGood : ibcsBad)",
+      "as": "_c"
+    },
+    {
+      "window": [
+        {
+          "op": "lead",
+          "field": "_key",
+          "as": "_next"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_i"
+        }
+      ]
+    },
+    {
+      "calculate": "replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)",
+      "as": "_fa"
+    },
+    {
+      "calculate": "replace(ibcsFmtVar, /[.][0-9]+/, '.' + decimals)",
+      "as": "_fv"
+    },
+    {
+      "calculate": "!isValid(datum._val) ? 'N/A' : (datum._k == 'variance' ? (abs(datum._val) * pow(10, decimals) < 0.5 ? format(0, datum._fa) : format(datum._val, datum._fv)) : format(datum._val, datum._fa))",
+      "as": "_lbl"
+    },
+    {
+      "calculate": "datum._k == 'base' ? datum._val : null",
+      "as": "_baseV"
+    },
+    {
+      "calculate": "datum._k == 'total' ? datum._val : null",
+      "as": "_totV"
+    },
+    {
+      "calculate": "datum._k == 'variance' ? datum._val : 0",
+      "as": "_varV"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_baseV",
+          "as": "_base"
+        },
+        {
+          "op": "max",
+          "field": "_totV",
+          "as": "_tot"
+        },
+        {
+          "op": "sum",
+          "field": "_varV",
+          "as": "_sumVar"
+        },
+        {
+          "op": "max",
+          "field": "_i",
+          "as": "_n"
+        },
+        {
+          "op": "max",
+          "field": "_x1",
+          "as": "_xmax"
+        },
+        {
+          "op": "max",
+          "field": "_x0",
+          "as": "_x0max"
+        }
+      ]
+    },
+    {
+      "calculate": "max(datum._xmax, xMax)",
+      "as": "_xmax"
+    },
+    {
+      "calculate": "isValid(datum['PxPerUnit']) && datum['PxPerUnit'] > 0 ? datum['PxPerUnit'] : pxPerUnit",
+      "as": "_ppu"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? max(datum._xmax + ibcsLabelPx / datum._ppu, width / datum._ppu) : datum._xmax",
+      "as": "_xhi"
+    },
+    {
+      "calculate": "datum._tot - datum._base",
+      "as": "_delta"
+    },
+    {
+      "calculate": "abs(datum._base + datum._sumVar - datum._tot) > 0.5 * pow(10, -decimals)",
+      "as": "_mismatch"
+    },
+    {
+      "calculate": "!isValid(datum._delta) || abs(datum._delta) * pow(10, decimals) < 0.5 ? null : datum._pol == 0 ? ibcsNeutral : (datum._delta * datum._pol > 0 ? ibcsGood : ibcsBad)",
+      "as": "_dc"
+    },
+    {
+      "calculate": "(abs(datum._delta) * pow(10, decimals) < 0.5 ? format(0, datum._fa) : format(datum._delta, datum._fv)) + (datum._mismatch ? '!' : '')",
+      "as": "_dlbl"
+    }
+  ],
+  "layer": [
+    {
+      "mark": {
+        "type": "point",
+        "opacity": 0
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending",
+          "scale": {
+            "paddingInner": {
+              "expr": "1 - ibcsBarRatio"
+            },
+            "paddingOuter": {
+              "expr": "(1 - ibcsBarRatio) / 2"
+            }
+          },
+          "axis": null
+        },
+        "x": {
+          "field": "_xhi",
+          "type": "quantitative",
+          "scale": {
+            "zero": true,
+            "nice": false
+          },
+          "axis": null
+        }
+      }
+    },
+    {
+      "description": "selection (cross-filtering): assisting-area band behind every mark of the selected category; no mark is dimmed (a dimmed AC reads like PY)",
+      "mark": {
+        "type": "bar",
+        "height": {
+          "expr": "bandwidth('y') / ibcsBarRatio"
+        },
+        "fill": {
+          "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : 'transparent'"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "value": 0
+        },
+        "x2": {
+          "value": {
+            "expr": "width"
+          }
+        }
+      }
+    },
+    {
+      "description": "category axis, drawn before the bars so every mark is in front of it",
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxis"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAxisWidth"
+        }
+      },
+      "encoding": {
+        "x": {
+          "datum": 0
+        },
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      },
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        }
+      ]
+    },
+    {
+      "description": "assisting lines between bar ends",
+      "transform": [
+        {
+          "filter": "isValid(datum._next)"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAssist"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAssistWidth"
+        },
+        "yOffset": {
+          "expr": "bw / 2"
+        },
+        "y2Offset": {
+          "expr": "-bw / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "y2": {
+          "field": "_next"
+        },
+        "x": {
+          "field": "_x1",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "vertical assisting line from the base end down to the total-variance arrow",
+      "transform": [
+        {
+          "filter": "datum._k == 'total'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAssist"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAssistWidth"
+        },
+        "yOffset": {
+          "expr": "bw / 2 + 8"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "_base",
+          "type": "quantitative"
+        },
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "y2": {
+          "value": {
+            "expr": "scale('y', datum._firstKey) + bandwidth('y') / 2 + bw / 2"
+          }
+        }
+      }
+    },
+    {
+      "description": "ground under hatched FC total",
+      "transform": [
+        {
+          "filter": "datum._k == 'total' && minuend == 'FC'"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "height": {
+          "expr": "bw"
+        },
+        "fill": {
+          "expr": "ibcsFCGround"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_x0",
+          "type": "quantitative"
+        },
+        "x2": {
+          "field": "_x1"
+        }
+      }
+    },
+    {
+      "description": "bars: base in reference notation, variances in impact colour (minuend notation), total in primary notation",
+      "mark": {
+        "type": "bar",
+        "height": {
+          "expr": "bw"
+        },
+        "tooltip": true,
+        "fill": {
+          "expr": "datum._k == 'base' ? (refScenario == 'PY' ? ibcsPY : ibcsPLFill) : datum._k == 'total' ? (minuend == 'FC' ? pbiPatternSVG(ibcsHatch, ibcsFCStripe, ibcsFCGround) : ibcsAC) : (minuend == 'FC' ? pbiPatternSVG(ibcsHatch, datum._c, ibcsFCGround) : datum._c)"
+        },
+        "stroke": {
+          "expr": "datum._k == 'base' ? (refScenario == 'PY' ? null : ibcsPLStroke) : datum._k == 'total' ? (minuend == 'FC' ? ibcsFCStroke : null) : (minuend == 'FC' ? datum._c : null)"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_x0",
+          "type": "quantitative"
+        },
+        "x2": {
+          "field": "_x1"
+        },
+        "tooltip": [
+          {
+            "field": "Category",
+            "type": "nominal"
+          },
+          {
+            "field": "_lbl",
+            "title": "value"
+          }
+        ]
+      }
+    },
+    {
+      "description": "halo behind variance labels, so assisting lines running behind a label do not cut through it",
+      "transform": [
+        {
+          "filter": "datum._k == 'variance'"
+        },
+        {
+          "calculate": "datum._k == 'variance' ? (datum._val >= 0 ? datum._x1 : datum._x1) : datum._x1 / 2",
+          "as": "_lx"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "baseline": "middle",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : ibcsBackground"
+        },
+        "align": {
+          "expr": "datum._k != 'variance' ? 'center' : (datum._val >= 0 ? 'left' : 'right')"
+        },
+        "dx": {
+          "expr": "datum._k != 'variance' ? 0 : (datum._val >= 0 ? 3 : (scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * 0.6 && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * 0.6 >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3))"
+        },
+        "stroke": {
+          "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : ibcsBackground"
+        },
+        "strokeWidth": 4,
+        "strokeJoin": "round"
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_lx",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_lbl"
+        }
+      }
+    },
+    {
+      "description": "base/total labels inside the bar (centred); variance labels outside in the direction of the change; a negative variance label that would sit on the vertical assisting line from the base end moves left of that line",
+      "transform": [
+        {
+          "calculate": "datum._k == 'variance' ? (datum._val >= 0 ? datum._x1 : datum._x1) : datum._x1 / 2",
+          "as": "_lx"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "baseline": "middle",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "datum._k == 'total' && minuend != 'FC' ? ibcsTextOnDark : ibcsText"
+        },
+        "align": {
+          "expr": "datum._k != 'variance' ? 'center' : (datum._val >= 0 ? 'left' : 'right')"
+        },
+        "dx": {
+          "expr": "datum._k != 'variance' ? 0 : (datum._val >= 0 ? 3 : (scale('x', datum._base) < scale('x', datum._x1) - 1 && scale('x', datum._base) > scale('x', datum._x1) - 5 - length(datum._lbl) * ibcsFontSize * 0.6 && scale('x', datum._base) - 4 - length(datum._lbl) * ibcsFontSize * 0.6 >= 0 ? scale('x', datum._base) - scale('x', datum._x1) - 4 : -3))"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_lx",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_lbl"
+        }
+      }
+    },
+    {
+      "description": "row labels",
+      "mark": {
+        "type": "text",
+        "baseline": "middle",
+        "align": "right",
+        "dx": -6,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "datum": 0
+        },
+        "text": {
+          "field": "Category"
+        }
+      }
+    },
+    {
+      "description": "legend: reference scenario above the base bar",
+      "transform": [
+        {
+          "filter": "datum._k == 'base'"
+        },
+        {
+          "calculate": "datum._x1 / 2",
+          "as": "_lx"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "baseline": "bottom",
+        "yOffset": {
+          "expr": "-bw / 2 - 1"
+        },
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_lx",
+          "type": "quantitative"
+        },
+        "text": {
+          "value": {
+            "expr": "refScenario"
+          }
+        }
+      }
+    },
+    {
+      "description": "legend: primary scenario below the total bar",
+      "transform": [
+        {
+          "filter": "datum._k == 'total'"
+        },
+        {
+          "calculate": "datum._x1 / 2",
+          "as": "_lx"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "baseline": "top",
+        "yOffset": {
+          "expr": "bw / 2 + 1"
+        },
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_lx",
+          "type": "quantitative"
+        },
+        "text": {
+          "value": {
+            "expr": "minuend"
+          }
+        }
+      }
+    },
+    {
+      "description": "total variance arrow (shaft) under the total bar, from the base level to the total level",
+      "transform": [
+        {
+          "filter": "datum._k == 'total'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "datum._dc"
+        },
+        "strokeWidth": {
+          "expr": "ibcsLineAbs"
+        },
+        "yOffset": {
+          "expr": "bw / 2 + 8"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_base",
+          "type": "quantitative"
+        },
+        "x2": {
+          "field": "_tot"
+        }
+      }
+    },
+    {
+      "description": "arrowhead at the total end",
+      "transform": [
+        {
+          "filter": "datum._k == 'total' && datum._delta != 0"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "filled": true,
+        "opacity": 1,
+        "size": 60,
+        "fill": {
+          "expr": "datum._dc"
+        },
+        "strokeWidth": 0,
+        "shape": {
+          "expr": "datum._delta < 0 ? 'triangle-left' : 'triangle-right'"
+        },
+        "yOffset": {
+          "expr": "bw / 2 + 8"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_tot",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "arrow label: ΔPY and the total variance",
+      "transform": [
+        {
+          "filter": "datum._k == 'total'"
+        },
+        {
+          "calculate": "(datum._base + datum._tot) / 2",
+          "as": "_mx"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "baseline": "top",
+        "yOffset": {
+          "expr": "bw / 2 + 12"
+        },
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "lineHeight": {
+          "expr": "ibcsFontSize + 1"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_mx",
+          "type": "quantitative"
+        },
+        "text": {
+          "value": {
+            "expr": "['Δ' + refScenario, datum._dlbl]"
+          }
+        }
+      }
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": null
+    }
+  }
+}

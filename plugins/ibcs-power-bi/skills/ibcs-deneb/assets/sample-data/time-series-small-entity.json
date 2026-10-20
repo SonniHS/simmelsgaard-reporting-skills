@@ -1,0 +1,58 @@
+[
+ {
+  "Period": "Jun",
+  "AC": 2.1,
+  "FC": null,
+  "PY": 1.9,
+  "PL": 2.0,
+  "BU": 2.0
+ },
+ {
+  "Period": "Jul",
+  "AC": 2.4,
+  "FC": null,
+  "PY": 2.2,
+  "PL": 2.1,
+  "BU": 2.1
+ },
+ {
+  "Period": "Aug",
+  "AC": 1.7,
+  "FC": null,
+  "PY": 1.9,
+  "PL": 1.9,
+  "BU": 1.9
+ },
+ {
+  "Period": "Sep",
+  "AC": 2.6,
+  "FC": null,
+  "PY": 2.3,
+  "PL": 2.2,
+  "BU": 2.2
+ },
+ {
+  "Period": "Oct",
+  "AC": 2.2,
+  "FC": null,
+  "PY": 2.0,
+  "PL": 2.3,
+  "BU": 2.3
+ },
+ {
+  "Period": "Nov",
+  "AC": null,
+  "FC": 1.9,
+  "PY": 2.1,
+  "PL": 1.8,
+  "BU": 1.8
+ },
+ {
+  "Period": "Dec",
+  "AC": null,
+  "FC": 2.5,
+  "PY": 2.4,
+  "PL": 2.4,
+  "BU": 2.4
+ }
+]

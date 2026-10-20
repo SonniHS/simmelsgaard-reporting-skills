@@ -1,0 +1,24 @@
+{
+  "$description": "Generic dark-mode token layer for tests (passed with --theme). Values are illustrative, not a recommendation.",
+  "$extensions": {"theme": {"mode": "dark"}},
+  "color": {
+    "background": {"page": {"$value": "#1E1E1E"}},
+    "text": {"primary": {"$value": "#F2F2F2"}, "secondary": {"$value": "#BFBFBF"}, "onAc": {"$value": "#1E1E1E"}},
+    "scenario": {
+      "ac": {"$value": "#E6E6E6"},
+      "py": {"$value": "#7A7A7A"},
+      "pl": {"fill": {"$value": "#1E1E1E"}, "stroke": {"$value": "#E6E6E6"}},
+      "fc": {"ground": {"$value": "#1E1E1E"}, "stripe": {"$value": "#E6E6E6"}, "stroke": {"$value": "#E6E6E6"}},
+      "stackGrays": {"$value": ["#E6E6E6", "#BFBFBF", "#999999", "#7A7A7A", "#5C5C5C", "#404040"]}
+    },
+    "variance": {
+      "good": {"$value": "#7CD957"},
+      "bad": {"$value": "#FF5A4D"},
+      "neutral": {"$value": "#5C9DFF"},
+      "goodText": {"$value": "#7CD957"},
+      "badText": {"$value": "#FF5A4D"},
+      "neutralText": {"$value": "#5C9DFF"},
+      "cvd": {"good": {"$value": "#33C4CC"}, "goodText": {"$value": "#33C4CC"}}
+    }
+  }
+}

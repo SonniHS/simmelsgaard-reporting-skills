@@ -1,0 +1,23 @@
+[
+  {
+    "Category": "Sales",
+    "Value": 4,
+    "BaseValue": 20,
+    "TotalValue": 23,
+    "Polarity": 1
+  },
+  {
+    "Category": "Standard cost",
+    "Value": -3,
+    "BaseValue": 20,
+    "TotalValue": 23,
+    "Polarity": 1
+  },
+  {
+    "Category": "Cost reduction",
+    "Value": 2,
+    "BaseValue": 20,
+    "TotalValue": 23,
+    "Polarity": 1
+  }
+]

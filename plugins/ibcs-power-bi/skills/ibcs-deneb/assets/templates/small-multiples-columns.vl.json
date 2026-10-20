@@ -1,0 +1,813 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "IBCS small multiples (CO 5.1, CH 4.1): one column chart per structure element, all on the identical value scale (shared y), AC solid / FC hatched with the reference scenario overlapped behind. Data-driven panel dimensions, period-qualified end labels, and selective scenario-labelled totals.",
+  "usermeta": {
+    "ibcs": {
+      "template": "small-multiples-columns",
+      "cards": [
+        "CO 5.1",
+        "CH 4.1",
+        "EX 1.1 card 5"
+      ],
+      "fields": {
+        "Panel": "text, structure element per panel (≤ 25 panels; aggregate the rest into an 'Others' panel in DAX)",
+        "Period": "text, category label; supply rows in period order within each panel; month1 uses the first letter of this label",
+        "AC": "measure, actual",
+        "FC": "measure, forecast (optional)",
+        "PY": "measure (refScenario 'PY')",
+        "PL": "measure (refScenario 'PL')",
+        "BU": "measure (refScenario 'BU'): budget, outlined like PL",
+        "PxPerUnit": "optional measure, same positive value on every populated row: px per display unit for the scale group; overrides pxPerUnit and sizes panel plots automatically",
+        "ShowTotal": "optional measure/column 1/0 (or true/false) per row: show this panel's total when panelTotals = 'field'"
+      },
+      "requiredFields": [
+        "Panel",
+        "Period"
+      ],
+      "notes": "Never set resolve.scale.y to independent. All panels in this facet have the same plot height and shared y domain, using the maximum across the displayed panels. For an element that needs a different plot height at the same scale (CO 5.1), use a separate Deneb visual with the same pxPerUnit; its height now derives from its own data. panelHeight / panelWidth = 0 select automatic sizing; no spec.height edit is needed. Blank Panel/Period rows and rows with AC, FC, PY and PL all null are dropped, even when constant PxPerUnit/ShowTotal measures are present; reference-only and zero-valued rows remain. Facets fill left to right, then the next row, in first-appearance Panel order. Periods retain source order. periodLabel = auto keeps full labels when they fit and uses initials for crowded month panels; month1 always uses initials; none hides labels. Selective totals: panelTotals = none (default), all, field (any ShowTotal = 1 in that panel), or a comma-separated list of panel names. A selected panel shows only its AC, FC or AC&FC total; its last-value label is suppressed. Other panels show a period-qualified last value. Reference-only panel totals are N/A. Totals are labels, never extra columns; a year total next to months needs its own scale. Internal width/height expression params use the first transformed dataset (data_0 in the bundled Vega-Lite version); spec.name must remain an empty string so these built-in size params control the facet plots.",
+      "knobs": [
+        "refScenario",
+        "decimals",
+        "yMax",
+        "pxPerUnit",
+        "ibcsLabelPx",
+        "showGrid",
+        "stepScale",
+        "periodType",
+        "unitDivisor",
+        "panelTotals",
+        "panelHeight",
+        "panelWidth",
+        "periodLabel"
+      ],
+      "layout": {
+        "valueAxis": "panelHeight",
+        "fixedPx": 0,
+        "tiers": [
+          {
+            "id": "panel",
+            "range": "0 … max(AC/FC, selected reference) across all displayed panels; include negative minima when present",
+            "padHigh": [
+              "ibcsLabelPx"
+            ]
+          }
+        ],
+        "rule": "With pxPerUnit > 0 (or positive PxPerUnit field), auto panel plot height = (hi - lo) × effective pxPerUnit + ibcsLabelPx, where lo = min(0, data minimum), hi = max(0, data maximum) across all displayed panels after unitDivisor. For nonnegative data this is max data value × pxPerUnit + label room. panelHeight > 0 is a minimum plot height in this mode: extra height extends the domain at the same px per unit; a smaller height cannot compress the data. With pxPerUnit off, panelHeight > 0 is the fixed plot height, otherwise 70 px. panelWidth > 0 is the fixed plot width; otherwise max(150, distinct Period count × ibcsCategoryStep[periodType] × stepScale).",
+        "container": "scale_layout sizes one panel plot from tiers.panel = [lo, hi] and ibcsLabelPx, not the whole facet container. For N populated panels and columns = 3, R = ceil(N / 3) rows. Every panel draws its own category axis (resolve.axis.x independent, so a wrapped grid never shows an empty axis). Container height >= R × (panel plot height + panelHeaderPx (16; 32 with panelTotals) + panelCategoryLabelsPx (18; 0 for periodLabel none)) + (R - 1) × 10 + 10 px outer padding; allow more for changed fonts. scale_layout.py prints it (member panels, columns, panelTotals, periodLabel). Container width >= min(N, 3) × panel plot width + (min(N, 3) - 1) × 18 + 10. Facet plots do not shrink to fit a smaller container.",
+        "panelHeaderPx": 16,
+        "panelHeaderTotalsPx": 32,
+        "panelCategoryLabelsPx": 18,
+        "panelGapPx": 10,
+        "outerPadPx": 10
+      },
+      "sampleData": "small-multiples.json",
+      "preview": {},
+      "previewVariants": [
+        {
+          "suffix": "-totals",
+          "params": {
+            "panelTotals": "Germany,Others"
+          }
+        },
+        {
+          "suffix": "-px-per-unit",
+          "sampleData": "small-multiples-columns-regressions.json",
+          "params": {
+            "pxPerUnit": 12,
+            "panelWidth": 180,
+            "periodLabel": "month1"
+          }
+        },
+        {
+          "suffix": "-panel-totals",
+          "sampleData": "small-multiples-columns-regressions.json",
+          "params": {
+            "panelTotals": "all",
+            "panelWidth": 180,
+            "periodLabel": "month1"
+          }
+        },
+        {
+          "suffix": "-wrapped-months",
+          "sampleData": "small-multiples-columns-regressions.json",
+          "params": {
+            "panelTotals": "field",
+            "panelWidth": 150
+          }
+        },
+        {
+          "suffix": "-period-label-none",
+          "sampleData": "small-multiples-columns-regressions.json",
+          "params": {
+            "periodLabel": "none",
+            "panelHeight": 90,
+            "panelWidth": 150
+          }
+        }
+      ]
+    }
+  },
+  "data": {
+    "name": "dataset"
+  },
+  "params": [
+    {
+      "name": "refScenario",
+      "value": "PY",
+      "description": "reference scenario drawn behind the columns: PY (solid light) or PL / BU (outlined)"
+    },
+    {
+      "name": "decimals",
+      "value": 0,
+      "description": "decimals of every value label (display units); also the precision of the rounded-zero rule"
+    },
+    {
+      "name": "unitDivisor",
+      "value": 1,
+      "description": "divides every value before drawing and labelling: 1 = the measures are already scaled (preferred, e.g. a scaled measure or a Scale picker), 1000 = thousands, 1000000 = millions. The unit belongs in the title (UN 2.2), never as K/M suffixes"
+    },
+    {
+      "name": "yMax",
+      "value": 0,
+      "description": "0 = from the data; a number fixes the panels' domain (shared DOMAIN: the same px per unit only at the same panel height). To share the page's scale group use pxPerUnit"
+    },
+    {
+      "name": "panelHeight",
+      "value": 0,
+      "description": "Panel plot height in px; 0 = auto (70 with pxPerUnit off; data range × effective pxPerUnit + ibcsLabelPx with it on). With pxPerUnit on, a positive value is a minimum height; data and label room win if taller."
+    },
+    {
+      "name": "panelWidth",
+      "value": 0,
+      "description": "Panel plot width in px; 0 = auto: max(150, distinct Period count × ibcsCategoryStep[periodType] × stepScale). A positive value fixes the width."
+    },
+    {
+      "name": "periodLabel",
+      "value": "auto",
+      "description": "auto = full labels, or first letters for crowded month panels; month1 = first letter of each Period (J F M … for month names); none = hide period labels."
+    },
+    {
+      "name": "width",
+      "expr": "length(data('data_0')) ? data('data_0')[0]._plotWidth : (panelWidth > 0 ? panelWidth : 150)",
+      "description": "Internal built-in plot width; spec.name must remain empty. Derived from the filtered, transformed data, not the container."
+    },
+    {
+      "name": "height",
+      "expr": "length(data('data_0')) ? data('data_0')[0]._plotHeight : (panelHeight > 0 ? panelHeight : 70)",
+      "description": "Internal built-in plot height; spec.name must remain empty. Derived from the filtered, transformed data, not the container."
+    },
+    {
+      "name": "pxPerUnit",
+      "value": 0,
+      "description": "Pixels per display unit after unitDivisor; 0 = off. A positive PxPerUnit field overrides this knob. Automatically sizes every panel plot from the displayed data range plus ibcsLabelPx, preserving the exact scale; panelHeight can add room without changing it. See usermeta.ibcs.layout for container sizing."
+    },
+    {
+      "name": "ibcsLabelPx",
+      "value": 16,
+      "description": "label room in px above the tallest column (pxPerUnit > 0 only)"
+    },
+    {
+      "name": "showGrid",
+      "value": false,
+      "description": "light gridlines are allowed in small multiples (SI 3.1)"
+    },
+    {
+      "name": "panelTotals",
+      "value": "none",
+      "description": "none | all | field | comma-separated panel names: selected panels show only their scenario-labelled total (AC, FC or AC&FC); other panels retain a period-qualified last-value label."
+    },
+    {
+      "name": "stepScale",
+      "value": 1.0,
+      "description": "screen scaling of the token category step; keep it identical on every page"
+    },
+    {
+      "name": "ibcsAC",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsPY",
+      "value": "#A6A6A6"
+    },
+    {
+      "name": "ibcsPLFill",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsPLStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCStripe",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCGround",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsFCStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsText",
+      "value": "#000000"
+    },
+    {
+      "name": "ibcsAxis",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsGrid",
+      "value": "#D9D9D9"
+    },
+    {
+      "name": "ibcsAssistArea",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "ibcsBarRatio",
+      "value": 0.6667
+    },
+    {
+      "name": "ibcsOffsetCol",
+      "value": 0.2
+    },
+    {
+      "name": "ibcsOutline",
+      "value": 1
+    },
+    {
+      "name": "ibcsAxisWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsFontSize",
+      "value": 12
+    },
+    {
+      "name": "ibcsFmtAbs",
+      "value": ",.1f"
+    },
+    {
+      "name": "ibcsHatch",
+      "value": "diagonal-stripe-3"
+    },
+    {
+      "name": "ibcsCategoryStep",
+      "value": {
+        "year": 32,
+        "quarter": 28,
+        "month": 24,
+        "week": 16,
+        "day": 12,
+        "structureRow": 20
+      }
+    },
+    {
+      "name": "periodType",
+      "value": "month",
+      "description": "year | quarter | month | week | day: column width per period type (UN 3.3)"
+    },
+    {
+      "name": "ibcsBold",
+      "value": 600
+    }
+  ],
+  "transform": [
+    {
+      "filter": "isValid(datum['Panel']) && datum['Panel'] !== '' && isValid(datum['Period']) && datum['Period'] !== ''"
+    },
+    {
+      "filter": "isValid(datum['AC']) || isValid(datum['FC']) || isValid(datum['PY']) || isValid(datum['PL']) || isValid(datum['BU']) || isValid(datum[refScenario])"
+    },
+    {
+      "calculate": "isValid(datum['AC']) ? (datum['AC']) / unitDivisor : null",
+      "as": "_ac"
+    },
+    {
+      "calculate": "isValid(datum['FC']) ? (datum['FC']) / unitDivisor : null",
+      "as": "_fc"
+    },
+    {
+      "calculate": "isValid(datum['PY']) ? (datum['PY']) / unitDivisor : null",
+      "as": "_py"
+    },
+    {
+      "calculate": "isValid(datum['PL']) ? (datum['PL']) / unitDivisor : null",
+      "as": "_pl"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_ord"
+        }
+      ]
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_j"
+        }
+      ],
+      "groupby": [
+        "Panel"
+      ]
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_j",
+          "as": "_last"
+        }
+      ],
+      "groupby": [
+        "Panel"
+      ]
+    },
+    {
+      "calculate": "isValid(datum._ac) ? datum._ac : datum._fc",
+      "as": "_v"
+    },
+    {
+      "calculate": "!isValid(datum._ac) && isValid(datum._fc)",
+      "as": "_isFC"
+    },
+    {
+      "calculate": "datum['ShowTotal'] === true || datum['ShowTotal'] == 1 ? 1 : 0",
+      "as": "_showFlag"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "sum",
+          "field": "_v",
+          "as": "_pSum"
+        },
+        {
+          "op": "sum",
+          "field": "_isFC",
+          "as": "_pFC"
+        },
+        {
+          "op": "max",
+          "field": "_showFlag",
+          "as": "_pShow"
+        },
+        {
+          "op": "valid",
+          "field": "_v",
+          "as": "_pValid"
+        },
+        {
+          "op": "valid",
+          "field": "_ac",
+          "as": "_pAC"
+        }
+      ],
+      "groupby": [
+        "Panel"
+      ]
+    },
+    {
+      "calculate": "panelTotals == 'all' || (panelTotals == 'field' && datum._pShow == 1) || (panelTotals != 'none' && panelTotals != 'all' && panelTotals != 'field' && indexof(split(replace(panelTotals, / *, */g, ','), ','), datum['Panel']) >= 0)",
+      "as": "_showT"
+    },
+    {
+      "calculate": "isValid(datum[refScenario]) ? (datum[refScenario]) / unitDivisor : null",
+      "as": "_r"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_v",
+          "as": "_mv"
+        },
+        {
+          "op": "max",
+          "field": "_r",
+          "as": "_mr"
+        },
+        {
+          "op": "min",
+          "field": "_v",
+          "as": "_lv"
+        },
+        {
+          "op": "min",
+          "field": "_r",
+          "as": "_lr"
+        },
+        {
+          "op": "max",
+          "field": "PxPerUnit",
+          "as": "_fieldPPU"
+        },
+        {
+          "op": "distinct",
+          "field": "Period",
+          "as": "_periodCount"
+        }
+      ]
+    },
+    {
+      "calculate": "datum._fieldPPU > 0 ? datum._fieldPPU : pxPerUnit",
+      "as": "_ppu"
+    },
+    {
+      "calculate": "max(0, isValid(datum._mv) ? datum._mv : 0, isValid(datum._mr) ? datum._mr : 0)",
+      "as": "_hi"
+    },
+    {
+      "calculate": "min(0, isValid(datum._lv) ? datum._lv : 0, isValid(datum._lr) ? datum._lr : 0)",
+      "as": "_lo"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? max(panelHeight, (datum._hi - datum._lo) * datum._ppu + ibcsLabelPx) : (panelHeight > 0 ? panelHeight : 70)",
+      "as": "_plotHeight"
+    },
+    {
+      "calculate": "panelWidth > 0 ? panelWidth : max(150, datum._periodCount * ibcsCategoryStep[periodType] * stepScale)",
+      "as": "_plotWidth"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? datum._lo + datum._plotHeight / datum._ppu : (yMax > 0 ? yMax : max(1, datum._hi * 1.18))",
+      "as": "_top"
+    },
+    {
+      "calculate": "isValid(datum._v) ? format(abs(datum._v) * pow(10, decimals) < 0.5 ? 0 : datum._v, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : ''",
+      "as": "_vLabel"
+    }
+  ],
+  "facet": {
+    "field": "Panel",
+    "type": "nominal",
+    "sort": {
+      "field": "_ord",
+      "op": "min",
+      "order": "ascending"
+    },
+    "header": {
+      "title": null,
+      "labelAnchor": "start",
+      "labelOrient": "top",
+      "labelPadding": 2,
+      "labelFontSize": {
+        "expr": "ibcsFontSize"
+      }
+    }
+  },
+  "columns": 3,
+  "resolve": {
+    "scale": {
+      "y": "shared",
+      "x": "shared"
+    },
+    "axis": {
+      "x": "independent"
+    }
+  },
+  "spacing": {
+    "row": 10,
+    "column": 18
+  },
+  "spec": {
+    "width": 150,
+    "height": 70,
+    "layer": [
+      {
+        "mark": {
+          "type": "point",
+          "opacity": 0
+        },
+        "encoding": {
+          "y": {
+            "field": "_top",
+            "type": "quantitative",
+            "scale": {
+              "zero": true,
+              "nice": false
+            },
+            "axis": {
+              "title": null,
+              "labels": false,
+              "ticks": false,
+              "domain": false,
+              "gridColor": {
+                "expr": "ibcsGrid"
+              },
+              "tickCount": 3,
+              "grid": true,
+              "gridOpacity": {
+                "expr": "showGrid ? 1 : 0"
+              }
+            }
+          },
+          "x": {
+            "field": "Period",
+            "type": "nominal",
+            "sort": null,
+            "title": null,
+            "scale": {
+              "paddingInner": {
+                "expr": "1 - ibcsBarRatio"
+              },
+              "paddingOuter": {
+                "expr": "(1 - ibcsBarRatio) / 2"
+              }
+            },
+            "axis": {
+              "title": null,
+              "domain": false,
+              "ticks": false,
+              "labelAngle": 0,
+              "labelPadding": 3,
+              "labelFontSize": {
+                "expr": "ibcsFontSize - 2"
+              },
+              "labels": {
+                "expr": "periodLabel != 'none'"
+              },
+              "labelExpr": "periodLabel == 'month1' || (periodLabel == 'auto' && periodType == 'month' && bandwidth('x') / ibcsBarRatio < (ibcsFontSize - 2) * 2.1) ? substring(datum.label, 0, 1) : datum.label",
+              "labelOverlap": false
+            }
+          }
+        }
+      },
+      {
+        "description": "selection (cross-filtering): assisting-area band behind every mark of the selected category; no mark is dimmed (a dimmed AC reads like PY)",
+        "mark": {
+          "type": "bar",
+          "width": {
+            "expr": "bandwidth('x') / ibcsBarRatio"
+          },
+          "fill": {
+            "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : 'transparent'"
+          },
+          "opacity": 1
+        },
+        "encoding": {
+          "y": {
+            "field": "_top",
+            "type": "quantitative"
+          },
+          "y2": {
+            "datum": 0
+          },
+          "x": {
+            "field": "Period",
+            "type": "nominal",
+            "sort": null
+          }
+        }
+      },
+      {
+        "mark": {
+          "type": "rule",
+          "stroke": {
+            "expr": "ibcsAxis"
+          },
+          "strokeWidth": {
+            "expr": "ibcsAxisWidth"
+          }
+        },
+        "encoding": {
+          "y": {
+            "datum": 0
+          }
+        },
+        "description": "category axis (base line), drawn before the columns so every mark is in front of it"
+      },
+      {
+        "mark": {
+          "type": "bar",
+          "width": {
+            "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)"
+          },
+          "xOffset": {
+            "expr": "-ibcsOffsetCol * min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)"
+          },
+          "fill": {
+            "expr": "refScenario == 'PY' ? ibcsPY : ibcsPLFill"
+          },
+          "stroke": {
+            "expr": "refScenario == 'PY' ? null : ibcsPLStroke"
+          },
+          "strokeWidth": {
+            "expr": "ibcsOutline"
+          }
+        },
+        "encoding": {
+          "y": {
+            "field": "_r",
+            "type": "quantitative"
+          },
+          "y2": {
+            "datum": 0
+          },
+          "x": {
+            "field": "Period",
+            "type": "nominal",
+            "sort": null
+          }
+        }
+      },
+      {
+        "transform": [
+          {
+            "filter": "datum._isFC"
+          }
+        ],
+        "mark": {
+          "type": "bar",
+          "width": {
+            "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)"
+          },
+          "fill": {
+            "expr": "ibcsFCGround"
+          }
+        },
+        "encoding": {
+          "y": {
+            "field": "_v",
+            "type": "quantitative"
+          },
+          "y2": {
+            "datum": 0
+          },
+          "x": {
+            "field": "Period",
+            "type": "nominal",
+            "sort": null
+          }
+        }
+      },
+      {
+        "mark": {
+          "type": "bar",
+          "tooltip": true,
+          "width": {
+            "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)"
+          },
+          "fill": {
+            "expr": "datum._isFC ? pbiPatternSVG(ibcsHatch, ibcsFCStripe, ibcsFCGround) : ibcsAC"
+          },
+          "stroke": {
+            "expr": "datum._isFC ? ibcsFCStroke : null"
+          },
+          "strokeWidth": {
+            "expr": "ibcsOutline"
+          },
+          "opacity": 1
+        },
+        "encoding": {
+          "y": {
+            "field": "_v",
+            "type": "quantitative"
+          },
+          "y2": {
+            "datum": 0
+          },
+          "tooltip": [
+            {
+              "field": "Panel",
+              "type": "nominal"
+            },
+            {
+              "field": "Period",
+              "type": "nominal"
+            },
+            {
+              "field": "_vLabel",
+              "title": "AC/FC"
+            }
+          ],
+          "x": {
+            "field": "Period",
+            "type": "nominal",
+            "sort": null
+          }
+        }
+      },
+      {
+        "description": "Period-qualified last-value label only when this panel is not showing its total; never an unexplained bare number. It sits above the taller of the last two columns, since the right-aligned text extends over the previous column.",
+        "transform": [
+          {
+            "window": [
+              {
+                "op": "lag",
+                "field": "_v",
+                "as": "_pv"
+              },
+              {
+                "op": "lag",
+                "field": "_r",
+                "as": "_pr"
+              }
+            ],
+            "groupby": [
+              "Panel"
+            ],
+            "sort": [
+              {
+                "field": "_j"
+              }
+            ]
+          },
+          {
+            "filter": "datum._j == datum._last && !datum._showT && isValid(datum._v)"
+          },
+          {
+            "calculate": "max(datum._v, isValid(datum._r) ? datum._r : 0, isValid(datum._pv) ? datum._pv : 0, isValid(datum._pr) ? datum._pr : 0)",
+            "as": "_ly"
+          }
+        ],
+        "mark": {
+          "type": "text",
+          "baseline": "bottom",
+          "dy": -2,
+          "fontSize": {
+            "expr": "ibcsFontSize - 1"
+          },
+          "fill": {
+            "expr": "ibcsText"
+          },
+          "align": "right"
+        },
+        "encoding": {
+          "y": {
+            "field": "_ly",
+            "type": "quantitative"
+          },
+          "text": {
+            "value": {
+              "expr": "datum['Period'] + ' ' + datum._vLabel"
+            }
+          },
+          "x": {
+            "field": "Period",
+            "type": "nominal",
+            "sort": null
+          }
+        }
+      },
+      {
+        "description": "selective panel totals (CO 5.1): the panel's sum of AC&FC, right-aligned on the panel's header line, only for the panels chosen by panelTotals; hatched-period sums are labelled AC&FC (invisible placeholder in the other panels keeps every panel's plot at the same height)",
+        "transform": [
+          {
+            "filter": "datum._j == 1 && panelTotals != 'none'"
+          }
+        ],
+        "mark": {
+          "type": "text",
+          "align": "right",
+          "baseline": "bottom",
+          "fontSize": {
+            "expr": "ibcsFontSize - 1"
+          },
+          "fill": {
+            "expr": "ibcsText"
+          },
+          "fontWeight": {
+            "expr": "ibcsBold"
+          },
+          "dy": -2,
+          "opacity": {
+            "expr": "datum._showT ? 1 : 0"
+          }
+        },
+        "encoding": {
+          "x": {
+            "value": {
+              "expr": "width"
+            }
+          },
+          "y": {
+            "value": 0
+          },
+          "text": {
+            "value": {
+              "expr": "datum._showT ? ((datum._pFC > 0 ? (datum._pAC > 0 ? 'AC&FC ' : 'FC ') : 'AC ') + (datum._pValid > 0 ? format(abs(datum._pSum) * pow(10, decimals) < 0.5 ? 0 : datum._pSum, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : 'N/A')) : 'AC 0'"
+            }
+          }
+        }
+      }
+    ],
+    "name": ""
+  },
+  "config": {
+    "view": {
+      "stroke": null
+    }
+  },
+  "align": "all",
+  "center": false,
+  "autosize": {
+    "type": "pad",
+    "resize": true
+  }
+}

@@ -1,0 +1,4 @@
+{"name":"Rainbow","dataColors":["#118DFF","#12239E","#E66C37","#6B007B","#E044A7","#744EC2"],
+ "good":"#00B050","bad":"#FF0000","background":"#FFFFFF",
+ "textClasses":{"title":{"fontFace":"Comic Sans MS","fontSize":16}},
+ "visualStyles":{"*":{"*":{"legend":[{"show":true}],"valueAxis":[{"gridlineShow":true}],"dropShadow":[{"show":true}],"labels":[{"labelDisplayUnits":0}]}}}}

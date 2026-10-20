@@ -1,0 +1,38 @@
+{
+ "name": "extension",
+ "entities": [
+  {
+   "name": "_Measures",
+   "measures": [
+    {
+     "name": "Sales Period",
+     "dataType": "Double",
+     "expression": "CALCULATE ( [Sales] )",
+     "references": {
+      "measures": [
+       {
+        "entity": "_Measures",
+        "name": "Sales"
+       }
+      ]
+     }
+    },
+    {
+     "name": "SVG Bar",
+     "dataType": "Text",
+     "dataCategory": "ImageUrl",
+     "expression": "\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200'><rect fill='#404040'/></svg>\""
+    },
+    {
+     "name": "SVG Pin",
+     "dataType": "Text",
+     "dataCategory": "ImageUrl",
+     "expression": "\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200'><rect fill='#404040'/></svg>\"",
+     "references": {
+      "measures": []
+     }
+    }
+   ]
+  }
+ ]
+}

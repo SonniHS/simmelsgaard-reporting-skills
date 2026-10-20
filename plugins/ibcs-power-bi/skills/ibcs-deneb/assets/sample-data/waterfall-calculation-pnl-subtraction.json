@@ -1,0 +1,32 @@
+[
+  {
+    "Line": "Sales",
+    "Kind": "base",
+    "Value": 10
+  },
+  {
+    "Line": "Standard cost",
+    "Kind": "delta",
+    "Value": -4
+  },
+  {
+    "Line": "Gross profit",
+    "Kind": "subtotal",
+    "Value": 6
+  },
+  {
+    "Line": "Other income",
+    "Kind": "delta",
+    "Value": 12
+  },
+  {
+    "Line": "Operating profit",
+    "Kind": "total",
+    "Value": 18
+  },
+  {
+    "Line": "N/A",
+    "Value": null,
+    "ScaleBand": 0
+  }
+]

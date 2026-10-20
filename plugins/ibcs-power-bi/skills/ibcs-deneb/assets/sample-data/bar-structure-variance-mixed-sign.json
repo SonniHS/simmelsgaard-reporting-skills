@@ -1,0 +1,70 @@
+[
+  {
+    "Category": "",
+    "AC": 999
+  },
+  {
+    "Category": "N/A",
+    "AC": null,
+    "FC": null,
+    "PY": null,
+    "PL": null,
+    "BU": null,
+    "XMax": 1000,
+    "VarMin": -1000,
+    "VarMax": 1000,
+    "PxPerUnit": 5,
+    "ScaleBand": 1000,
+    "Polarity": -1
+  },
+  {
+    "Category": "Item A",
+    "AC": -120,
+    "BU": -100,
+    "PY": -100,
+    "PL": -100
+  },
+  {
+    "Category": "Item B",
+    "AC": 80,
+    "BU": 100,
+    "PY": 95,
+    "PL": 100
+  },
+  {
+    "Category": "Item C",
+    "AC": -60,
+    "BU": -80,
+    "PY": -55,
+    "PL": -80
+  },
+  {
+    "Category": "Item D",
+    "AC": 100,
+    "BU": -15,
+    "PY": 90,
+    "PL": -15
+  },
+  {
+    "Category": "Zero",
+    "AC": -0.2,
+    "BU": -0.4,
+    "PY": 0,
+    "PL": -0.4
+  },
+  {
+    "Category": "PY only",
+    "AC": null,
+    "FC": null,
+    "PY": -45,
+    "PL": null,
+    "BU": null
+  },
+  {
+    "Category": "Item E",
+    "AC": 40,
+    "BU": 50,
+    "PY": 45,
+    "PL": 50
+  }
+]

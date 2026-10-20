@@ -1,0 +1,932 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "IBCS calculation waterfall (EX 1.1 card 28): a P&L or additive calculation, dark base/results from the axis, grey additions/subtractions with signed labels and assisting lines, subtotal rows bold with a calculation line above. Supports explicit Kind rows and element-only rows with BaseValue/TotalValue anchors.",
+  "usermeta": {
+    "ibcs": {
+      "template": "waterfall-calculation",
+      "cards": [
+        "EX 1.1 card 28"
+      ],
+      "fields": {
+        "Line": "text, row label; sort the visual in the intended element/report order (blank labels are dropped)",
+        "Value": "measure, SIGNED contribution (+ addition, − subtraction); Kind base supplies the start value. For explicit subtotal/total rows supply the expected result for reconciliation (or repeat an anchor measure to retain a null-Value result row)",
+        "Kind": "optional text: base | delta (or element) | subtotal | total. Omit for element-only input with BaseValue/TotalValue; omitted/blank Kind means delta",
+        "PxPerUnit": "optional measure, same value on every row: px per display unit for the page's scale group; wins over pxPerUnit",
+        "BaseValue": "optional measure on element rows: starting/reference value; the first non-null value in visual row order synthesizes a base bar unless an explicit Kind base row exists. Values are before unitDivisor",
+        "TotalValue": "optional measure on element rows: primary/result value; the first non-null value in visual row order synthesizes a total bar unless an explicit Kind total row exists. Values are before unitDivisor",
+        "ScaleBand": "optional positive measure, same value on every row: common scale-band value in data units before unitDivisor; wins over scaleBand"
+      },
+      "requiredFields": [
+        "Line",
+        "Value"
+      ],
+      "requiredAnyOf": [
+        [
+          "Kind"
+        ],
+        [
+          "BaseValue",
+          "TotalValue"
+        ]
+      ],
+      "notes": "Additions and subtractions are not variances: results and additions mid grey, subtractions dark (FIG EX 1.1-14), never green/red. Labels are unsigned (the fill shows the direction); a negative result (a loss) is drawn left of the axis and keeps its sign. Rounded-zero rule: abs(value) × 10^decimals < 0.5 is labelled 0 without a sign. These calculation steps are not variances and never use impact colour. The template recomputes subtotals/results as running sums; if a supplied result differs by more than 0.5 of the last decimal, its label shows the supplied magnitude with a '!' to expose the mismatch. Two waterfalls of one unit: the same pxPerUnit, labelWidth and labelRoom, with each visual sized to its own range (usermeta.ibcs.layout). Label room is reserved inside the domain, automatically enlarged for longer labels, so the rightmost result label fits even without pxPerUnit. Scale band (CH 4.3): set the same positive scaleBand value (display units) in charts of one unit that must use different scales; a light area from zero to the value, a line and a label provide the common reference. 0 = off; ScaleBand is in data units before unitDivisor. Input formats: (1) explicit Kind rows, with base/total values in Value; (2) one model row per element, Value as the signed contribution, optional Kind omitted, and BaseValue/TotalValue measures repeated on element rows. The template uses the first non-null value of each anchor independently in visual row order, creates each missing anchor once, and keeps explicit base/total rows when present. baseLabel/totalLabel name only the synthesized bars. Repeated anchor measures must be constant in the current filter context. Blank categories and rows whose Value, BaseValue and TotalValue are all null are dropped; zero is a value, and an anchor-only row is retained. PxPerUnit/ScaleBand alone do not retain an unknown N/A member.",
+      "knobs": [
+        "decimals",
+        "labelWidth",
+        "labelRoom",
+        "stepScale",
+        "unitDivisor",
+        "xMax",
+        "pxPerUnit",
+        "baseLabel",
+        "totalLabel",
+        "scaleBand"
+      ],
+      "layout": {
+        "valueAxis": "width",
+        "fixedPx": 3,
+        "plusCategoryLabels": "width of the longest report-line name in px + 6 (Vega measures the text; about 7 px per character at 12 px Segoe UI); labelWidth does not reserve it",
+        "tiers": [
+          {
+            "id": "waterfall",
+            "range": "min(0, lowest bar end) … max(highest bar end, scaleBand)",
+            "padLowIfNegative": [
+              "labelRoom"
+            ],
+            "padHigh": [
+              "labelRoom"
+            ]
+          }
+        ],
+        "rule": "container width = fixedPx + report-line names + (hi − lo) × pxPerUnit + padHigh + padLow; value-label pads are at least labelRoom and grow to fit formatted labels"
+      },
+      "sampleData": "pnl-calculation.json",
+      "preview": {
+        "width": 340,
+        "height": 250
+      },
+      "previewVariants": [
+        {
+          "suffix": "-wide-rows",
+          "sampleData": "waterfall-calculation-wide-rows.json",
+          "params": {
+            "baseLabel": "Sales",
+            "totalLabel": "Operating profit",
+            "scaleBand": 5
+          },
+          "preview": {
+            "width": 480,
+            "height": 260
+          },
+          "note": "One row per element with no Kind: repeated starting/result measures synthesize exactly one Sales and Operating profit row; grey additions, dark subtractions, unsigned labels, rounded-zero labels and scale-band knob. Later anchor values deliberately differ to verify that the first non-null value wins."
+        },
+        {
+          "suffix": "-pnl-subtraction",
+          "sampleData": "waterfall-calculation-pnl-subtraction.json",
+          "preview": {
+            "width": 440,
+            "height": 240
+          },
+          "note": "Standard cost subtraction is dark, additions and results grey, labels unsigned; the rightmost, largest result has label room with pxPerUnit off."
+        },
+        {
+          "suffix": "-long-result",
+          "sampleData": "waterfall-calculation-long-result.json",
+          "params": {
+            "decimals": 2
+          },
+          "preview": {
+            "width": 460,
+            "height": 160
+          },
+          "note": "Large, rightmost result labels reserve room automatically; ScaleBand field (before unitDivisor) overrides the knob."
+        }
+      ]
+    }
+  },
+  "data": {
+    "name": "dataset"
+  },
+  "width": "container",
+  "height": "container",
+  "padding": {
+    "left": {
+      "expr": "labelWidth"
+    },
+    "right": {
+      "expr": "labelRoom"
+    },
+    "top": {
+      "expr": "ibcsFontSize + 6"
+    },
+    "bottom": 4
+  },
+  "params": [
+    {
+      "name": "baseLabel",
+      "value": "Base",
+      "description": "row label of the synthesized BaseValue bar; explicit Kind base rows keep their own label"
+    },
+    {
+      "name": "totalLabel",
+      "value": "Total",
+      "description": "row label of the synthesized TotalValue bar; explicit Kind total rows keep their own label"
+    },
+    {
+      "name": "scaleBand",
+      "value": 0,
+      "description": "common positive reference in display units for charts of one unit that use different scales: area from zero to the value plus a labelled line; 0 = off. The ScaleBand field overrides this in data units before unitDivisor"
+    },
+    {
+      "name": "decimals",
+      "value": 1,
+      "description": "decimals of every value label (display units); also the precision of the rounded-zero rule"
+    },
+    {
+      "name": "unitDivisor",
+      "value": 1,
+      "description": "divides every value before drawing and labelling: 1 = the measures are already scaled (preferred, e.g. a scaled measure or a Scale picker), 1000 = thousands, 1000000 = millions. The unit belongs in the title (UN 2.2), never as K/M suffixes"
+    },
+    {
+      "name": "xMax",
+      "value": 0,
+      "description": "right end of the value scale in display units; 0 = from the data. A shared DOMAIN: same xMax gives the same px per unit only on waterfalls of the same width and labelWidth. For a same-unit scale group use pxPerUnit instead"
+    },
+    {
+      "name": "pxPerUnit",
+      "value": 0,
+      "description": "px per display unit (after unitDivisor) on the value axis; 0 = off. When set, the domain is the plot width ÷ pxPerUnit, anchored at the left end (zero, or the loss label room), so two waterfalls of one unit show the same px per unit. Size the container to the data (usermeta.ibcs.layout, scripts/scale_layout.py of the ibcs-power-bi skill). If the container is too small, the data wins and the px per unit shrinks: nothing is cut"
+    },
+    {
+      "name": "labelWidth",
+      "value": 120,
+      "description": "px reserved left of the axis for the report-line names"
+    },
+    {
+      "name": "labelRoom",
+      "value": 30,
+      "description": "minimum px reserved inside the value domain beyond the bar ends; automatically enlarged for long value labels. Also used as right outer padding"
+    },
+    {
+      "name": "stepScale",
+      "value": 1.5,
+      "description": "multiplies the category step (ibcsCategoryStep), keep it identical for every chart of the page"
+    },
+    {
+      "name": "ibcsAC",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsGray2",
+      "value": "#7F7F7F"
+    },
+    {
+      "name": "ibcsText",
+      "value": "#000000"
+    },
+    {
+      "name": "ibcsBackground",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsAxis",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsAssist",
+      "value": "#808080"
+    },
+    {
+      "name": "ibcsAssistArea",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "ibcsBarRatio",
+      "value": 0.6667
+    },
+    {
+      "name": "ibcsAxisWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsAssistWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsFontSize",
+      "value": 12
+    },
+    {
+      "name": "ibcsBold",
+      "value": 600
+    },
+    {
+      "name": "ibcsFmtAbs",
+      "value": ",.1f"
+    },
+    {
+      "name": "ibcsCategoryStep",
+      "value": {
+        "year": 32,
+        "quarter": 28,
+        "month": 24,
+        "week": 16,
+        "day": 12,
+        "structureRow": 20
+      }
+    },
+    {
+      "name": "bw",
+      "expr": "min(bandwidth('y'), ibcsCategoryStep['structureRow'] * stepScale * ibcsBarRatio)"
+    }
+  ],
+  "transform": [
+    {
+      "filter": "isValid(datum['Line']) && datum['Line'] !== ''"
+    },
+    {
+      "filter": "isValid(datum['Value']) || isValid(datum['BaseValue']) || isValid(datum['TotalValue'])"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_inputI"
+        }
+      ]
+    },
+    {
+      "calculate": "!isValid(datum['Kind']) || datum['Kind'] == '' || lower(datum['Kind']) == 'element' ? 'delta' : lower(datum['Kind'])",
+      "as": "_inputKind"
+    },
+    {
+      "calculate": "datum._inputKind == 'delta' && isValid(datum['BaseValue']) ? datum._inputI : null",
+      "as": "_baseI"
+    },
+    {
+      "calculate": "datum._inputKind == 'delta' && isValid(datum['TotalValue']) ? datum._inputI : null",
+      "as": "_totalI"
+    },
+    {
+      "calculate": "datum._inputKind == 'base' ? 1 : 0",
+      "as": "_explicitBase"
+    },
+    {
+      "calculate": "datum._inputKind == 'total' ? 1 : 0",
+      "as": "_explicitTotal"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "min",
+          "field": "_baseI",
+          "as": "_firstBaseI"
+        },
+        {
+          "op": "min",
+          "field": "_totalI",
+          "as": "_firstTotalI"
+        },
+        {
+          "op": "sum",
+          "field": "_explicitBase",
+          "as": "_hasBase"
+        },
+        {
+          "op": "sum",
+          "field": "_explicitTotal",
+          "as": "_hasTotal"
+        },
+        {
+          "op": "max",
+          "field": "_inputI",
+          "as": "_lastInputI"
+        }
+      ]
+    },
+    {
+      "calculate": "[0, datum._hasBase == 0 && datum._inputI == datum._firstBaseI ? 1 : null, datum._hasTotal == 0 && datum._inputI == datum._firstTotalI ? 2 : null]",
+      "as": "_copies"
+    },
+    {
+      "flatten": [
+        "_copies"
+      ],
+      "as": [
+        "_copy"
+      ]
+    },
+    {
+      "filter": "isValid(datum._copy)"
+    },
+    {
+      "calculate": "datum._copy == 1 ? 0 : datum._copy == 2 ? datum._lastInputI + 1 : datum._inputI",
+      "as": "_sortI"
+    },
+    {
+      "calculate": "datum._copy == 1 ? 'base' : datum._copy == 2 ? 'total' : datum._inputKind",
+      "as": "_k"
+    },
+    {
+      "calculate": "datum._copy == 1 ? baseLabel : datum._copy == 2 ? totalLabel : datum['Line']",
+      "as": "Line"
+    },
+    {
+      "calculate": "datum._copy == 1 ? datum['BaseValue'] / unitDivisor : datum._copy == 2 ? datum['TotalValue'] / unitDivisor : isValid(datum['Value']) ? datum['Value'] / unitDivisor : null",
+      "as": "_val"
+    },
+    {
+      "calculate": "datum._copy == 0 ? datum['__selected__'] : null",
+      "as": "__selected__"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_i"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_sortI"
+        }
+      ]
+    },
+    {
+      "calculate": "(datum._i < 10 ? '00' : datum._i < 100 ? '0' : '') + datum._i + '|' + datum['Line']",
+      "as": "_key"
+    },
+    {
+      "calculate": "datum._k == 'base' || datum._k == 'delta' ? datum._val : 0",
+      "as": "_contrib"
+    },
+    {
+      "window": [
+        {
+          "op": "sum",
+          "field": "_contrib",
+          "as": "_cum"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_i"
+        }
+      ],
+      "frame": [
+        null,
+        0
+      ]
+    },
+    {
+      "calculate": "datum._k == 'subtotal' || datum._k == 'total' || datum._k == 'base'",
+      "as": "_isResult"
+    },
+    {
+      "calculate": "datum._isResult ? 0 : datum._cum - datum._contrib",
+      "as": "_x0"
+    },
+    {
+      "calculate": "datum._cum",
+      "as": "_x1"
+    },
+    {
+      "calculate": "datum._k == 'delta' && datum._val < 0",
+      "as": "_isSub"
+    },
+    {
+      "window": [
+        {
+          "op": "lead",
+          "field": "_key",
+          "as": "_next"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_i"
+        }
+      ]
+    },
+    {
+      "calculate": "replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)",
+      "as": "_fmt"
+    },
+    {
+      "calculate": "(datum._k == 'subtotal' || datum._k == 'total') && isValid(datum._val) && abs(datum._val - datum._cum) > 0.5 * pow(10, -decimals)",
+      "as": "_mismatch"
+    },
+    {
+      "calculate": "datum._mismatch ? datum._val : datum._isResult ? datum._cum : datum._val",
+      "as": "_labelValue"
+    },
+    {
+      "calculate": "!isValid(datum._labelValue) ? 'N/A' : format(datum._mismatch ? datum._val : (datum._isResult ? datum._cum : abs(datum._val)), datum._fmt) + (datum._mismatch ? '!' : '')",
+      "as": "_lbl"
+    },
+    {
+      "calculate": "datum._isResult ? (datum._mismatch ? datum._val : datum._cum) < 0 : datum._isSub",
+      "as": "_left"
+    },
+    {
+      "calculate": "datum._left ? min(datum._x0, datum._x1) : max(datum._x0, datum._x1)",
+      "as": "_lx"
+    },
+    {
+      "calculate": "max(labelRoom, (length(datum._lbl) + 1) * ibcsFontSize * 0.7)",
+      "as": "_labelPx"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_x1",
+          "as": "_xmax"
+        },
+        {
+          "op": "max",
+          "field": "_x0",
+          "as": "_x0max"
+        },
+        {
+          "op": "min",
+          "field": "_x1",
+          "as": "_x1min"
+        },
+        {
+          "op": "min",
+          "field": "_x0",
+          "as": "_x0min"
+        },
+        {
+          "op": "max",
+          "field": "_labelPx",
+          "as": "_room"
+        }
+      ]
+    },
+    {
+      "calculate": "isValid(datum['ScaleBand']) && datum['ScaleBand'] > 0 ? datum['ScaleBand'] / unitDivisor : scaleBand",
+      "as": "_band"
+    },
+    {
+      "calculate": "max(datum._xmax, datum._x0max, xMax, datum._band, 0)",
+      "as": "_xmax"
+    },
+    {
+      "calculate": "isValid(datum['PxPerUnit']) && datum['PxPerUnit'] > 0 ? datum['PxPerUnit'] : pxPerUnit",
+      "as": "_ppu"
+    },
+    {
+      "calculate": "min(datum._x0min, datum._x1min, 0)",
+      "as": "_xmin"
+    },
+    {
+      "calculate": "datum._xmin < 0 ? datum._room : 0",
+      "as": "_leftRoom"
+    },
+    {
+      "calculate": "max(datum._ppu > 0 ? 1 / datum._ppu : 0, (datum._xmax - datum._xmin) / max(width - datum._room - datum._leftRoom, 1))",
+      "as": "_unitPerPx"
+    },
+    {
+      "calculate": "datum._xmin - datum._leftRoom * datum._unitPerPx",
+      "as": "_xlo"
+    },
+    {
+      "calculate": "max(datum._xmax + datum._room * datum._unitPerPx, datum._ppu > 0 ? datum._xlo + width / datum._ppu : 0)",
+      "as": "_xhi"
+    }
+  ],
+  "layer": [
+    {
+      "description": "band scale for the rows + x domain (upper end)",
+      "mark": {
+        "type": "point",
+        "opacity": 0
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending",
+          "scale": {
+            "paddingInner": {
+              "expr": "1 - ibcsBarRatio"
+            },
+            "paddingOuter": {
+              "expr": "(1 - ibcsBarRatio) / 2"
+            }
+          },
+          "axis": null
+        },
+        "x": {
+          "field": "_xhi",
+          "type": "quantitative",
+          "scale": {
+            "zero": true,
+            "nice": false
+          },
+          "axis": null
+        }
+      }
+    },
+    {
+      "description": "x domain (lower end): label room left of the most negative bar",
+      "mark": {
+        "type": "point",
+        "opacity": 0
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_xlo",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "scale band (CH 4.3): common positive value from zero, behind all calculation rows",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._band > 0"
+        }
+      ],
+      "mark": {
+        "type": "rect",
+        "fill": {
+          "expr": "ibcsAssistArea"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "_band",
+          "type": "quantitative"
+        },
+        "x2": {
+          "datum": 0
+        },
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      }
+    },
+    {
+      "description": "scale band reference line",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._band > 0"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAssist"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAssistWidth"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "_band",
+          "type": "quantitative"
+        },
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      }
+    },
+    {
+      "description": "selection (cross-filtering): assisting-area band behind every mark of the selected category; no mark is dimmed (a dimmed AC reads like PY)",
+      "mark": {
+        "type": "bar",
+        "height": {
+          "expr": "bandwidth('y') / ibcsBarRatio"
+        },
+        "fill": {
+          "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : 'transparent'"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "value": 0
+        },
+        "x2": {
+          "value": {
+            "expr": "width"
+          }
+        }
+      }
+    },
+    {
+      "description": "category axis, drawn before the bars so every mark is in front of it",
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxis"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAxisWidth"
+        }
+      },
+      "encoding": {
+        "x": {
+          "datum": 0
+        },
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      },
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        }
+      ]
+    },
+    {
+      "description": "calculation line above subtotal/total rows (label column through the bar)",
+      "transform": [
+        {
+          "filter": "datum._k == 'subtotal' || datum._k == 'total'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsText"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAxisWidth"
+        },
+        "yOffset": {
+          "expr": "-bandwidth('y') / ibcsBarRatio / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "value": {
+            "expr": "-labelWidth + 4"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "scale('x', max(datum._x1, 0)) + 6"
+          }
+        }
+      }
+    },
+    {
+      "description": "assisting lines: end of a bar -> start of the next",
+      "transform": [
+        {
+          "filter": "isValid(datum._next)"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAssist"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAssistWidth"
+        },
+        "yOffset": {
+          "expr": "bw / 2"
+        },
+        "y2Offset": {
+          "expr": "-bw / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "y2": {
+          "field": "_next"
+        },
+        "x": {
+          "field": "_x1",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "bars: results and additions mid grey, subtractions dark (FIG EX 1.1-14); never green/red",
+      "mark": {
+        "type": "bar",
+        "height": {
+          "expr": "bw"
+        },
+        "tooltip": true,
+        "fill": {
+          "expr": "datum._isSub ? ibcsAC : ibcsGray2"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_x0",
+          "type": "quantitative"
+        },
+        "x2": {
+          "field": "_x1"
+        },
+        "tooltip": [
+          {
+            "field": "Line",
+            "type": "nominal"
+          },
+          {
+            "field": "_lbl",
+            "title": "value"
+          }
+        ]
+      }
+    },
+    {
+      "description": "halo behind the value labels, so the axis or an assisting line behind a label (e.g. a loss crossing zero) does not cut through it",
+      "mark": {
+        "type": "text",
+        "baseline": "middle",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : ibcsBackground"
+        },
+        "align": {
+          "expr": "datum._left ? 'right' : 'left'"
+        },
+        "dx": {
+          "expr": "datum._left ? -3 : 3"
+        },
+        "fontWeight": {
+          "expr": "datum._k == 'subtotal' || datum._k == 'total' ? ibcsBold : 'normal'"
+        },
+        "stroke": {
+          "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : ibcsBackground"
+        },
+        "strokeWidth": 6,
+        "strokeJoin": "round"
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_lx",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_lbl"
+        }
+      }
+    },
+    {
+      "description": "value labels on the side of the bar end, unsigned for additions and subtractions (the fill shows the direction); a negative result keeps its sign",
+      "mark": {
+        "type": "text",
+        "baseline": "middle",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "align": {
+          "expr": "datum._left ? 'right' : 'left'"
+        },
+        "dx": {
+          "expr": "datum._left ? -3 : 3"
+        },
+        "fontWeight": {
+          "expr": "datum._k == 'subtotal' || datum._k == 'total' ? ibcsBold : 'normal'"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "field": "_lx",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_lbl"
+        }
+      }
+    },
+    {
+      "description": "report-line names in the label column left of the plot (left of any loss bar); subtotal/total bold",
+      "mark": {
+        "type": "text",
+        "baseline": "middle",
+        "align": "right",
+        "dx": -6,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "fontWeight": {
+          "expr": "datum._k == 'subtotal' || datum._k == 'total' ? ibcsBold : 'normal'"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "value": 0
+        },
+        "text": {
+          "field": "Line"
+        }
+      }
+    },
+    {
+      "description": "scale band value above the common reference line",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._band > 0"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "baseline": "bottom",
+        "dy": -3,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsAssist"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "_band",
+          "type": "quantitative"
+        },
+        "y": {
+          "value": 0
+        },
+        "text": {
+          "value": {
+            "expr": "format(datum._band, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + (datum._band % 1 == 0 ? 0 : decimals)))"
+          }
+        }
+      }
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": null
+    }
+  }
+}

@@ -1,0 +1,114 @@
+[
+  {
+    "Element": "North",
+    "X": 0.045,
+    "Y": 0.105,
+    "Size": 80
+  },
+  {
+    "Element": "South",
+    "X": 0.046,
+    "Y": 0.106,
+    "Size": 75
+  },
+  {
+    "Element": "Nordic",
+    "X": 0.0455,
+    "Y": 0.1055,
+    "Size": 70
+  },
+  {
+    "Element": "Positive outlier",
+    "X": 0.08,
+    "Y": 0.24,
+    "Size": 120
+  },
+  {
+    "Element": "Negative gap",
+    "X": 0.16,
+    "Y": 0.05,
+    "Size": 65
+  },
+  {
+    "Element": "Forecast",
+    "X": -0.16,
+    "Y": 0.06,
+    "Size": 60,
+    "Scenario": "FC"
+  },
+  {
+    "Element": "Prior year",
+    "X": -0.13,
+    "Y": -0.2,
+    "Size": 55,
+    "Scenario": "PY"
+  },
+  {
+    "Element": "Plan",
+    "X": 0.15,
+    "Y": -0.13,
+    "Size": 55,
+    "Scenario": "PL"
+  },
+  {
+    "Element": "Budget",
+    "X": -0.1,
+    "Y": 0.16,
+    "Size": 50,
+    "Scenario": "BU"
+  },
+  {
+    "Element": "Row polarity",
+    "X": -0.18,
+    "Y": -0.09,
+    "Size": 45,
+    "Polarity": -1
+  },
+  {
+    "Element": "Neutral row",
+    "X": 0.18,
+    "Y": -0.06,
+    "Size": 45,
+    "Polarity": 0
+  },
+  {
+    "Element": "Inside band A",
+    "X": 0.16,
+    "Y": 0.165,
+    "Size": 70
+  },
+  {
+    "Element": "Inside band B",
+    "X": -0.16,
+    "Y": -0.15,
+    "Size": 60
+  },
+  {
+    "Element": "Rounded zero",
+    "X": 0.002,
+    "Y": 0.004,
+    "Size": 30
+  },
+  {
+    "Element": "Y only",
+    "X": null,
+    "Y": 0.04,
+    "Size": null,
+    "XRef": -40,
+    "YRef": 100
+  },
+  {
+    "Element": "N/A",
+    "X": null,
+    "Y": null,
+    "Size": null,
+    "Polarity": 1,
+    "PxPerUnit": 0
+  },
+  {
+    "Element": "   ",
+    "X": 9,
+    "Y": -9,
+    "Size": 10000
+  }
+]

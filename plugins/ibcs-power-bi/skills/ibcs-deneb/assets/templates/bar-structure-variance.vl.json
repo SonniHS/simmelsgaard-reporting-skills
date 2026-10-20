@@ -1,0 +1,1460 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "IBCS vertical two-tier bar chart (EX 4.2, CO 4.2, UN 4.1): structure on the vertical axis, AC bars with the reference scenario as down-pointing triangles (or an overlapped bar behind, shifted up), absolute variance bars ΔPL / ΔPY to the right on the SAME scale, variance axis in the reference notation.",
+  "usermeta": {
+    "ibcs": {
+      "template": "bar-structure-variance",
+      "cards": [
+        "EX 1.1 cards 23, 24, 25",
+        "EX 4.2",
+        "CO 4.2-2"
+      ],
+      "fields": {
+        "Category": "text, structure element (row); sort the visual as the analysis needs (e.g. AC descending)",
+        "AC": "measure, actual (or FC for a forecast analysis: set minuend to 'FC')",
+        "FC": "optional measure, forecast: bind it and set minuend to 'FC' for a forecast analysis (hatched bars)",
+        "PY": "measure, previous year (refScenario 'PY')",
+        "PL": "measure, plan/budget (refScenario 'PL'); any other code works the same way, e.g. BU: bind it under that name and set refScenario = 'BU' (plan notation: outlined)",
+        "Polarity": "optional measure 1 / -1 / 0 per row; else the polarity knob",
+        "BU": "measure, budget (refScenario or triangleScenario 'BU'); plan notation like PL",
+        "XMax": "optional measure, same value on every row: right end of the base tier (measures' unit); wins over xMax",
+        "VarMin": "optional measure: lowest variance the tier must show (≤ 0); wins over varMin",
+        "VarMax": "optional measure: highest variance the tier must show (≥ 0); wins over varMax",
+        "PxPerUnit": "optional measure, same value on every row: px per display unit for the page's scale group; wins over pxPerUnit",
+        "ScaleBand": "optional measure, same value on every row: scale band value in data units (before unitDivisor); wins over scaleBand"
+      },
+      "requiredFields": [
+        "Category"
+      ],
+      "knobs": [
+        "refScenario",
+        "refMark",
+        "minuend",
+        "polarity",
+        "stepScale",
+        "ibcsLabelPad",
+        "ibcsTierGap",
+        "ibcsLabelPx",
+        "ibcsTierGapPx",
+        "decimals",
+        "unitDivisor",
+        "xMax",
+        "varMin",
+        "varMax",
+        "pxPerUnit",
+        "triangleScenario",
+        "showCategoryLabels",
+        "scaleBand"
+      ],
+      "layout": {
+        "valueAxis": "width",
+        "fixedPx": 37,
+        "fixedPxNoCategoryLabels": 38,
+        "plusCategoryLabels": "width of the longest category label in px + 6 (Vega measures the text; about 7 px per character at 12 px Segoe UI), at most categoryLabelLimitPx + 6: longer labels are cut with an ellipsis",
+        "tiers": [
+          {
+            "id": "base",
+            "range": "min(AC/FC, reference, triangle scenario, 0) … max(AC/FC, reference, triangle scenario, xMax/XMax, scaleBand, 0)",
+            "padHigh": [
+              "ibcsLabelPx",
+              "ibcsTierGapPx"
+            ],
+            "padLowIfNegative": [
+              "ibcsLabelPx"
+            ]
+          },
+          {
+            "id": "variance",
+            "range": "min(Δ, 0) … max(Δ, 0)",
+            "padHigh": [
+              "ibcsLabelPx"
+            ],
+            "padLowIfNegative": [
+              "ibcsLabelPx"
+            ]
+          }
+        ],
+        "rule": "container width = fixedPx + category labels + Σ over tiers of ((hi − lo) × pxPerUnit + padHigh + padLow); measured with Vega-Lite 6.4.3 at ibcsFontSize 12",
+        "categoryLabelLimitPx": 180
+      },
+      "sampleData": "structure-ac-py-pl.json",
+      "preview": {
+        "width": 460,
+        "height": 190
+      },
+      "previewVariants": [
+        {
+          "suffix": "-py-overlap",
+          "params": {
+            "refScenario": "PY",
+            "refMark": "bar"
+          }
+        },
+        {
+          "suffix": "-bu-py-triangle",
+          "params": {
+            "refScenario": "BU",
+            "refMark": "bar",
+            "triangleScenario": "PY"
+          }
+        },
+        {
+          "suffix": "-scale-band",
+          "params": {
+            "scaleBand": 100
+          }
+        },
+        {
+          "suffix": "-scale-band-near-name",
+          "params": {
+            "scaleBand": 130
+          }
+        },
+        {
+          "suffix": "-all-negative",
+          "sampleData": "bar-structure-variance-all-negative.json",
+          "params": {
+            "refScenario": "PY",
+            "polarity": -1
+          },
+          "preview": {
+            "width": 520,
+            "height": 220
+          }
+        },
+        {
+          "suffix": "-mixed-sign",
+          "sampleData": "bar-structure-variance-mixed-sign.json",
+          "params": {
+            "refScenario": "BU",
+            "refMark": "bar",
+            "triangleScenario": "PY",
+            "polarity": -1,
+            "pxPerUnit": 1
+          },
+          "preview": {
+            "width": 635,
+            "height": 280
+          }
+        }
+      ],
+      "notes": "Same unit, same scale (CH 4.1) means the same px per unit: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field) and size each visual's width to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill). xMax, varMin, varMax only share a domain: use them for visuals of the same width that must show the same range. A Total row on another scale belongs in a separate visual with a scaling indicator or a footnote. Bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Category or no value in AC, FC, PY, PL, BU, or the selected scenario fields are dropped; constant scale/polarity measures do not keep unknown members alive. Rows with any scenario value, including PY-only rows, remain. The base range includes negative values and reserves label room below zero; value labels sit outside the bar pair in the direction of the AC/FC value, in dark text. When a reference bar and a third-scenario triangle are both named, their top labels occupy separate vertical levels. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off."
+    }
+  },
+  "data": {
+    "name": "dataset"
+  },
+  "width": "container",
+  "height": "container",
+  "padding": {
+    "left": 4,
+    "right": 30,
+    "top": 16,
+    "bottom": 16
+  },
+  "params": [
+    {
+      "name": "refScenario",
+      "value": "PL",
+      "description": "reference scenario: 'PY' or a plan code such as 'PL' or 'BU' (any code except PY gets the plan notation); the field of that name must be bound"
+    },
+    {
+      "name": "decimals",
+      "value": 0,
+      "description": "decimals for value and absolute-variance labels (the token formats with this precision); IBCS: at most 3 digits in charts"
+    },
+    {
+      "name": "refMark",
+      "value": "triangle",
+      "description": "'triangle' (card 24) or 'bar' (overlapped reference bar behind, card 23)"
+    },
+    {
+      "name": "minuend",
+      "value": "AC",
+      "description": "'AC' (solid) or 'FC' (hatched bars and hatched variance bars)"
+    },
+    {
+      "name": "polarity",
+      "value": 1,
+      "description": "used when the Polarity field is absent"
+    },
+    {
+      "name": "stepScale",
+      "value": 1.5,
+      "description": "screen scaling of the token row step; keep identical on every page"
+    },
+    {
+      "name": "unitDivisor",
+      "value": 1,
+      "description": "divides every value before drawing and labelling: 1 = the measures are already scaled (preferred, e.g. a scaled measure or a Scale picker), 1000 = thousands, 1000000 = millions. The unit belongs in the title (UN 2.2), never as K/M suffixes"
+    },
+    {
+      "name": "xMax",
+      "value": 0,
+      "description": "right end of the base tier in display units (after unitDivisor); 0 = from the data. A shared DOMAIN, not a shared scale: same xMax gives the same px per unit only on visuals of the same width. For a same-unit scale group use pxPerUnit instead"
+    },
+    {
+      "name": "varMin",
+      "value": 0,
+      "description": "lowest value of the variance tier (≤ 0); 0 = from the data"
+    },
+    {
+      "name": "varMax",
+      "value": 0,
+      "description": "highest value of the variance tier (≥ 0); 0 = from the data"
+    },
+    {
+      "name": "pxPerUnit",
+      "value": 0,
+      "description": "px per display unit (after unitDivisor) on the value axis; 0 = off. When set, the value domain is the plot extent ÷ pxPerUnit, anchored at the baseline, so values render at exactly this px per unit. The container must then be sized to the data (usermeta.ibcs.layout, scripts/scale_layout.py of the ibcs-power-bi skill): a chart with smaller values gets a smaller visual, never a larger empty domain (CH 4.1 + CH 4.2). If the container is too small, the data wins and the px per unit shrinks: nothing is cut"
+    },
+    {
+      "name": "triangleScenario",
+      "value": "",
+      "description": "a third scenario drawn as a down-pointing triangle above the bars when refMark is 'bar' (e.g. AC in front of BU, PY as triangle); its field must exist; '' = none"
+    },
+    {
+      "name": "showCategoryLabels",
+      "value": true,
+      "description": "false hides the category labels, e.g. for a tier stacked directly above another visual that already shows them"
+    },
+    {
+      "name": "scaleBand",
+      "value": 0,
+      "description": "common positive scale-band value in display units (after unitDivisor); 0 = off; overridden by a positive ScaleBand field in data units"
+    },
+    {
+      "name": "ibcsLabelPad",
+      "value": 0.16,
+      "description": "label room, as a share of the largest absolute base value (pxPerUnit = 0); reserved at the low end too when a tier has negative values"
+    },
+    {
+      "name": "ibcsTierGap",
+      "value": 0.08,
+      "description": "gap between the tiers, as a share of the largest absolute base value (pxPerUnit = 0)"
+    },
+    {
+      "name": "ibcsLabelPx",
+      "value": 40,
+      "description": "label room in px beyond a bar end (pxPerUnit > 0 only; else ibcsLabelPad)"
+    },
+    {
+      "name": "ibcsTierGapPx",
+      "value": 8,
+      "description": "gap between the tiers in px (pxPerUnit > 0 only; else ibcsTierGap)"
+    },
+    {
+      "name": "ibcsAC",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsPY",
+      "value": "#A6A6A6"
+    },
+    {
+      "name": "ibcsPLFill",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsPLStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCStripe",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCGround",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsFCStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsGood",
+      "value": "#8CB400"
+    },
+    {
+      "name": "ibcsBad",
+      "value": "#FF0000"
+    },
+    {
+      "name": "ibcsNeutral",
+      "value": "#0064FF"
+    },
+    {
+      "name": "ibcsText",
+      "value": "#000000"
+    },
+    {
+      "name": "ibcsAxis",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsAxisPY",
+      "value": "#A6A6A6"
+    },
+    {
+      "name": "ibcsAxisPL",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsAssistArea",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "ibcsScaleBandFill",
+      "value": "#DCE8FA"
+    },
+    {
+      "name": "ibcsScaleBandLine",
+      "value": "#5B9BD5"
+    },
+    {
+      "name": "ibcsBarRatio",
+      "value": 0.6667
+    },
+    {
+      "name": "ibcsOffsetBar",
+      "value": 0.25
+    },
+    {
+      "name": "ibcsTriangleRatio",
+      "value": 0.33
+    },
+    {
+      "name": "ibcsTriMin",
+      "value": 6
+    },
+    {
+      "name": "ibcsTriMax",
+      "value": 12
+    },
+    {
+      "name": "ibcsOutline",
+      "value": 1
+    },
+    {
+      "name": "ibcsAxisWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsPYAxisWidth",
+      "value": 3
+    },
+    {
+      "name": "ibcsPLAxisLine",
+      "value": 1
+    },
+    {
+      "name": "ibcsPLAxisGap",
+      "value": 3
+    },
+    {
+      "name": "ibcsFontSize",
+      "value": 12
+    },
+    {
+      "name": "ibcsFmtAbs",
+      "value": ",.1f"
+    },
+    {
+      "name": "ibcsFmtVar",
+      "value": "+,.1f"
+    },
+    {
+      "name": "ibcsHatch",
+      "value": "diagonal-stripe-3"
+    },
+    {
+      "name": "ibcsCategoryStep",
+      "value": {
+        "year": 32,
+        "quarter": 28,
+        "month": 24,
+        "week": 16,
+        "day": 12,
+        "structureRow": 20
+      }
+    },
+    {
+      "name": "bw",
+      "expr": "min(bandwidth('y'), ibcsCategoryStep['structureRow'] * stepScale * ibcsBarRatio)",
+      "description": "bar thickness: 2/3 of the row, capped at the token row step"
+    },
+    {
+      "name": "triPx",
+      "expr": "clamp(ibcsTriangleRatio * bw, ibcsTriMin, ibcsTriMax)",
+      "description": "triangle height: token ratio × column width / bar thickness, clamped in px (geometry.triangleSizePx)"
+    }
+  ],
+  "transform": [
+    {
+      "filter": "isValid(datum['Category']) && datum['Category'] !== ''"
+    },
+    {
+      "filter": "isValid(datum['AC']) || isValid(datum['FC']) || isValid(datum['PY']) || isValid(datum['PL']) || isValid(datum['BU']) || isValid(datum[minuend]) || isValid(datum[refScenario]) || (triangleScenario != '' && isValid(datum[triangleScenario]))"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_i"
+        }
+      ]
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_i",
+          "as": "_n"
+        }
+      ]
+    },
+    {
+      "calculate": "isValid(datum[minuend]) ? datum[minuend] / unitDivisor : (isValid(datum['AC']) ? datum['AC'] / unitDivisor : null)",
+      "as": "_v"
+    },
+    {
+      "calculate": "isValid(datum[refScenario]) ? (datum[refScenario]) / unitDivisor : null",
+      "as": "_r"
+    },
+    {
+      "calculate": "refMark == 'bar' && triangleScenario != '' && triangleScenario != refScenario && isValid(datum[triangleScenario]) ? datum[triangleScenario] / unitDivisor : null",
+      "as": "_t"
+    },
+    {
+      "calculate": "isValid(datum['XMax']) ? datum['XMax'] / unitDivisor : xMax",
+      "as": "_kMax"
+    },
+    {
+      "calculate": "isValid(datum['ScaleBand']) && datum['ScaleBand'] > 0 ? datum['ScaleBand'] / unitDivisor : scaleBand",
+      "as": "_band"
+    },
+    {
+      "calculate": "isValid(datum['VarMin']) ? datum['VarMin'] / unitDivisor : varMin",
+      "as": "_kDLo"
+    },
+    {
+      "calculate": "isValid(datum['VarMax']) ? datum['VarMax'] / unitDivisor : varMax",
+      "as": "_kDHi"
+    },
+    {
+      "calculate": "isValid(datum['PxPerUnit']) && datum['PxPerUnit'] > 0 ? datum['PxPerUnit'] : pxPerUnit",
+      "as": "_ppu"
+    },
+    {
+      "calculate": "isValid(datum._v) && isValid(datum._r) ? datum._v - datum._r : null",
+      "as": "_d"
+    },
+    {
+      "calculate": "isValid(datum['Polarity']) ? datum['Polarity'] : polarity",
+      "as": "_pol"
+    },
+    {
+      "calculate": "!isValid(datum._d) || abs(datum._d) * pow(10, decimals) < 0.5 ? null : datum._pol == 0 ? ibcsNeutral : (datum._d * datum._pol > 0 ? ibcsGood : ibcsBad)",
+      "as": "_c"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_v",
+          "as": "_maxV"
+        },
+        {
+          "op": "max",
+          "field": "_r",
+          "as": "_maxR"
+        },
+        {
+          "op": "max",
+          "field": "_d",
+          "as": "_dMax"
+        },
+        {
+          "op": "min",
+          "field": "_d",
+          "as": "_dMin"
+        },
+        {
+          "op": "max",
+          "field": "_t",
+          "as": "_maxT"
+        },
+        {
+          "op": "min",
+          "field": "_v",
+          "as": "_minV"
+        },
+        {
+          "op": "min",
+          "field": "_r",
+          "as": "_minR"
+        },
+        {
+          "op": "min",
+          "field": "_t",
+          "as": "_minT"
+        }
+      ]
+    },
+    {
+      "calculate": "min(isValid(datum._minV) ? datum._minV : 0, isValid(datum._minR) ? datum._minR : 0, isValid(datum._minT) ? datum._minT : 0, 0)",
+      "as": "_m"
+    },
+    {
+      "calculate": "max(isValid(datum._maxV) ? datum._maxV : 0, isValid(datum._maxR) ? datum._maxR : 0, isValid(datum._maxT) ? datum._maxT : 0, datum._kMax, datum._band, 0)",
+      "as": "_M"
+    },
+    {
+      "calculate": "min(isValid(datum._dMin) ? datum._dMin : 0, datum._kDLo, 0)",
+      "as": "_dLo"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? ibcsLabelPx / datum._ppu : max(datum._M, -datum._m) * ibcsLabelPad",
+      "as": "_lp"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? ibcsTierGapPx / datum._ppu : max(datum._M, -datum._m) * ibcsTierGap",
+      "as": "_tg"
+    },
+    {
+      "calculate": "datum._M + datum._lp + datum._tg - datum._dLo + (datum._dLo < 0 ? datum._lp : 0)",
+      "as": "_B"
+    },
+    {
+      "calculate": "datum._B + max(isValid(datum._dMax) ? datum._dMax : 0, datum._kDHi, 0) + datum._lp",
+      "as": "_right"
+    },
+    {
+      "calculate": "datum._m - (datum._m < 0 ? datum._lp : 0)",
+      "as": "_xLeft"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? max(datum._right, datum._xLeft + width / datum._ppu) : datum._right",
+      "as": "_xRight"
+    },
+    {
+      "calculate": "isValid(datum._d) ? datum._B + datum._d : null",
+      "as": "_dEnd"
+    },
+    {
+      "calculate": "isValid(datum._v) ? format(abs(datum._v) * pow(10, decimals) < 0.5 ? 0 : datum._v, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : ''",
+      "as": "_vLabel"
+    },
+    {
+      "calculate": "isValid(datum._d) ? (abs(datum._d) * pow(10, decimals) < 0.5 ? format(0, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : format(datum._d, replace(ibcsFmtVar, /[.][0-9]+/, '.' + decimals))) : ''",
+      "as": "_dLabel"
+    },
+    {
+      "calculate": "isValid(datum._t) ? triangleScenario + ' ' + format(abs(datum._t) * pow(10, decimals) < 0.5 ? 0 : datum._t, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : ''",
+      "as": "_tLabel"
+    }
+  ],
+  "layer": [
+    {
+      "description": "y axis with the category labels; invisible rule keeps both padded tier extents in the x domain",
+      "mark": {
+        "type": "rule",
+        "opacity": 0
+      },
+      "encoding": {
+        "y": {
+          "field": "Category",
+          "type": "nominal",
+          "sort": null,
+          "scale": {
+            "paddingInner": {
+              "expr": "1 - ibcsBarRatio"
+            },
+            "paddingOuter": {
+              "expr": "(1 - ibcsBarRatio) / 2"
+            }
+          },
+          "axis": {
+            "title": null,
+            "domain": false,
+            "ticks": false,
+            "labelPadding": {
+              "expr": "showCategoryLabels ? 6 : 0"
+            },
+            "labelAlign": "right",
+            "labelOpacity": {
+              "expr": "showCategoryLabels ? 1 : 0"
+            },
+            "labelFontSize": {
+              "expr": "showCategoryLabels ? ibcsFontSize : 0"
+            },
+            "labelLimit": 180
+          }
+        },
+        "x": {
+          "field": "_xRight",
+          "type": "quantitative",
+          "scale": {
+            "zero": true,
+            "nice": false
+          },
+          "axis": null
+        },
+        "x2": {
+          "field": "_xLeft"
+        }
+      }
+    },
+    {
+      "description": "selection (cross-filtering): assisting-area band behind every mark of the selected category; no mark is dimmed (a dimmed AC reads like PY)",
+      "mark": {
+        "type": "bar",
+        "height": {
+          "expr": "bandwidth('y') / ibcsBarRatio"
+        },
+        "fill": {
+          "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : 'transparent'"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "Category",
+          "type": "nominal",
+          "sort": null
+        },
+        "x": {
+          "value": 0
+        },
+        "x2": {
+          "value": {
+            "expr": "width"
+          }
+        }
+      }
+    },
+    {
+      "description": "scale band (CH 4.3): light area from the axis to the common value, with a labelled line; set the same value in every chart of the unit whose scale must differ",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._band > 0"
+        }
+      ],
+      "mark": {
+        "type": "rect",
+        "fill": {
+          "expr": "ibcsScaleBandFill"
+        }
+      },
+      "encoding": {
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        },
+        "x": {
+          "field": "_band",
+          "type": "quantitative"
+        },
+        "x2": {
+          "datum": 0
+        }
+      }
+    },
+    {
+      "description": "scale band line",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._band > 0"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsScaleBandLine"
+        },
+        "strokeWidth": 1
+      },
+      "encoding": {
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        },
+        "x": {
+          "field": "_band",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "category axis (vertical line at zero), drawn before the bars so every mark is in front of it",
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxis"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAxisWidth"
+        }
+      },
+      "encoding": {
+        "x": {
+          "datum": 0
+        },
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      },
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        }
+      ]
+    },
+    {
+      "description": "variance axis = reference scenario: PY solid light thick line",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && refScenario == 'PY'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxisPY"
+        },
+        "strokeWidth": {
+          "expr": "ibcsPYAxisWidth"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "_B",
+          "type": "quantitative"
+        },
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      }
+    },
+    {
+      "description": "variance axis = reference scenario: PL/BU two parallel lines",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && refScenario != 'PY'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxisPL"
+        },
+        "strokeWidth": {
+          "expr": "ibcsPLAxisLine"
+        },
+        "xOffset": {
+          "expr": "-ibcsPLAxisGap / 2"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "_B",
+          "type": "quantitative"
+        },
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      }
+    },
+    {
+      "transform": [
+        {
+          "filter": "datum._i == 1 && refScenario != 'PY'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxisPL"
+        },
+        "strokeWidth": {
+          "expr": "ibcsPLAxisLine"
+        },
+        "xOffset": {
+          "expr": "ibcsPLAxisGap / 2"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "_B",
+          "type": "quantitative"
+        },
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      }
+    },
+    {
+      "description": "reference bar behind, shifted up (refMark 'bar'): PY solid light / PL outlined",
+      "transform": [
+        {
+          "filter": "refMark == 'bar' && isValid(datum._r)"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "height": {
+          "expr": "bw"
+        },
+        "yOffset": {
+          "expr": "-ibcsOffsetBar * bw"
+        },
+        "fill": {
+          "expr": "refScenario == 'PY' ? ibcsPY : ibcsPLFill"
+        },
+        "stroke": {
+          "expr": "refScenario == 'PY' ? null : ibcsPLStroke"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "Category",
+          "type": "nominal",
+          "sort": null
+        },
+        "x": {
+          "field": "_r",
+          "type": "quantitative"
+        },
+        "x2": {
+          "datum": 0
+        }
+      }
+    },
+    {
+      "description": "ground under hatched FC bars",
+      "transform": [
+        {
+          "filter": "minuend == 'FC'"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "height": {
+          "expr": "bw"
+        },
+        "fill": {
+          "expr": "ibcsFCGround"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "Category",
+          "type": "nominal",
+          "sort": null
+        },
+        "x": {
+          "field": "_v",
+          "type": "quantitative"
+        },
+        "x2": {
+          "datum": 0
+        }
+      }
+    },
+    {
+      "description": "AC solid dark / FC hatched bars",
+      "mark": {
+        "type": "bar",
+        "height": {
+          "expr": "bw"
+        },
+        "tooltip": true,
+        "fill": {
+          "expr": "minuend == 'FC' ? pbiPatternSVG(ibcsHatch, ibcsFCStripe, ibcsFCGround) : ibcsAC"
+        },
+        "stroke": {
+          "expr": "minuend == 'FC' ? ibcsFCStroke : null"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "Category",
+          "type": "nominal",
+          "sort": null
+        },
+        "x": {
+          "field": "_v",
+          "type": "quantitative"
+        },
+        "x2": {
+          "datum": 0
+        },
+        "tooltip": [
+          {
+            "field": "Category",
+            "type": "nominal"
+          },
+          {
+            "field": "_vLabel",
+            "title": "value"
+          },
+          {
+            "field": "_dLabel",
+            "title": "Δ"
+          }
+        ]
+      }
+    },
+    {
+      "description": "value labels outside the bar pair: negative values left of the lower end, positive values right of the upper end; always dark text",
+      "mark": {
+        "type": "text",
+        "align": {
+          "expr": "datum._v < 0 ? 'right' : 'left'"
+        },
+        "baseline": "middle",
+        "dx": {
+          "expr": "datum._v < 0 ? -3 : 3"
+        },
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "Category",
+          "type": "nominal",
+          "sort": null
+        },
+        "x": {
+          "field": "_lx",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_vLabel"
+        }
+      },
+      "transform": [
+        {
+          "filter": "isValid(datum._v)"
+        },
+        {
+          "calculate": "refMark == 'bar' && isValid(datum._r) ? (datum._v < 0 ? min(datum._v, datum._r) : max(datum._v, datum._r)) : datum._v",
+          "as": "_lx"
+        }
+      ]
+    },
+    {
+      "description": "reference triangle above the bar, pointing down, at the reference value (refMark 'triangle')",
+      "transform": [
+        {
+          "filter": "refMark == 'triangle' && isValid(datum._r)"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "shape": "M-1.15,-1L1.15,-1L0,1Z",
+        "filled": true,
+        "opacity": 1,
+        "fill": {
+          "expr": "refScenario == 'PY' ? ibcsPY : ibcsPLFill"
+        },
+        "stroke": {
+          "expr": "refScenario == 'PY' ? ibcsPY : ibcsPLStroke"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "size": {
+          "expr": "triPx * triPx"
+        },
+        "yOffset": {
+          "expr": "-bw / 2 - 0.5 * triPx - 1"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "Category",
+          "type": "nominal",
+          "sort": null
+        },
+        "x": {
+          "field": "_r",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "third scenario (triangleScenario, refMark 'bar') as a down-pointing triangle above the overlapped pair, tip at its value; size clamped in px",
+      "transform": [
+        {
+          "filter": "isValid(datum._t)"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "shape": "M-1.15,-1L1.15,-1L0,1Z",
+        "filled": true,
+        "opacity": 1,
+        "fill": {
+          "expr": "triangleScenario == 'PY' ? ibcsPY : (triangleScenario == 'AC' ? ibcsAC : ibcsPLFill)"
+        },
+        "stroke": {
+          "expr": "triangleScenario == 'PY' ? ibcsPY : (triangleScenario == 'AC' ? ibcsAC : ibcsPLStroke)"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "size": {
+          "expr": "triPx * triPx"
+        },
+        "yOffset": {
+          "expr": "-bw / 2 - ibcsOffsetBar * bw - 0.5 * triPx - 1"
+        },
+        "tooltip": true
+      },
+      "encoding": {
+        "y": {
+          "field": "Category",
+          "type": "nominal",
+          "sort": null
+        },
+        "x": {
+          "field": "_t",
+          "type": "quantitative"
+        },
+        "tooltip": [
+          {
+            "field": "Category",
+            "type": "nominal"
+          },
+          {
+            "field": "_tLabel",
+            "title": "triangle"
+          }
+        ]
+      }
+    },
+    {
+      "description": "variance bars: same thickness and scale as the AC bars; impact colour; FC minuend hatched",
+      "transform": [
+        {
+          "filter": "isValid(datum._d)"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "height": {
+          "expr": "bw"
+        },
+        "fill": {
+          "expr": "minuend == 'FC' ? pbiPatternSVG(ibcsHatch, datum._c, ibcsFCGround) : datum._c"
+        },
+        "stroke": {
+          "expr": "minuend == 'FC' ? datum._c : null"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "Category",
+          "type": "nominal",
+          "sort": null
+        },
+        "x": {
+          "field": "_B",
+          "type": "quantitative"
+        },
+        "x2": {
+          "field": "_dEnd"
+        }
+      }
+    },
+    {
+      "description": "variance labels outside, in the direction of the change",
+      "transform": [
+        {
+          "filter": "isValid(datum._d)"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "baseline": "middle",
+        "align": {
+          "expr": "datum._d >= 0 ? 'left' : 'right'"
+        },
+        "dx": {
+          "expr": "datum._d >= 0 ? 3 : -3"
+        },
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "Category",
+          "type": "nominal",
+          "sort": null
+        },
+        "x": {
+          "field": "_dEnd",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_dLabel"
+        }
+      }
+    },
+    {
+      "description": "tier title above the variance axis",
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "baseline": "bottom",
+        "dy": -4,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "_B",
+          "type": "quantitative"
+        },
+        "y": {
+          "value": 0
+        },
+        "text": {
+          "value": {
+            "expr": "'Δ' + refScenario"
+          }
+        }
+      }
+    },
+    {
+      "description": "integrated legend: reference scenario above the first reference marker; a separate higher text level when the third-scenario triangle is also named (anchored to the first row that has a reference value, drawn at the top row)",
+      "transform": [
+        {
+          "joinaggregate": [
+            {
+              "op": "argmin",
+              "field": "_i",
+              "as": "_edgeRow"
+            }
+          ]
+        },
+        {
+          "calculate": "isValid(datum._r) ? datum._i : 1e9",
+          "as": "_okI"
+        },
+        {
+          "joinaggregate": [
+            {
+              "op": "min",
+              "field": "_okI",
+              "as": "_anchorI"
+            }
+          ]
+        },
+        {
+          "filter": "datum._i == datum._anchorI"
+        },
+        {
+          "calculate": "datum._edgeRow['Category']",
+          "as": "_yCat"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "baseline": "bottom",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "yOffset": {
+          "expr": "refMark == 'triangle' ? -bw / 2 - triPx - 2 : -bw / 2 - ibcsOffsetBar * bw - 1 - (isValid(datum._t) ? 0.5 * triPx + ibcsFontSize + 3 : 0)"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_yCat",
+          "type": "nominal",
+          "sort": null
+        },
+        "x": {
+          "field": "_r",
+          "type": "quantitative"
+        },
+        "text": {
+          "value": {
+            "expr": "refScenario"
+          }
+        }
+      }
+    },
+    {
+      "description": "integrated legend: AC / FC below the last bar (x from the last row that has AC/FC, drawn at the bottom row)",
+      "transform": [
+        {
+          "joinaggregate": [
+            {
+              "op": "argmax",
+              "field": "_i",
+              "as": "_edgeRow"
+            }
+          ]
+        },
+        {
+          "calculate": "isValid(datum._v) ? datum._i : -1",
+          "as": "_okI"
+        },
+        {
+          "joinaggregate": [
+            {
+              "op": "max",
+              "field": "_okI",
+              "as": "_anchorI"
+            }
+          ]
+        },
+        {
+          "filter": "datum._i == datum._anchorI"
+        },
+        {
+          "calculate": "datum._edgeRow['Category']",
+          "as": "_yCat"
+        },
+        {
+          "calculate": "datum._v / 2",
+          "as": "_lx"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "baseline": "top",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "yOffset": {
+          "expr": "bw / 2 + 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_yCat",
+          "type": "nominal",
+          "sort": null
+        },
+        "x": {
+          "field": "_lx",
+          "type": "quantitative"
+        },
+        "text": {
+          "value": {
+            "expr": "minuend"
+          }
+        }
+      }
+    },
+    {
+      "description": "integrated legend: triangle scenario name beside the first triangle, on the side away from the reference label",
+      "transform": [
+        {
+          "joinaggregate": [
+            {
+              "op": "argmin",
+              "field": "_i",
+              "as": "_edgeRow"
+            }
+          ]
+        },
+        {
+          "calculate": "isValid(datum._t) ? datum._i : 1e9",
+          "as": "_okI"
+        },
+        {
+          "joinaggregate": [
+            {
+              "op": "min",
+              "field": "_okI",
+              "as": "_anchorI"
+            }
+          ]
+        },
+        {
+          "filter": "datum._i == datum._anchorI"
+        },
+        {
+          "calculate": "datum._edgeRow['Category']",
+          "as": "_yCat"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "baseline": "middle",
+        "align": {
+          "expr": "datum._t <= datum._r ? 'right' : 'left'"
+        },
+        "dx": {
+          "expr": "(datum._t <= datum._r ? -1 : 1) * (triPx / 2 + 2)"
+        },
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "yOffset": {
+          "expr": "-bw / 2 - ibcsOffsetBar * bw - 0.5 * triPx - 1"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_yCat",
+          "type": "nominal",
+          "sort": null
+        },
+        "x": {
+          "field": "_t",
+          "type": "quantitative"
+        },
+        "text": {
+          "value": {
+            "expr": "triangleScenario"
+          }
+        }
+      }
+    },
+    {
+      "description": "scale band label, below the plot, left of the line (the AC legend sits right of it); shifted further left when it would run into the AC/FC name under the last bar",
+      "transform": [
+        {
+          "calculate": "isValid(datum._v) ? datum._i : -1",
+          "as": "_okI"
+        },
+        {
+          "joinaggregate": [
+            {
+              "op": "max",
+              "field": "_okI",
+              "as": "_anchorI"
+            }
+          ]
+        },
+        {
+          "calculate": "datum._i == datum._anchorI ? datum._v : null",
+          "as": "_anchorV"
+        },
+        {
+          "joinaggregate": [
+            {
+              "op": "max",
+              "field": "_anchorV",
+              "as": "_acV"
+            }
+          ]
+        },
+        {
+          "filter": "datum._i == 1 && datum._band > 0"
+        },
+        {
+          "calculate": "format(datum._band, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + (datum._band % 1 == 0 ? 0 : decimals)))",
+          "as": "_bandText"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "right",
+        "baseline": "top",
+        "dy": 2,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsScaleBandLine"
+        },
+        "dx": {
+          "expr": "isValid(datum._acV) && scale('x', datum._band) - 3 > scale('x', datum._acV / 2) - length(minuend) * ibcsFontSize * 0.3 - 2 && scale('x', datum._band) - 3 - length(datum._bandText) * ibcsFontSize * 0.6 < scale('x', datum._acV / 2) + length(minuend) * ibcsFontSize * 0.3 + 2 ? (scale('x', datum._acV / 2) - length(minuend) * ibcsFontSize * 0.3 - 4) - scale('x', datum._band) : -3"
+        }
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "height"
+          }
+        },
+        "x": {
+          "field": "_band",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_bandText"
+        }
+      }
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": null
+    }
+  }
+}

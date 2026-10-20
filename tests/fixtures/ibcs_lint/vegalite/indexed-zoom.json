@@ -1,0 +1,4 @@
+{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","config":{"view":{"stroke":null}},
+ "mark":"line",
+ "encoding":{"x":{"field":"Month","type":"ordinal"},
+  "y":{"field":"Sales index","type":"quantitative","scale":{"zero":false,"domain":[90,115]}}}}

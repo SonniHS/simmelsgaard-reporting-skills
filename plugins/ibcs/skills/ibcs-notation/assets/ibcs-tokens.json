@@ -1,0 +1,2115 @@
+{
+  "$description": "IBCS design tokens: colours, patterns, geometry, typography, number/date formats and abbreviations, for reports that follow the IBCS® Standards. Format: W3C Design Tokens (DTCG) with $value/$type; provenance in $extensions.ibcs.src (STD = stated by IBCS/ISO 24896, REC = IBCS recommendation, FIG = read/measured from an IBCS figure, OURS = our default where IBCS is silent, ORG = set by a corporate override). IBCS prescribes no hex codes. Values follow IBCS Standards v2.0 (2026-07-16); refs such as 'UN 4.1' cite its rule numbers. This file is data under the MIT License. IBCS® is a registered trademark of IBCS Institute; not affiliated with or certified by IBCS Institute. See the ibcs-notation skill, references/tokens-in-practice.md, for structure, overrides and consumption.",
+  "$extensions": {
+    "ibcs": {
+      "meta": {
+        "schemaVersion": "1.0.0",
+        "standard": "IBCS Standards v2.0 (2026-07-16); ISO 24896",
+        "licence": "MIT (data); values follow IBCS Standards v2.0",
+        "attribution": "IBCS® is a registered trademark of IBCS Institute. Values follow the IBCS Standards v2.0, © IBCS Association.",
+        "docs": [
+          "../references/notation-reference.md",
+          "../references/tokens-in-practice.md"
+        ],
+        "overrideFile": "ibcs-tokens.overrides.json in your project (optional; see ibcs-tokens.overrides.example.json)"
+      }
+    }
+  },
+  "color": {
+    "$type": "color",
+    "scenario": {
+      "$description": "Scenario notation lives in the fill pattern (solid dark / solid light / outlined / hatched), never in hue (UN 3.2).",
+      "ac": {
+        "$value": "#404040",
+        "$description": "Actual (AC): solid dark fill; also line colour, filled square markers, thick dark table-header rule.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 3.2, p. 43-44; Fig. UN 4.1-3 dark gray",
+            "note": "Text says 'solid dark (e.g. dark gray)'."
+          }
+        }
+      },
+      "py": {
+        "$value": "#A6A6A6",
+        "$description": "Previous year / previous period (PY): solid light fill, ONLY in scenario comparisons (not in plain time series).",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 3.2, p. 44",
+            "note": "Figures measure #9F9F9F..#AEABAC."
+          }
+        }
+      },
+      "pl": {
+        "fill": {
+          "$value": "#FFFFFF",
+          "$description": "Plan (PL): outlined = empty fill ('fill up when materializing'); fill = page background.",
+          "$extensions": {
+            "ibcs": {
+              "src": "FIG",
+              "ref": "UN 3.2, p. 45 (outlined/empty rule STD, hex FIG)"
+            }
+          }
+        },
+        "stroke": {
+          "$value": "{color.scenario.ac}",
+          "$description": "Plan outline in the AC colour.",
+          "$extensions": {
+            "ibcs": {
+              "src": "FIG",
+              "ref": "UN 3.2-1"
+            }
+          }
+        }
+      },
+      "bu": {
+        "fill": {
+          "$value": "{color.scenario.pl.fill}",
+          "$description": "Budget (BU): identical notation to PL.",
+          "$extensions": {
+            "ibcs": {
+              "src": "STD",
+              "ref": "UN 3.2, p. 45"
+            }
+          }
+        },
+        "stroke": {
+          "$value": "{color.scenario.pl.stroke}",
+          "$extensions": {
+            "ibcs": {
+              "src": "STD",
+              "ref": "UN 3.2"
+            }
+          }
+        }
+      },
+      "fc": {
+        "stripe": {
+          "$value": "{color.scenario.ac}",
+          "$description": "Forecast (FC): hatched; dark stripes = colour of measured data. Geometry in pattern.fcHatch.",
+          "$extensions": {
+            "ibcs": {
+              "src": "STD",
+              "ref": "UN 3.2, p. 45"
+            }
+          }
+        },
+        "ground": {
+          "$value": "#FFFFFF",
+          "$extensions": {
+            "ibcs": {
+              "src": "FIG",
+              "ref": "UN 3.2"
+            }
+          }
+        },
+        "stroke": {
+          "$value": "{color.scenario.ac}",
+          "$description": "Dark outline around hatched FC shapes.",
+          "$extensions": {
+            "ibcs": {
+              "src": "FIG",
+              "ref": "UN 3.2"
+            }
+          }
+        }
+      },
+      "stackGrays": {
+        "$type": "color",
+        "$value": [
+          "#404040",
+          "#7F7F7F",
+          "#A6A6A6",
+          "#BFBFBF",
+          "#D9D9D9",
+          "#EDEDED"
+        ],
+        "$description": "Segment shades for stacked columns/bars/areas and multi-series, darkest at the axis. The lowest segment carries the scenario notation; upper segments get different gray shades (+ outline for PL, hatch for FC). Note: array value (not a plain DTCG colour); a merge replaces it wholesale.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.2 (rule STD, shades OURS)"
+          }
+        }
+      }
+    },
+    "variance": {
+      "$description": "Three impact states (UN 4.1, pp. 52-54): desirable = bright green, undesirable = dark red, neutral/ambiguous = blue. The HUES are fixed by IBCS; only the exact codes are an organisational choice. Colour is chosen by business impact (measure polarity); geometry always follows the arithmetic sign (an increase goes up/right even for a cost line). Not traffic lights (EX 2.5). Also used for difference markers, trend arrows, outlier triangles.",
+      "good": {
+        "$value": "#8CB400",
+        "$description": "Desirable impact: bright green.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 4.1, Fig. UN 4.1-3, p. 52",
+            "note": "Example charts use #8AC91D/#8BB300."
+          }
+        }
+      },
+      "bad": {
+        "$value": "#FF0000",
+        "$description": "Undesirable impact: red (text says 'dark red').",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 4.1, Fig. UN 4.1-3, p. 52",
+            "note": "Example charts use #DE0023."
+          }
+        }
+      },
+      "neutral": {
+        "$value": "#0064FF",
+        "$description": "Neutral / ambiguous impact: blue.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 4.1, Fig. UN 4.1-3, p. 52"
+          }
+        }
+      },
+      "goodText": {
+        "$value": "#5A7A00",
+        "$description": "Text colour for a variance NUMBER tinted by impact (decision: a variance number may be tinted only with a colour that meets 4.5:1 text contrast on color.background.page, WCAG 1.4.3; otherwise it stays color.text.primary). Darker green of the same hue family as color.variance.good: 5.0:1 on white (the bright graphic green is 2.4:1 and must not be used for text). Bars, pins and markers keep color.variance.good.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 4.1 (tinted numbers allowed), WCAG 1.4.3"
+          }
+        }
+      },
+      "badText": {
+        "$value": "#D00000",
+        "$description": "Text colour for a variance NUMBER tinted by impact (decision: a variance number may be tinted only with a colour that meets 4.5:1 text contrast on color.background.page, WCAG 1.4.3; otherwise it stays color.text.primary). Dark red, 5.7:1 on white (the graphic red #FF0000 is 4.0:1). Stays darker than goodText, as for the graphic colours.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 4.1 (dark red), WCAG 1.4.3"
+          }
+        }
+      },
+      "neutralText": {
+        "$value": "{color.variance.neutral}",
+        "$description": "Text colour for a variance NUMBER tinted by impact (decision: a variance number may be tinted only with a colour that meets 4.5:1 text contrast on color.background.page, WCAG 1.4.3; otherwise it stays color.text.primary). The neutral blue already meets 4.5:1 on white (4.9:1); override it together with color.variance.neutral if that changes.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 4.1, WCAG 1.4.3"
+          }
+        }
+      },
+      "cvd": {
+        "$description": "Colour-vision-deficiency variant: green -> blue-green; keep desirable bright, undesirable dark.",
+        "good": {
+          "$value": "#008E96",
+          "$extensions": {
+            "ibcs": {
+              "src": "FIG",
+              "ref": "Fig. UN 4.1-3 blue-green"
+            }
+          }
+        },
+        "bad": {
+          "$value": "{color.variance.bad}",
+          "$extensions": {
+            "ibcs": {
+              "src": "FIG",
+              "ref": "Fig. UN 4.1-3"
+            }
+          }
+        },
+        "neutral": {
+          "$value": "{color.variance.neutral}",
+          "$extensions": {
+            "ibcs": {
+              "src": "FIG",
+              "ref": "Fig. UN 4.1-3"
+            }
+          }
+        },
+        "goodText": {
+          "$value": "#00747A",
+          "$description": "Text variant of the CVD blue-green (5.6:1 on white; the graphic #008E96 is 4.0:1).",
+          "$extensions": {
+            "ibcs": {
+              "src": "OURS",
+              "ref": "UN 4.1, WCAG 1.4.3"
+            }
+          }
+        },
+        "badText": {
+          "$value": "{color.variance.badText}",
+          "$extensions": {
+            "ibcs": {
+              "src": "OURS",
+              "ref": "UN 4.1, WCAG 1.4.3"
+            }
+          }
+        },
+        "neutralText": {
+          "$value": "{color.variance.neutralText}",
+          "$extensions": {
+            "ibcs": {
+              "src": "OURS",
+              "ref": "UN 4.1, WCAG 1.4.3"
+            }
+          }
+        }
+      },
+      "bw": {
+        "$description": "No-colour (black & white) variant: good light gray, neutral medium gray, bad dark gray.",
+        "good": {
+          "$value": "#BFBFBF",
+          "$extensions": {
+            "ibcs": {
+              "src": "FIG",
+              "ref": "UN 4.1, Fig. UN 4.1-3 (shade rule STD, hex FIG)"
+            }
+          }
+        },
+        "neutral": {
+          "$value": "#808080",
+          "$extensions": {
+            "ibcs": {
+              "src": "FIG",
+              "ref": "UN 4.1, Fig. UN 4.1-3 (shade rule STD, hex FIG)"
+            }
+          }
+        },
+        "bad": {
+          "$value": "#404040",
+          "$extensions": {
+            "ibcs": {
+              "src": "FIG",
+              "ref": "UN 4.1, Fig. UN 4.1-3 (shade rule STD, hex FIG)"
+            }
+          }
+        }
+      }
+    },
+    "marker": {
+      "highlight": {
+        "$value": "#0064FF",
+        "$description": "Highlighting ellipse around the value the key message refers to; single highlighted element (e.g. one bar).",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 5.1, Fig. UN 5.1-4",
+            "note": "Legend figure uses #42BCEF; tone not fixed by IBCS."
+          }
+        }
+      },
+      "annotationRef": {
+        "$value": "#0064FF",
+        "$description": "Numbered annotation reference circles (used in pairs).",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 2.4-1, UN 5.1-6"
+          }
+        }
+      },
+      "referenceArrowhead": {
+        "$value": "#000000",
+        "$description": "Black arrowhead for index (100%) and benchmark references.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 4.2, UN 4.3, UN 5.1 (black arrowhead rule STD, hex FIG)"
+          }
+        }
+      },
+      "scaleBandFill": {
+        "$value": "#DCE8FA",
+        "$description": "Scale band area: light colour (e.g. light blue) from category axis to the common value.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 5.2, CH 4.3"
+          }
+        }
+      },
+      "scaleBandLine": {
+        "$value": "#5B9BD5",
+        "$description": "Scale band line and its value label.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 5.2"
+          }
+        }
+      },
+      "adjustment": {
+        "$value": "{color.marker.scaleBandFill}",
+        "$description": "Light-blue segment for inflation/currency effects (AC* analyses).",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "CH 5.1"
+          }
+        }
+      },
+      "assistingLine": {
+        "$value": "#808080",
+        "$description": "Thin assisting lines/areas: connectors, separators, difference-marker projections, AC/FC separator ticks.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 5.1-1"
+          }
+        }
+      },
+      "assistingArea": {
+        "$value": "#F2F2F2",
+        "$description": "Light area to group or highlight text/chart parts (e.g. reference panel in small multiples).",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 5.1, CO 5.1-1"
+          }
+        }
+      }
+    },
+    "text": {
+      "primary": {
+        "$value": "#000000",
+        "$description": "Black text on white (SI 1.2).",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "SI 1.2 (black-on-white rule STD, hex FIG)"
+          }
+        }
+      },
+      "secondary": {
+        "$value": "#595959",
+        "$description": "Footnotes, sources, secondary series labels. 7.0:1 on white.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 2.5"
+          }
+        }
+      },
+      "onAc": {
+        "$value": "#FFFFFF",
+        "$description": "Labels on an AC-filled mark, regardless of theme mode.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 2.3"
+          }
+        }
+      },
+      "onDark": {
+        "$value": "{color.text.onAc}",
+        "$description": "Deprecated alias of color.text.onAc; use onAc for labels on AC-filled marks.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 2.3"
+          }
+        }
+      }
+    },
+    "background": {
+      "page": {
+        "$value": "#FFFFFF",
+        "$description": "Page and visual background: white, no fills, no bands, no wallpaper.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "SI 1.2 (white-background rule STD, hex FIG)"
+          }
+        }
+      }
+    },
+    "axis": {
+      "category": {
+        "$value": "#404040",
+        "$description": "Thin dark category axis (baseline). Variance-chart axes use stroke.varianceAxis.* instead.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "EX 1.1-2"
+          }
+        }
+      },
+      "pyReference": {
+        "$value": "{color.scenario.py}",
+        "$description": "Axis of variance charts whose subtrahend is PY: solid light, thick.",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.1 p. 53"
+          }
+        }
+      },
+      "plReference": {
+        "$value": "{color.scenario.ac}",
+        "$description": "Axis of variance charts whose subtrahend is PL/BU: two parallel thin dark lines.",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.1 p. 53"
+          }
+        }
+      },
+      "grid": {
+        "$value": "#D9D9D9",
+        "$description": "Grid lines: OFF by default; allowed only in dense charts, small multiples, scatter/bubble.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "SI 3.1 (exception)"
+          }
+        }
+      }
+    },
+    "table": {
+      "rule": {
+        "$value": "#000000",
+        "$description": "Header underline (non-scenario columns), rule above totals/result rows.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "SI 3.2, ST 5.2"
+          }
+        }
+      },
+      "ruleLight": {
+        "$value": "#BFBFBF",
+        "$description": "Thin horizontal separators between rows. No vertical rules.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "SI 1.2, EX 1.2"
+          }
+        }
+      },
+      "totalFill": {
+        "$value": "#F2F2F2",
+        "$description": "Optional light-gray background of totals/result rows/columns.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "EX 1.2-10, EX 1.2-14 (optional)"
+          }
+        }
+      }
+    }
+  },
+  "pattern": {
+    "fcHatch": {
+      "$description": "Forecast hatch. Stripes rising bottom-left to top-right ('////'), dark stripe = color.scenario.fc.stripe on color.scenario.fc.ground, shape outlined with color.scenario.fc.stroke. Also used for hatched variance fills (FC minuend) with the impact colour as stripe colour.",
+      "angleDeg": {
+        "$type": "number",
+        "$value": 45,
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 3.2"
+          }
+        }
+      },
+      "periodMm": {
+        "$type": "number",
+        "$value": 1.0,
+        "$description": "Print: stripe period ≈ 0.9..1.4 mm.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 3.2"
+          }
+        }
+      },
+      "periodPx": {
+        "$type": "number",
+        "$value": 4,
+        "$description": "Screen default at 96 dpi (≈1 mm).",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.2"
+          }
+        }
+      },
+      "stripeShare": {
+        "$type": "number",
+        "$value": 0.45,
+        "$description": "Dark share of one period (stripe width = periodPx × stripeShare).",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 3.2"
+          }
+        }
+      },
+      "svgTemplate": {
+        "$type": "string",
+        "$value": "<pattern id=\"ibcs-fc-hatch\" patternUnits=\"userSpaceOnUse\" width=\"4\" height=\"4\" patternTransform=\"rotate(45)\"><rect width=\"4\" height=\"4\" fill=\"#FFFFFF\"/><rect width=\"1.8\" height=\"4\" fill=\"#404040\"/></pattern>",
+        "$description": "Reference SVG pattern built from the tokens above (regenerate if overridden). Vega-Lite has no pattern fill: use SVG/Deneb-Vega or a stripe layer.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.2"
+          }
+        }
+      }
+    }
+  },
+  "geometry": {
+    "$type": "number",
+    "$description": "Ratios are relative to the category width (band) unless stated otherwise.",
+    "barWidthRatio": {
+      "absolute": {
+        "$value": 0.6667,
+        "$description": "Columns/bars of absolute measures: width = 2/3 of category width (gap 1/3). Vega-Lite paddingInner 0.333.",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 3.1, ISO 24896"
+          }
+        }
+      },
+      "relative": {
+        "$value": 0.3333,
+        "$description": "Columns/bars of relative measures (%, ratios, shares): 1/3 of category width. Vega-Lite paddingInner 0.667.",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 3.1, ISO 24896"
+          }
+        }
+      },
+      "variance": {
+        "$value": "{geometry.barWidthRatio.absolute}",
+        "$description": "Absolute variance columns/bars: SAME width (and same scale) as their base columns/bars.",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.1, ISO 24896"
+          }
+        }
+      }
+    },
+    "pin": {
+      "thicknessRatio": {
+        "$value": 0.3,
+        "$description": "Pin body thickness relative to the base bar thickness. Clamp the result to geometry.pin.stemPx (px).",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 4.1-5/-6"
+          }
+        }
+      },
+      "headRatio": {
+        "$value": 0.85,
+        "$description": "Pin head edge relative to the base bar thickness (square is the illustrated default, not a mandate). Head fill = minuend scenario (AC solid, FC hatched). Clamp the result to geometry.pin.headPx (px).",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 4.1-5/-6"
+          }
+        }
+      },
+      "stemPx": {
+        "$description": "Pin stem thickness clamp in px, applied after the ratio × bar thickness. Use the same clamp in every renderer (SVG/React, Deneb/Vega, SVG-in-DAX).",
+        "$type": "number",
+        "min": {
+          "$value": 2
+        },
+        "max": {
+          "$value": 4
+        },
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 4.1-5/-6"
+          }
+        }
+      },
+      "headPx": {
+        "$description": "Pin head edge clamp in px, applied after the ratio × bar thickness. Use the same clamp in every renderer (SVG/React, Deneb/Vega, SVG-in-DAX).",
+        "$type": "number",
+        "min": {
+          "$value": 6
+        },
+        "max": {
+          "$value": 10
+        },
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 4.1-5/-6"
+          }
+        }
+      }
+    },
+    "referenceOffsetRatio": {
+      "column": {
+        "$value": 0.2,
+        "$description": "Overlapped grouping: reference column (PY/PL) behind AC/FC, shifted LEFT by this share of its width.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 4.1-1"
+          }
+        }
+      },
+      "bar": {
+        "$value": 0.25,
+        "$description": "Overlapped grouping: reference bar behind, shifted UP by this share of its thickness.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 4.1-2"
+          }
+        }
+      }
+    },
+    "triangleSizeRatio": {
+      "$value": 0.33,
+      "$description": "Scenario triangle height relative to the column width / bar thickness. Columns: right-pointing, left of column. Bars: down-pointing, above bar. Clamp the result to geometry.triangleSizePx (px).",
+      "$extensions": {
+        "ibcs": {
+          "src": "FIG",
+          "ref": "UN 4.1-1/-2"
+        }
+      }
+    },
+    "triangleSizePx": {
+      "$description": "Scenario triangle size (height) clamp in px, applied after geometry.triangleSizeRatio × column width / bar thickness. Use the same clamp in every renderer (SVG/React, Deneb/Vega, SVG-in-DAX).",
+      "$type": "number",
+      "min": {
+        "$value": 6
+      },
+      "max": {
+        "$value": 12
+      },
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "UN 4.1-1/-2"
+        }
+      }
+    },
+    "remainderGapRatio": {
+      "$value": 1.0,
+      "$description": "Extra gap before a remainder bar/row ('Other', 'Rest of …'), in category heights.",
+      "$extensions": {
+        "ibcs": {
+          "src": "FIG",
+          "ref": "EX 1.1-16, ST 3.2"
+        }
+      }
+    },
+    "categoryWidthByPeriod": {
+      "$description": "Relative category width per period type (longer period -> wider); fixed per period type for at least a page/screen.",
+      "year": {
+        "$value": 1.34,
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 3.3-3 (rule STD)"
+          }
+        }
+      },
+      "quarter": {
+        "$value": 1.18,
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 3.3-3"
+          }
+        }
+      },
+      "month": {
+        "$value": 1.0,
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 3.3-3"
+          }
+        }
+      },
+      "week": {
+        "$value": 0.67,
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 3.3-3"
+          }
+        }
+      },
+      "day": {
+        "$value": 0.5,
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 3.3-3"
+          }
+        }
+      }
+    },
+    "categoryStepPx": {
+      "$description": "Screen defaults for band step per period type (px).",
+      "year": {
+        "$value": 32,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.3"
+          }
+        }
+      },
+      "quarter": {
+        "$value": 28,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.3"
+          }
+        }
+      },
+      "month": {
+        "$value": 24,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.3"
+          }
+        }
+      },
+      "week": {
+        "$value": 16,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.3"
+          }
+        }
+      },
+      "day": {
+        "$value": 12,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.3"
+          }
+        }
+      },
+      "structureRow": {
+        "$value": 20,
+        "$description": "Band step for structure categories in bar charts / table rows.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.4"
+          }
+        }
+      }
+    }
+  },
+  "stroke": {
+    "$type": "number",
+    "$description": "Line widths. *Pt values for print/Power BI, *Px for screens.",
+    "line": {
+      "absolutePt": {
+        "$value": 2.0,
+        "$description": "Thick line for absolute measures (≈0.6-0.7 mm).",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 3.1-2"
+          }
+        }
+      },
+      "absolutePx": {
+        "$value": 3,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.1"
+          }
+        }
+      },
+      "relativeRatio": {
+        "$value": 0.5,
+        "$description": "Thin line for relative measures = 50% of thick.",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 3.1, ISO 24896"
+          }
+        }
+      },
+      "relativePx": {
+        "$value": 1.5,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.1"
+          }
+        }
+      },
+      "markerToLineRatio": {
+        "$value": 2.5,
+        "$description": "Point-marker edge relative to line width. Scenario lives in the MARKERS on a continuous line: AC filled, PL hollow/outlined, FC hatched (never dashed lines). Line thickness encodes absolute vs relative, not scenario.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 3.1-2, UN 3.2"
+          }
+        }
+      }
+    },
+    "outlinePx": {
+      "$value": 1,
+      "$description": "Outline width for PL/BU shapes (print ≈0.35-0.5 mm).",
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "UN 3.2"
+        }
+      }
+    },
+    "categoryAxisPx": {
+      "$value": 1,
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "EX 1.1"
+        }
+      }
+    },
+    "varianceAxis": {
+      "pyWidthMm": {
+        "$value": 0.85,
+        "$description": "Solid light axis for variances vs PY.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "pyWidthPx": {
+        "$value": 3,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "plLineMm": {
+        "$value": 0.15,
+        "$description": "Each of the two parallel lines for variances vs PL/BU.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "plGapMm": {
+        "$value": 0.6,
+        "$description": "Centre-to-centre distance of the two PL axis lines.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "plLinePx": {
+        "$value": 1,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "plGapPx": {
+        "$value": 3,
+        "$description": "Centre-to-centre (i.e. 2 px white between two 1 px lines).",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 4.1"
+          }
+        }
+      }
+    },
+    "tableHeader": {
+      "scenarioPx": {
+        "$value": 3,
+        "$description": "Header underline encoding the scenario: AC thick dark, PY thick light, FC thick hatched; PL/BU = double thin dark (two 1 px lines, 1 px gap).",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.2-3 (rule STD/FIG)"
+          }
+        }
+      },
+      "plainPx": {
+        "$value": 1,
+        "$description": "Thin single line under structure/measure/time/variance headers.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "EX 1.2"
+          }
+        }
+      },
+      "totalRulePx": {
+        "$value": 1,
+        "$description": "Solid line above totals/result rows.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "EX 1.2-19, ST 5.2"
+          }
+        }
+      },
+      "rowRulePx": {
+        "$value": 1,
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "SI 1.2"
+          }
+        }
+      }
+    },
+    "assistingLinePx": {
+      "$value": 1,
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "UN 5.1"
+        }
+      }
+    },
+    "highlightEllipsePx": {
+      "$value": 1.5,
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "UN 5.1-4"
+        }
+      }
+    },
+    "trendArrowPx": {
+      "$value": 3,
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "UN 5.1-3"
+        }
+      }
+    }
+  },
+  "typography": {
+    "family": {
+      "$type": "fontFamily",
+      "powerbi": {
+        "$value": [
+          "Segoe UI",
+          "Segoe UI Semibold"
+        ],
+        "$description": "Plain, widely available sans-serif. Semibold only for semantic emphasis.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "SI 2.3 (rule STD: sans-serif, no ornaments)"
+          }
+        }
+      },
+      "web": {
+        "$value": [
+          "system-ui",
+          "Segoe UI",
+          "Roboto",
+          "Helvetica Neue",
+          "Arial",
+          "sans-serif"
+        ],
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "SI 2.3"
+          }
+        }
+      }
+    },
+    "weight": {
+      "$type": "fontWeight",
+      "regular": {
+        "$value": 400,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "SI 2.3"
+          }
+        }
+      },
+      "emphasis": {
+        "$value": 600,
+        "$description": "ONLY for measure names in title line 2, totals/results rows and columns, defined subtotals. Italic only for semantically defined rows ('percent of').",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "SI 2.3, UN 2.2"
+          }
+        }
+      }
+    },
+    "size": {
+      "$type": "number",
+      "$description": "Screen defaults. pt for Power BI, px for web. IBCS gives no sizes: 'as small as possible, still legible' (CO 1). Phone layouts +1 pt / +2 px; web never below 12 px.",
+      "keyMessage": {
+        "pt": {
+          "$value": 13
+        },
+        "px": {
+          "$value": 17
+        },
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 2.1, CO 1.1"
+          }
+        }
+      },
+      "title": {
+        "pt": {
+          "$value": 11
+        },
+        "px": {
+          "$value": 14
+        },
+        "$description": "All three title lines same size; line 2 measure in emphasis weight.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 2.2-1"
+          }
+        }
+      },
+      "subtitle": {
+        "pt": {
+          "$value": 10
+        },
+        "px": {
+          "$value": 13
+        },
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 2.2"
+          }
+        }
+      },
+      "label": {
+        "pt": {
+          "$value": 9
+        },
+        "px": {
+          "$value": 12
+        },
+        "$description": "Data labels, category labels, integrated legends, table cells.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 2.3, CO 1.1"
+          }
+        }
+      },
+      "annotation": {
+        "pt": {
+          "$value": 9
+        },
+        "px": {
+          "$value": 12
+        },
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 2.4"
+          }
+        }
+      },
+      "footnote": {
+        "pt": {
+          "$value": 8
+        },
+        "px": {
+          "$value": 12
+        },
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 2.5"
+          }
+        }
+      },
+      "ofWhich": {
+        "pt": {
+          "$value": 8
+        },
+        "px": {
+          "$value": 12
+        },
+        "$description": "'Of which' / 'percent of' rows and columns: smaller (web keeps 12 px minimum, use secondary colour instead).",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "EX 1.2-7, 1.2-16"
+          }
+        }
+      }
+    },
+    "orientation": {
+      "$type": "string",
+      "$value": "horizontal",
+      "$description": "Legends, category labels and data labels are never rotated.",
+      "$extensions": {
+        "ibcs": {
+          "src": "STD",
+          "ref": "UN 2.3, ISO 24896"
+        }
+      }
+    }
+  },
+  "number": {
+    "maxDigits": {
+      "$type": "number",
+      "chart": {
+        "$value": 3,
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "SI 5.2, UN 1.2"
+          }
+        }
+      },
+      "table": {
+        "$value": 4,
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "SI 5.2, UN 1.2"
+          }
+        }
+      }
+    },
+    "separator": {
+      "$type": "string",
+      "thousands": {
+        "$value": " ",
+        "$description": "Narrow no-break space U+202F (ISO 80000-1 narrow space).",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 1.2"
+          }
+        }
+      },
+      "decimal": {
+        "$value": ".",
+        "$description": "'.' or ',' — pick one per organisation.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 1.2 (both allowed, REC)"
+          }
+        }
+      },
+      "range": {
+        "$value": "..",
+        "$description": "Time spans: two full stops, no blanks (Jan..Mar).",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.3"
+          }
+        }
+      }
+    },
+    "sign": {
+      "$type": "string",
+      "negativeStyle": {
+        "$value": "minus",
+        "$description": "'minus' = -123, 'parentheses' = (123). One per organisation.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 1.2 (choice STD)"
+          }
+        }
+      },
+      "negative": {
+        "$value": "-",
+        "$description": "Hyphen-minus for exports/CSV safety; U+2212 is an acceptable override.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 1.2"
+          }
+        }
+      },
+      "plus": {
+        "$value": "+",
+        "$description": "Plus sign ONLY on variances (ΔPY, ΔPL, ΔPY%, pp); never on plain values.",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 1.2, UN 4.1"
+          }
+        }
+      },
+      "notApplicable": {
+        "$value": "N/A",
+        "$description": "Shown instead of a relative variance when the reference is ≤ 0 or blank (our derivation of UN 4.1 p. 54). Examples: PL 100 / AC -20 → -120 % (shown); PL -30 / AC -10 → N/A. Always computed with the SIGNED reference, never ABS().",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 4.1 p. 53-54 (N/A concept STD, ≤ 0 rule OURS)"
+          }
+        }
+      }
+    },
+    "scaling": {
+      "$description": "Prefixes: monetary lower-case single letter attached to the ISO 4217 code (kEUR); non-monetary SI (k, M, G). The unit lives in title line 2 / subtitle, not on every value.",
+      "monetary": {
+        "$type": "string",
+        "thousand": {
+          "$value": "k",
+          "$extensions": {
+            "ibcs": {
+              "src": "REC",
+              "ref": "UN 1.2"
+            }
+          }
+        },
+        "million": {
+          "$value": "m",
+          "$extensions": {
+            "ibcs": {
+              "src": "REC",
+              "ref": "UN 1.2"
+            }
+          }
+        },
+        "billion": {
+          "$value": "b",
+          "$extensions": {
+            "ibcs": {
+              "src": "REC",
+              "ref": "UN 1.2"
+            }
+          }
+        }
+      },
+      "si": {
+        "$type": "string",
+        "thousand": {
+          "$value": "k",
+          "$extensions": {
+            "ibcs": {
+              "src": "REC",
+              "ref": "UN 1.2"
+            }
+          }
+        },
+        "million": {
+          "$value": "M",
+          "$extensions": {
+            "ibcs": {
+              "src": "REC",
+              "ref": "UN 1.2"
+            }
+          }
+        },
+        "billion": {
+          "$value": "G",
+          "$extensions": {
+            "ibcs": {
+              "src": "REC",
+              "ref": "UN 1.2"
+            }
+          }
+        }
+      },
+      "countUnit": {
+        "$type": "string",
+        "$value": "#",
+        "$description": "Unit for counts, e.g. 'Headcount in #'.",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 2.2"
+          }
+        }
+      },
+      "percentagePoint": {
+        "$type": "string",
+        "$value": "pp",
+        "$description": "Absolute variance of percentages: +10pp.",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "rule": {
+        "$type": "string",
+        "$value": "Pick one prefix per visual (per scale group) so the largest |value| shows ≤ maxDigits.chart integer digits; 1 decimal if the largest |value| < 100, else 0 decimals.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "SI 5.2"
+          }
+        }
+      }
+    },
+    "format": {
+      "$type": "string",
+      "$description": "Format patterns per value kind. d3 = d3-format/Vega-Lite (replace ',' group separator with number.separator.thousands after formatting); excel = Power BI/DAX/Excel format string (thousands separator comes from the culture).",
+      "absolute": {
+        "d3": {
+          "$value": ",.1f"
+        },
+        "excel": {
+          "$value": "#,0.0"
+        },
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 1.2"
+          }
+        }
+      },
+      "absoluteInteger": {
+        "d3": {
+          "$value": ",.0f"
+        },
+        "excel": {
+          "$value": "#,0"
+        },
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 1.2"
+          }
+        }
+      },
+      "variance": {
+        "d3": {
+          "$value": "+,.1f"
+        },
+        "excel": {
+          "$value": "+#,0.0;-#,0.0;0.0"
+        },
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.1 (sign STD, pattern OURS)"
+          }
+        }
+      },
+      "ratio": {
+        "d3": {
+          "$value": ".1%"
+        },
+        "excel": {
+          "$value": "0.0%"
+        },
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.1"
+          }
+        }
+      },
+      "relativeVariance": {
+        "d3": {
+          "$value": "+.0%"
+        },
+        "excel": {
+          "$value": "+0%;-0%;0%"
+        },
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.1 (sign STD, pattern OURS)"
+          }
+        }
+      },
+      "relativeVariance1": {
+        "d3": {
+          "$value": "+.1%"
+        },
+        "excel": {
+          "$value": "+0.0%;-0.0%;0.0%"
+        },
+        "$description": "Relative variance with one decimal (+5.8%), for specs whose display setting asks for it (decimals fixed per scale group). Default stays relativeVariance (whole percent).",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 4.1 (sign STD, pattern OURS)"
+          }
+        }
+      },
+      "percentagePoints": {
+        "d3": {
+          "$value": "+.1f"
+        },
+        "excel": {
+          "$value": "+0.0\"pp\";-0.0\"pp\";0.0\"pp\""
+        },
+        "$description": "d3: append 'pp' after formatting.",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "plainRatio": {
+        "d3": {
+          "$value": ",.2f"
+        },
+        "excel": {
+          "$value": "#,0.00"
+        },
+        "$description": "Plain ratio that is not a percentage (book-to-bill, coverage, current ratio): 1.01, no % sign, unit 'ratio' in the title. Its variance uses the same decimals with a sign (+0.03).",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 1.2, UN 3.1"
+          }
+        }
+      }
+    },
+    "currency": {
+      "$type": "string",
+      "$value": "ISO 4217",
+      "$description": "EUR, USD, CHF, GBP — no €/$/£ symbols when currencies mix.",
+      "$extensions": {
+        "ibcs": {
+          "src": "STD",
+          "ref": "UN 1.2"
+        }
+      }
+    }
+  },
+  "date": {
+    "$type": "string",
+    "$description": "Period notation. <YYYY>,<YY>,<Q>,<MM>,<MMM>,<WW>,<DD> placeholders. ISO 8601 preferred.",
+    "day": {
+      "$value": "<YYYY>-<MM>-<DD>",
+      "$extensions": {
+        "ibcs": {
+          "src": "REC",
+          "ref": "UN 1.2, ISO 8601"
+        }
+      }
+    },
+    "week": {
+      "$value": "<YYYY>-W<WW>",
+      "$extensions": {
+        "ibcs": {
+          "src": "REC",
+          "ref": "UN 3.3"
+        }
+      }
+    },
+    "month": {
+      "$value": "<YYYY>-<MM>",
+      "$extensions": {
+        "ibcs": {
+          "src": "REC",
+          "ref": "UN 3.3"
+        }
+      }
+    },
+    "quarter": {
+      "$value": "<YYYY>-Q<Q>",
+      "$extensions": {
+        "ibcs": {
+          "src": "REC",
+          "ref": "UN 3.3"
+        }
+      }
+    },
+    "year": {
+      "$value": "<YYYY>",
+      "$extensions": {
+        "ibcs": {
+          "src": "REC",
+          "ref": "UN 3.3"
+        }
+      }
+    },
+    "withinYear": {
+      "month": {
+        "$value": "<MMM>",
+        "$description": "Jan, Feb … when the year is in the title (SI 4.3).",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.3-2"
+          }
+        }
+      },
+      "quarter": {
+        "$value": "Q<Q>",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.3-2"
+          }
+        }
+      },
+      "week": {
+        "$value": "W<WW>",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.3-2"
+          }
+        }
+      },
+      "day": {
+        "$value": "<MMM> <D>",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.3-2"
+          }
+        }
+      }
+    },
+    "shortYear": {
+      "$value": "'<YY>",
+      "$description": "'26, '26-Q2, Jan '26",
+      "$extensions": {
+        "ibcs": {
+          "src": "REC",
+          "ref": "UN 3.3-2"
+        }
+      }
+    },
+    "notation": {
+      "$description": "Analysis prefixes/suffixes applied to a period label x.",
+      "span": {
+        "$value": "<a>..<b>",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.3"
+          }
+        }
+      },
+      "firstDay": {
+        "$value": ".<x>",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.3"
+          }
+        }
+      },
+      "lastDay": {
+        "$value": "<x>.",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.3"
+          }
+        }
+      },
+      "ytd": {
+        "$value": "_<x>",
+        "$description": "Year to date: _Jun 2026",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.2"
+          }
+        }
+      },
+      "ytg": {
+        "$value": "<x>_",
+        "$description": "Year to go: Jun 2026_",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.2"
+          }
+        }
+      },
+      "ytdAverage": {
+        "$value": "_<x>Ø",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.2"
+          }
+        }
+      },
+      "ytdLastDate": {
+        "$value": "_<x>.",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.2"
+          }
+        }
+      },
+      "moving": {
+        "$value": "~<x>",
+        "$description": "Moving (previous 12 months): ~Jun 2026; MAT/MAA",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.2"
+          }
+        }
+      },
+      "average": {
+        "$value": "Ø<x>",
+        "$description": "Ø'26, EuropeØ, Ø464",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.2, UN 4.3"
+          }
+        }
+      },
+      "difference": {
+        "$value": "<a>-<b>",
+        "$description": "AC'26-AC'25",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.2"
+          }
+        }
+      },
+      "histogramClass": {
+        "$value": "<lo>_<hi>",
+        "$description": "16_20",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "CH 1.3"
+          }
+        }
+      }
+    }
+  },
+  "abbreviation": {
+    "$type": "string",
+    "$description": "Codes used in labels, headers and title line 3. Long forms for glossary/tooltips.",
+    "scenario": {
+      "AC": {
+        "$value": "Actual",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.2"
+          }
+        }
+      },
+      "PY": {
+        "$value": "Previous year",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.2"
+          }
+        }
+      },
+      "PP": {
+        "$value": "Previous period",
+        "$description": "Same notation as PY. Code is OURS.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 3.2 (concept STD)"
+          }
+        }
+      },
+      "PL": {
+        "$value": "Plan",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.2"
+          }
+        }
+      },
+      "BU": {
+        "$value": "Budget",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.2"
+          }
+        }
+      },
+      "FC": {
+        "$value": "Forecast",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 3.2"
+          }
+        }
+      },
+      "AC*": {
+        "$value": "Adjusted actual (currency/inflation), footnoted",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "CH 5.2"
+          }
+        }
+      }
+    },
+    "variance": {
+      "ΔPY": {
+        "$value": "AC − PY (or FC − PY)",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "ΔPL": {
+        "$value": "AC − PL (or FC − PL)",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "ΔBU": {
+        "$value": "AC − BU",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "ΔFC": {
+        "$value": "AC − FC",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "UN 4.1 pattern"
+          }
+        }
+      },
+      "ΔPY%": {
+        "$value": "(AC − PY) / PY × 100, signed reference; N/A if reference ≤ 0 or blank",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "ΔPL%": {
+        "$value": "(AC − PL) / PL × 100, signed reference; N/A if reference ≤ 0 or blank",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "ΔBU%": {
+        "$value": "(AC − BU) / BU × 100, signed reference; N/A if reference ≤ 0 or blank",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "AC-PL": {
+        "$value": "explicit form when AC/FC is ambiguous; likewise FC-PL, AC-PY, FC-PY, (AC-PL)% …",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.1"
+          }
+        }
+      }
+    },
+    "analysis": {
+      "YTD": {
+        "$value": "Year to date",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.2"
+          }
+        }
+      },
+      "YTG": {
+        "$value": "Year to go",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.2"
+          }
+        }
+      },
+      "MAT": {
+        "$value": "Moving annual total",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.2"
+          }
+        }
+      },
+      "MAA": {
+        "$value": "Moving annual average",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.2"
+          }
+        }
+      },
+      "CAGR": {
+        "$value": "Compound annual growth rate",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "UN 5.1-3"
+          }
+        }
+      },
+      "pp": {
+        "$value": "Percentage points",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "N/A": {
+        "$value": "Not applicable",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "UN 4.1"
+          }
+        }
+      },
+      "Ø": {
+        "$value": "Average",
+        "$extensions": {
+          "ibcs": {
+            "src": "REC",
+            "ref": "UN 4.2, UN 4.3"
+          }
+        }
+      },
+      "RoW": {
+        "$value": "Rest of world (remainder category)",
+        "$extensions": {
+          "ibcs": {
+            "src": "FIG",
+            "ref": "ST 3.2"
+          }
+        }
+      }
+    },
+    "scenarioOrder": {
+      "$type": "string",
+      "$value": [
+        "PY",
+        "PL",
+        "BU",
+        "FC",
+        "AC"
+      ],
+      "$description": "Default left→right / top→bottom order for scenario columns of the SAME period (by creation time: PL, FC, AC; PY first as an earlier period). Different periods: ascending time.",
+      "$extensions": {
+        "ibcs": {
+          "src": "STD",
+          "ref": "UN 4.1 (order STD; PY/BU placement OURS)"
+        }
+      }
+    },
+    "varianceOrder": {
+      "$type": "string",
+      "$value": [
+        "ΔPY",
+        "ΔPY%",
+        "ΔPL",
+        "ΔPL%"
+      ],
+      "$description": "Variance column order in tables (EX 1.2-23). Pairs separated by layout.table.groupGapPx.",
+      "$extensions": {
+        "ibcs": {
+          "src": "FIG",
+          "ref": "EX 1.2-23"
+        }
+      }
+    }
+  },
+  "polarity": {
+    "$type": "number",
+    "$description": "Per-measure attribute that selects the impact COLOUR only (never the geometry; never plot Δ × polarity): polarity 0 → neutral (blue); otherwise Δ = 0 → no bar and default text colour (never bad), good if Δ × polarity > 0, bad if < 0.",
+    "higherIsBetter": {
+      "$value": 1,
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "UN 4.1 (impact rule STD)"
+        }
+      }
+    },
+    "lowerIsBetter": {
+      "$value": -1,
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "UN 4.1"
+        }
+      }
+    },
+    "neutral": {
+      "$value": 0,
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "UN 4.1"
+        }
+      }
+    }
+  },
+  "layout": {
+    "$type": "number",
+    "$description": "Page grid defaults. IBCS gives no numbers (CO 1-2: narrow margins, smallest legible). Standardise per page type in the notation manual.",
+    "canvas": {
+      "widthPx": {
+        "$value": 1280,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "CO 2"
+          }
+        }
+      },
+      "heightPx": {
+        "$value": 720,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "CO 2"
+          }
+        }
+      }
+    },
+    "marginPx": {
+      "$value": 16,
+      "$description": "Outer margin; also the web side gutter at phone width.",
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "CO 2.1"
+        }
+      }
+    },
+    "gutterPx": {
+      "$value": 12,
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "CO 2.2"
+        }
+      }
+    },
+    "headerBandPx": {
+      "$value": 64,
+      "$description": "Key message + 3-line title.",
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "UN 2.1, UN 2.2"
+        }
+      }
+    },
+    "footerBandPx": {
+      "$value": 20,
+      "$description": "Sources, data timestamp, footnotes.",
+      "$extensions": {
+        "ibcs": {
+          "src": "OURS",
+          "ref": "UN 2.5, SA 4.4"
+        }
+      }
+    },
+    "table": {
+      "columnGapPx": {
+        "$value": 8,
+        "$description": "Narrow gap B1 between columns of the same type.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "EX 1.2 B1"
+          }
+        }
+      },
+      "groupGapPx": {
+        "$value": 16,
+        "$description": "Wide gap B2 between column groups and after the row-header column.",
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "EX 1.2 B2"
+          }
+        }
+      },
+      "rowHeightPx": {
+        "$value": 20,
+        "$extensions": {
+          "ibcs": {
+            "src": "OURS",
+            "ref": "EX 1.2 A"
+          }
+        }
+      }
+    },
+    "smallMultiples": {
+      "maxPanels": {
+        "$value": 25,
+        "$description": "≈25 panels max; beyond that add an 'Others' panel.",
+        "$extensions": {
+          "ibcs": {
+            "src": "STD",
+            "ref": "CO 5.1"
+          }
+        }
+      }
+    }
+  }
+}

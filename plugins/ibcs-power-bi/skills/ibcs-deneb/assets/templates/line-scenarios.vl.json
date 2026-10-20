@@ -1,0 +1,1253 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "IBCS line chart with scenario notation (EX 1.1 cards 12 and 15, UN 3.2): one continuous AC&FC line with filled dark square markers for AC and HATCHED markers for FC; PY light grey line with light markers; Plan (planLabel, default PL) dark line with HOLLOW (outlined) markers. Line thickness encodes the measure type (absolute = thick), not the scenario. Scenario names and values paired at the line ends with a minimum vertical gap; other primary values labelled above peaks and below valleys. Optional pxPerUnit joins a shared scale group.",
+  "usermeta": {
+    "ibcs": {
+      "template": "line-scenarios",
+      "cards": [
+        "EX 1.1 card 12",
+        "EX 1.1 card 15",
+        "UN 3.2",
+        "UN 5.1 trend arrow"
+      ],
+      "fields": {
+        "Period": "text, category label; sort by period ascending",
+        "AC": "measure, actual",
+        "FC": "measure, forecast (optional; continues the AC line)",
+        "PY": "measure, previous year (optional, shown when showPY)",
+        "PL": "measure, plan/budget (optional, shown when showPL); bind the plan measure as PL and set planLabel for its displayed name"
+      },
+      "requiredFields": [
+        "Period"
+      ],
+      "notes": "Follows the IBCS® Standards. planLabel names the measure bound as PL in the end label, tooltip and notation footnote; its markers stay hollow/outlined. For a relative measure (%, ratio) set measureType = 'relative': thin lines and % labels/tooltips (fractions, 0.42 = 42%). More than three crossing lines: use small multiples (EX 2.4). Blank Period rows and rows with AC, FC, PY and PL all null are dropped before ordering; a PY-only or PL-only row remains. End labels pair each scenario name with its last value in a shared right-hand column, separated by at least ibcsFontSize + 4 px; the last primary value is omitted from the peak/valley labels. pxPerUnit is pixels per display unit after unitDivisor (also per fraction for relative measures); 0 fits the data. For a scale group use the same positive pxPerUnit and size each container to its data range using layout; if too small, data wins and the actual scale shrinks. Trend arrow (UN 5.1): from the first to the last valid AC&FC value, parallel to the arithmetic change, lifted above all visible series. Polarity chooses colour only (1 / -1 / 0 = higher better / lower better / neutral). For absolute measures, 'delta' is relative change on the signed start (N/A when start <= 0 or blank); 'cagr' uses period steps (only meaningful for years; N/A unless both ends > 0). For relative measures, both 'delta' and 'cagr' show the arithmetic change in percentage points (pp), including zero/negative starts; CAGR falls back to pp delta. A trend rounding to zero at the displayed precision is unsigned and uncoloured. Raise trendLiftPx if needed. Render-checked outside Power BI; not verified in Desktop.",
+      "knobs": [
+        "showPY",
+        "showPL",
+        "planLabel",
+        "measureType",
+        "decimals",
+        "unitDivisor",
+        "pxPerUnit",
+        "trendArrow",
+        "trendLabel",
+        "polarity",
+        "trendLiftPx"
+      ],
+      "sampleData": "line-12-months.json",
+      "preview": {
+        "width": 540,
+        "height": 220
+      },
+      "previewVariants": [
+        {
+          "suffix": "-trend",
+          "params": {
+            "trendArrow": true,
+            "trendLabel": "delta"
+          }
+        },
+        {
+          "suffix": "-bu",
+          "sampleData": "line-scenarios-bu.json",
+          "params": {
+            "planLabel": "BU",
+            "decimals": 1
+          }
+        },
+        {
+          "suffix": "-relative-trend",
+          "sampleData": "line-scenarios-relative.json",
+          "params": {
+            "measureType": "relative",
+            "decimals": 1,
+            "trendArrow": true,
+            "trendLabel": "delta",
+            "planLabel": "BU"
+          }
+        },
+        {
+          "suffix": "-relative-cagr",
+          "sampleData": "line-scenarios-relative.json",
+          "params": {
+            "measureType": "relative",
+            "decimals": 1,
+            "trendArrow": true,
+            "trendLabel": "cagr",
+            "planLabel": "BU"
+          }
+        },
+        {
+          "suffix": "-crowded-ends",
+          "sampleData": "line-scenarios-crowded.json",
+          "params": {
+            "decimals": 1,
+            "planLabel": "BU"
+          }
+        },
+        {
+          "suffix": "-scale",
+          "sampleData": "line-scenarios-crowded.json",
+          "params": {
+            "pxPerUnit": 8,
+            "decimals": 1,
+            "planLabel": "BU"
+          },
+          "preview": {
+            "width": 540,
+            "height": 223
+          }
+        },
+        {
+          "suffix": "-scale-trend",
+          "sampleData": "line-scenarios-crowded.json",
+          "params": {
+            "pxPerUnit": 8,
+            "decimals": 1,
+            "planLabel": "BU",
+            "trendArrow": true,
+            "trendLabel": "delta"
+          },
+          "preview": {
+            "width": 540,
+            "height": 270
+          }
+        }
+      ],
+      "layout": {
+        "valueAxis": "height",
+        "unit": "display unit (fractions for relative measures)",
+        "fixedPx": 46,
+        "tiers": [
+          {
+            "id": "base",
+            "range": "min(0, visible AC/FC/PY/PL divided by unitDivisor) … max(0, visible AC/FC/PY/PL divided by unitDivisor); with trendArrow use the envelope described in rule",
+            "padHigh": [
+              "ibcsFontSize"
+            ],
+            "padLow": [
+              "ibcsFontSize"
+            ]
+          }
+        ],
+        "rule": "At ibcsFontSize 12 with the plan footnote visible: container height = 46 + (hi - lo) * pxPerUnit + 2 * ibcsFontSize. Without the plan footnote (showPL false or no PL bound) subtract 24 px: fixedPxNoPlanFootnote; scale_layout.py uses it for a member with \"planFootnote\": false or params showPL false. Deneb uses a fixed container: size it from this data range, then the y domain spans plot height / pxPerUnit, with label padding in data units. A too-small container lets data win. With trendArrow and at least two primary values, let v0/v1 be its endpoints, e = max(0, max(visible row maximum - interpolated primary trend)); hi = max(base hi, max(v0,v1) + e + (ibcsFontSize + 10 + trendLiftPx + (trendLabel is nonempty ? ibcsFontSize + 10 : 4)) / pxPerUnit). Minimum plot height for three stacked end labels is 3 * (ibcsFontSize + 4). Recompute the fixed overhead for changed fonts.",
+        "fixedPxNoPlanFootnote": 22
+      }
+    }
+  },
+  "data": {
+    "name": "dataset"
+  },
+  "width": "container",
+  "height": "container",
+  "padding": {
+    "left": 6,
+    "right": 6,
+    "top": 6,
+    "bottom": 2
+  },
+  "params": [
+    {
+      "name": "showPY",
+      "value": true,
+      "description": "draw the PY line (solid light) when PY is bound"
+    },
+    {
+      "name": "showPL",
+      "value": true,
+      "description": "draw the plan line (outlined markers, named by planLabel) when PL is bound"
+    },
+    {
+      "name": "planLabel",
+      "value": "PL",
+      "description": "Displayed name of the plan measure bound as PL, e.g. BU; used in the line-end label, tooltip and notation footnote. Plan markers remain hollow/outlined."
+    },
+    {
+      "name": "measureType",
+      "value": "absolute",
+      "description": "'absolute' (thick line) or 'relative' (thin line)"
+    },
+    {
+      "name": "decimals",
+      "value": 0,
+      "description": "decimals for labels and tooltips (absolute: number format; relative: % format); IBCS: at most 3 digits in charts"
+    },
+    {
+      "name": "unitDivisor",
+      "value": 1,
+      "description": "divides every value before drawing and labelling: 1 = the measures are already scaled (preferred, e.g. a scaled measure or a Scale picker), 1000 = thousands, 1000000 = millions. The unit belongs in the title (UN 2.2), never as K/M suffixes"
+    },
+    {
+      "name": "pxPerUnit",
+      "value": 0,
+      "description": "Pixels per display unit after unitDivisor (per fraction for relative measures); 0 = fit. Use the same positive value on a scale group and size each container from usermeta.ibcs.layout. A too-small container lets the data win and reduces the actual pixels per unit."
+    },
+    {
+      "name": "trendArrow",
+      "value": false,
+      "description": "draw a trend arrow (UN 5.1) from the first to the last value above the lines, coloured by polarity"
+    },
+    {
+      "name": "trendLabel",
+      "value": "",
+      "description": "'' hides the label; delta = relative change for absolute measures, arithmetic pp change for relative measures; cagr = CAGR for absolute measures, pp delta fallback for relative measures."
+    },
+    {
+      "name": "polarity",
+      "value": 1,
+      "description": "1 higher is better, -1 lower is better, 0 neutral (blue): impact colour only, never the direction (a Polarity field per row wins where the template reads one)"
+    },
+    {
+      "name": "trendLiftPx",
+      "value": 0,
+      "description": "extra px between the highest point and the trend arrow"
+    },
+    {
+      "name": "ibcsAC",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsPY",
+      "value": "#A6A6A6"
+    },
+    {
+      "name": "ibcsPLFill",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsPLStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCStripe",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCGround",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsFCStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsText",
+      "value": "#000000"
+    },
+    {
+      "name": "ibcsTextSecondary",
+      "value": "#595959"
+    },
+    {
+      "name": "ibcsAxis",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsAssist",
+      "value": "#808080"
+    },
+    {
+      "name": "ibcsAssistArea",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "ibcsLineAbs",
+      "value": 3
+    },
+    {
+      "name": "ibcsLineRel",
+      "value": 1.5
+    },
+    {
+      "name": "ibcsMarkerRatio",
+      "value": 2.5
+    },
+    {
+      "name": "ibcsOutline",
+      "value": 1
+    },
+    {
+      "name": "ibcsAxisWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsAssistWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsFontSize",
+      "value": 12
+    },
+    {
+      "name": "ibcsFmtAbs",
+      "value": ",.1f"
+    },
+    {
+      "name": "ibcsFmtRatio",
+      "value": ".1%"
+    },
+    {
+      "name": "ibcsHatch",
+      "value": "diagonal-stripe-3"
+    },
+    {
+      "name": "lw",
+      "expr": "measureType == 'relative' ? ibcsLineRel : ibcsLineAbs"
+    },
+    {
+      "name": "ibcsGood",
+      "value": "#8CB400"
+    },
+    {
+      "name": "ibcsBad",
+      "value": "#FF0000"
+    },
+    {
+      "name": "ibcsNeutral",
+      "value": "#0064FF"
+    },
+    {
+      "name": "ibcsFmtRelVar",
+      "value": "+.0%"
+    },
+    {
+      "name": "ibcsNA",
+      "value": "N/A"
+    }
+  ],
+  "transform": [
+    {
+      "filter": "isValid(datum['Period']) && datum['Period'] !== ''"
+    },
+    {
+      "filter": "isValid(datum['AC']) || isValid(datum['FC']) || isValid(datum['PY']) || isValid(datum['PL'])"
+    },
+    {
+      "calculate": "isValid(datum['AC']) ? (datum['AC']) / unitDivisor : null",
+      "as": "_ac"
+    },
+    {
+      "calculate": "isValid(datum['FC']) ? (datum['FC']) / unitDivisor : null",
+      "as": "_fc"
+    },
+    {
+      "calculate": "isValid(datum['PY']) ? (datum['PY']) / unitDivisor : null",
+      "as": "_py"
+    },
+    {
+      "calculate": "isValid(datum['PL']) ? (datum['PL']) / unitDivisor : null",
+      "as": "_pl"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_i"
+        }
+      ]
+    },
+    {
+      "calculate": "isValid(datum._ac) ? datum._ac : datum._fc",
+      "as": "_v"
+    },
+    {
+      "calculate": "!isValid(datum._ac) && isValid(datum._fc)",
+      "as": "_isFC"
+    },
+    {
+      "window": [
+        {
+          "op": "lag",
+          "field": "_v",
+          "as": "_prev"
+        },
+        {
+          "op": "lead",
+          "field": "_v",
+          "as": "_next"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_i"
+        }
+      ]
+    },
+    {
+      "calculate": "isValid(datum._prev) && isValid(datum._next) ? (datum._v < datum._prev && datum._v <= datum._next) : (isValid(datum._prev) ? datum._v < datum._prev : (isValid(datum._next) ? datum._v < datum._next : false))",
+      "as": "_valley"
+    },
+    {
+      "calculate": "datum._isFC ? datum._i : 1e9",
+      "as": "_fcI"
+    },
+    {
+      "calculate": "isValid(datum._py) ? datum._i : 0",
+      "as": "_pyI"
+    },
+    {
+      "calculate": "isValid(datum._pl) ? datum._i : 0",
+      "as": "_plI"
+    },
+    {
+      "calculate": "isValid(datum._v) ? datum._i : 0",
+      "as": "_vI"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "min",
+          "field": "_fcI",
+          "as": "_firstFC"
+        },
+        {
+          "op": "max",
+          "field": "_pyI",
+          "as": "_lastPY"
+        },
+        {
+          "op": "max",
+          "field": "_plI",
+          "as": "_lastPL"
+        },
+        {
+          "op": "max",
+          "field": "_vI",
+          "as": "_lastV"
+        },
+        {
+          "op": "sum",
+          "field": "_isFC",
+          "as": "_nFC"
+        }
+      ]
+    },
+    {
+      "calculate": "replace(measureType == 'relative' ? ibcsFmtRatio : ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)",
+      "as": "_fmt"
+    },
+    {
+      "calculate": "isValid(datum._v) ? format(abs(datum._v) * (measureType == 'relative' ? 100 : 1) * pow(10, decimals) < 0.5 ? 0 : datum._v, datum._fmt) : ''",
+      "as": "_vLabel"
+    },
+    {
+      "calculate": "isValid(datum._py) ? format(abs(datum._py) * (measureType == 'relative' ? 100 : 1) * pow(10, decimals) < 0.5 ? 0 : datum._py, datum._fmt) : ''",
+      "as": "_pyLabel"
+    },
+    {
+      "calculate": "isValid(datum._pl) ? format(abs(datum._pl) * (measureType == 'relative' ? 100 : 1) * pow(10, decimals) < 0.5 ? 0 : datum._pl, datum._fmt) : ''",
+      "as": "_plLabel"
+    },
+    {
+      "calculate": "min(isValid(datum._v) ? datum._v : 1e300, showPY && isValid(datum._py) ? datum._py : 1e300, showPL && isValid(datum._pl) ? datum._pl : 1e300)",
+      "as": "_rowLo"
+    },
+    {
+      "calculate": "max(isValid(datum._v) ? datum._v : -1e300, showPY && isValid(datum._py) ? datum._py : -1e300, showPL && isValid(datum._pl) ? datum._pl : -1e300)",
+      "as": "_rowHi"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "min",
+          "field": "_rowLo",
+          "as": "_lo"
+        },
+        {
+          "op": "max",
+          "field": "_rowHi",
+          "as": "_hi"
+        }
+      ]
+    },
+    {
+      "calculate": "min(0, datum._lo)",
+      "as": "_lo"
+    },
+    {
+      "calculate": "max(0, datum._hi)",
+      "as": "_hi"
+    },
+    {
+      "calculate": "isValid(datum._v) ? datum._i : 1e9",
+      "as": "_vI0"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "argmin",
+          "field": "_vI0",
+          "as": "_fRow"
+        },
+        {
+          "op": "argmax",
+          "field": "_vI",
+          "as": "_lRow"
+        }
+      ]
+    },
+    {
+      "calculate": "datum._fRow._v",
+      "as": "_tv0"
+    },
+    {
+      "calculate": "datum._lRow._v",
+      "as": "_tv1"
+    },
+    {
+      "calculate": "datum._fRow.Period",
+      "as": "_tp0"
+    },
+    {
+      "calculate": "datum._fRow._i",
+      "as": "_ti0"
+    },
+    {
+      "calculate": "datum._lRow._i - datum._fRow._i",
+      "as": "_tn"
+    },
+    {
+      "calculate": "datum._tv1 - datum._tv0",
+      "as": "_td"
+    },
+    {
+      "calculate": "datum._tn > 0 && datum._rowHi > -1e299 ? datum._rowHi - (datum._tv0 + (datum._i - datum._ti0) * datum._td / datum._tn) : 0",
+      "as": "_ex"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_ex",
+          "as": "_exMax"
+        }
+      ]
+    },
+    {
+      "calculate": "pxPerUnit > 0 ? pxPerUnit : max(height - 2 * ibcsFontSize, 1) / max(datum._hi - datum._lo, 1e-9)",
+      "as": "_ppu0"
+    },
+    {
+      "calculate": "trendArrow && datum._tn > 0 ? max(datum._exMax, 0) + (pxPerUnit > 0 ? 1 : 1.6) * (ibcsFontSize + 10 + trendLiftPx) / datum._ppu0 : 0",
+      "as": "_tk"
+    },
+    {
+      "calculate": "datum._tv0 + datum._tk",
+      "as": "_a0"
+    },
+    {
+      "calculate": "datum._tv1 + datum._tk",
+      "as": "_a1"
+    },
+    {
+      "calculate": "trendArrow && datum._tn > 0 ? max(datum._hi, max(datum._a0, datum._a1) + (pxPerUnit > 0 ? 1 : 1.6) * (trendLabel != '' ? ibcsFontSize + 10 : 4) / datum._ppu0) : datum._hi",
+      "as": "_hi"
+    },
+    {
+      "calculate": "pxPerUnit > 0 ? datum._lo - ibcsFontSize / pxPerUnit : datum._lo",
+      "as": "_yLo"
+    },
+    {
+      "calculate": "pxPerUnit > 0 ? max(datum._hi + ibcsFontSize / pxPerUnit, datum._yLo + height / pxPerUnit) : datum._hi",
+      "as": "_yHi"
+    },
+    {
+      "calculate": "measureType == 'relative' ? datum._td * 100 : (trendLabel == 'cagr' ? (datum._tv0 > 0 && datum._tv1 > 0 && datum._tn > 0 ? (pow(datum._tv1 / datum._tv0, 1 / datum._tn) - 1) * 100 : null) : (trendLabel == 'delta' ? (datum._tv0 > 0 ? datum._td / datum._tv0 * 100 : null) : datum._td))",
+      "as": "_tMetric"
+    },
+    {
+      "calculate": "measureType != 'relative' && trendLabel == 'cagr' ? 1 : decimals",
+      "as": "_tDecimals"
+    },
+    {
+      "calculate": "!isValid(datum._tMetric) || abs(datum._tMetric) * pow(10, datum._tDecimals) < 0.5",
+      "as": "_tZero"
+    },
+    {
+      "calculate": "datum._tZero ? ibcsAxis : (polarity == 0 ? ibcsNeutral : (datum._td * polarity > 0 ? ibcsGood : ibcsBad))",
+      "as": "_tc"
+    },
+    {
+      "calculate": "trendLabel == 'delta' || trendLabel == 'cagr' ? (measureType == 'relative' ? format(datum._tZero ? 0 : datum._tMetric, replace(replace(datum._tZero ? replace(ibcsFmtRelVar, '+', '') : ibcsFmtRelVar, '%', 'f'), /[.][0-9]+/, '.' + decimals)) + 'pp' : (trendLabel == 'cagr' ? 'CAGR: ' : '') + (isValid(datum._tMetric) ? format(datum._tZero ? 0 : datum._tMetric / 100, replace(datum._tZero ? replace(ibcsFmtRelVar, '+', '') : ibcsFmtRelVar, /[.][0-9]+/, '.' + datum._tDecimals)) : ibcsNA)) : ''",
+      "as": "_tLabel"
+    },
+    {
+      "calculate": "planLabel + ': ' + (isValid(datum._pl) ? datum._plLabel : ibcsNA)",
+      "as": "_planTooltip"
+    }
+  ],
+  "encoding": {
+    "x": {
+      "field": "Period",
+      "type": "nominal",
+      "sort": null,
+      "scale": {
+        "paddingInner": 0,
+        "paddingOuter": 0.4
+      },
+      "axis": {
+        "title": null,
+        "domain": false,
+        "ticks": false,
+        "labelAngle": 0,
+        "labelPadding": 4,
+        "offset": {
+          "expr": "-ibcsFontSize"
+        },
+        "zindex": 1
+      }
+    }
+  },
+  "layer": [
+    {
+      "description": "Invisible lower extent; no value axis, data labels instead. pxPerUnit > 0 removes scale padding and includes label room in the explicit domain.",
+      "mark": {
+        "type": "point",
+        "opacity": 0
+      },
+      "encoding": {
+        "y": {
+          "field": "_yLo",
+          "type": "quantitative",
+          "scale": {
+            "zero": true,
+            "nice": false,
+            "padding": {
+              "expr": "pxPerUnit > 0 ? 0 : ibcsFontSize"
+            }
+          },
+          "axis": null
+        }
+      }
+    },
+    {
+      "description": "Invisible upper extent: visible data, optional trend arrow and label; in fixed-scale mode the domain spans at least plot height / pxPerUnit.",
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "opacity": 0
+      },
+      "encoding": {
+        "y": {
+          "field": "_yHi",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "selection (cross-filtering): assisting-area band behind every mark of the selected category; no mark is dimmed (a dimmed AC reads like PY)",
+      "mark": {
+        "type": "bar",
+        "width": {
+          "expr": "bandwidth('x')"
+        },
+        "fill": {
+          "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : 'transparent'"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      }
+    },
+    {
+      "description": "category axis (base line at zero), drawn before the lines so every mark is in front of it",
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxis"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAxisWidth"
+        }
+      },
+      "encoding": {
+        "y": {
+          "datum": 0
+        },
+        "x": {
+          "value": 0
+        },
+        "x2": {
+          "value": {
+            "expr": "width"
+          }
+        }
+      }
+    },
+    {
+      "description": "AC -> FC separator",
+      "transform": [
+        {
+          "filter": "datum._isFC && datum._i == datum._firstFC && datum._firstFC > 1"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAssist"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAssistWidth"
+        },
+        "xOffset": {
+          "expr": "-bandwidth('x') / 2"
+        }
+      }
+    },
+    {
+      "description": "PY line (solid light)",
+      "transform": [
+        {
+          "filter": "showPY && isValid(datum._py)"
+        }
+      ],
+      "mark": {
+        "type": "line",
+        "stroke": {
+          "expr": "ibcsPY"
+        },
+        "strokeWidth": {
+          "expr": "lw"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_py",
+          "type": "quantitative",
+          "title": "PY"
+        }
+      }
+    },
+    {
+      "transform": [
+        {
+          "filter": "showPY && isValid(datum._py)"
+        }
+      ],
+      "mark": {
+        "type": "square",
+        "filled": true,
+        "opacity": 1,
+        "fill": {
+          "expr": "ibcsPY"
+        },
+        "size": {
+          "expr": "pow(ibcsLineAbs * ibcsMarkerRatio, 2)"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_py",
+          "type": "quantitative",
+          "title": "PY"
+        }
+      }
+    },
+    {
+      "description": "PL line (dark) with hollow markers",
+      "transform": [
+        {
+          "filter": "showPL && isValid(datum._pl)"
+        }
+      ],
+      "mark": {
+        "type": "line",
+        "stroke": {
+          "expr": "ibcsPLStroke"
+        },
+        "strokeWidth": {
+          "expr": "lw"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_pl",
+          "type": "quantitative",
+          "title": "PL"
+        }
+      }
+    },
+    {
+      "transform": [
+        {
+          "filter": "showPL && isValid(datum._pl)"
+        }
+      ],
+      "mark": {
+        "type": "square",
+        "filled": true,
+        "opacity": 1,
+        "fill": {
+          "expr": "ibcsPLFill"
+        },
+        "stroke": {
+          "expr": "ibcsPLStroke"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline * 1.5"
+        },
+        "size": {
+          "expr": "pow(ibcsLineAbs * ibcsMarkerRatio, 2)"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_pl",
+          "type": "quantitative",
+          "title": "PL"
+        }
+      }
+    },
+    {
+      "description": "AC&FC: one continuous dark line",
+      "transform": [
+        {
+          "filter": "isValid(datum._v)"
+        }
+      ],
+      "mark": {
+        "type": "line",
+        "stroke": {
+          "expr": "ibcsAC"
+        },
+        "strokeWidth": {
+          "expr": "lw"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_v",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "markers: AC filled dark squares",
+      "transform": [
+        {
+          "filter": "isValid(datum._v) && !datum._isFC"
+        }
+      ],
+      "mark": {
+        "type": "square",
+        "filled": true,
+        "tooltip": true,
+        "fill": {
+          "expr": "ibcsAC"
+        },
+        "size": {
+          "expr": "pow(ibcsLineAbs * ibcsMarkerRatio, 2)"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "_v",
+          "type": "quantitative"
+        },
+        "tooltip": [
+          {
+            "field": "Period",
+            "type": "nominal"
+          },
+          {
+            "field": "_vLabel",
+            "title": "AC/FC"
+          },
+          {
+            "field": "_pyLabel",
+            "title": "PY"
+          },
+          {
+            "field": "_planTooltip",
+            "title": "Plan"
+          }
+        ]
+      }
+    },
+    {
+      "description": "markers: FC hatched squares (outline + diagonal stripes drawn as a symbol path, so the hatch stays visible at marker size; Deneb's 10 px pattern tiles are larger than a marker)",
+      "transform": [
+        {
+          "filter": "datum._isFC"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "shape": "M-1,-1H1V1H-1Z M-1,0L0,-1 M-1,1L1,-1 M0,1L1,0",
+        "filled": false,
+        "opacity": 1,
+        "fill": {
+          "expr": "ibcsFCGround"
+        },
+        "fillOpacity": 1,
+        "stroke": {
+          "expr": "ibcsFCStripe"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline * 1.2"
+        },
+        "size": {
+          "expr": "pow(ibcsLineAbs * ibcsMarkerRatio, 2) * 1.3"
+        },
+        "tooltip": true
+      },
+      "encoding": {
+        "y": {
+          "field": "_v",
+          "type": "quantitative"
+        },
+        "tooltip": [
+          {
+            "field": "Period",
+            "type": "nominal"
+          },
+          {
+            "field": "_vLabel",
+            "title": "FC"
+          },
+          {
+            "field": "_pyLabel",
+            "title": "PY"
+          },
+          {
+            "field": "_planTooltip",
+            "title": "Plan"
+          }
+        ]
+      }
+    },
+    {
+      "description": "Primary values above peaks and below valleys; the final value is paired with its scenario name in the end-label column.",
+      "transform": [
+        {
+          "filter": "isValid(datum._v) && datum._i != datum._lastV"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "baseline": {
+          "expr": "datum._valley ? 'top' : 'bottom'"
+        },
+        "dy": {
+          "expr": "datum._valley ? 7 : -7"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_v",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_vLabel"
+        }
+      }
+    },
+    {
+      "description": "End labels: names and values together, spaced at least ibcsFontSize + 4 px vertically; connectors identify displaced labels.",
+      "transform": [
+        {
+          "filter": "datum._i == datum._lastV || datum._i == datum._lastPY || datum._i == datum._lastPL"
+        },
+        {
+          "fold": [
+            "_v",
+            "_py",
+            "_pl"
+          ],
+          "as": [
+            "_s",
+            "_sv"
+          ]
+        },
+        {
+          "filter": "(datum._s == '_v' && datum._i == datum._lastV) || (datum._s == '_py' && showPY && datum._i == datum._lastPY) || (datum._s == '_pl' && showPL && datum._i == datum._lastPL)"
+        },
+        {
+          "filter": "isValid(datum._sv)"
+        },
+        {
+          "calculate": "datum._s == '_v' ? (datum._nFC > 0 && datum._firstFC > 1 ? 'AC&FC' : (datum._nFC > 0 ? 'FC' : 'AC')) : (datum._s == '_py' ? 'PY' : planLabel)",
+          "as": "_name"
+        },
+        {
+          "calculate": "datum._name + ' ' + (datum._s == '_v' ? datum._vLabel : (datum._s == '_py' ? datum._pyLabel : datum._plLabel))",
+          "as": "_endLabel"
+        },
+        {
+          "calculate": "scale('y', datum._sv)",
+          "as": "_px"
+        },
+        {
+          "window": [
+            {
+              "op": "row_number",
+              "as": "_rank"
+            },
+            {
+              "op": "lag",
+              "field": "_px",
+              "as": "_l1"
+            },
+            {
+              "op": "lag",
+              "field": "_px",
+              "param": 2,
+              "as": "_l2"
+            }
+          ],
+          "sort": [
+            {
+              "field": "_sv",
+              "order": "descending"
+            },
+            {
+              "field": "_s",
+              "order": "ascending"
+            }
+          ]
+        },
+        {
+          "calculate": "datum._rank == 1 ? datum._px : (datum._rank == 2 ? max(datum._px, datum._l1 + ibcsFontSize + 4) : max(datum._px, datum._l1 + ibcsFontSize + 4, datum._l2 + 2 * (ibcsFontSize + 4)))",
+          "as": "_adj"
+        },
+        {
+          "joinaggregate": [
+            {
+              "op": "max",
+              "field": "_adj",
+              "as": "_endBottom"
+            }
+          ]
+        },
+        {
+          "calculate": "datum._adj - max(0, datum._endBottom - height + ibcsFontSize / 2)",
+          "as": "_labelY"
+        }
+      ],
+      "layer": [
+        {
+          "mark": {
+            "type": "rule",
+            "stroke": {
+              "expr": "ibcsAssist"
+            },
+            "strokeWidth": {
+              "expr": "ibcsAssistWidth"
+            },
+            "opacity": {
+              "expr": "abs(datum._labelY - datum._px) > 1 ? 1 : 0"
+            }
+          },
+          "encoding": {
+            "x": {
+              "field": "Period",
+              "type": "nominal",
+              "sort": null
+            },
+            "x2": {
+              "value": {
+                "expr": "width + 6"
+              }
+            },
+            "y": {
+              "value": {
+                "expr": "datum._px"
+              }
+            },
+            "y2": {
+              "value": {
+                "expr": "datum._labelY"
+              }
+            }
+          }
+        },
+        {
+          "mark": {
+            "type": "text",
+            "align": "left",
+            "baseline": "middle",
+            "fontSize": {
+              "expr": "ibcsFontSize"
+            },
+            "fill": {
+              "expr": "ibcsText"
+            }
+          },
+          "encoding": {
+            "x": {
+              "value": {
+                "expr": "width + 10"
+              }
+            },
+            "y": {
+              "value": {
+                "expr": "datum._labelY"
+              }
+            },
+            "text": {
+              "field": "_endLabel"
+            }
+          }
+        }
+      ]
+    },
+    {
+      "description": "trend arrow (UN 5.1, F3): thick arrow from the first to the last period of the AC&FC series, parallel to first→last and lifted above every point, head in time direction, colour = impact of the change (polarity)",
+      "transform": [
+        {
+          "filter": "trendArrow && datum._i == datum._lastV && datum._tn > 0"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "strokeCap": "butt",
+        "stroke": {
+          "expr": "datum._tc"
+        },
+        "strokeWidth": {
+          "expr": "1.5 * lw"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "_tp0",
+          "type": "nominal"
+        },
+        "x2": {
+          "field": "Period"
+        },
+        "y": {
+          "field": "_a0",
+          "type": "quantitative"
+        },
+        "y2": {
+          "field": "_a1"
+        }
+      }
+    },
+    {
+      "description": "trend arrow head, rotated to the arrow's pixel slope",
+      "transform": [
+        {
+          "filter": "trendArrow && datum._i == datum._lastV && datum._tn > 0"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "shape": "triangle-right",
+        "filled": true,
+        "opacity": 1,
+        "fill": {
+          "expr": "datum._tc"
+        },
+        "size": {
+          "expr": "pow(4 * lw, 2)"
+        },
+        "angle": {
+          "expr": "atan2(scale('y', datum._a1) - scale('y', datum._a0), scale('x', datum.Period) - scale('x', datum._tp0)) * 180 / PI"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_a1",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "Trend label: relative measures use pp delta, including CAGR fallback; absolute measures use relative change or CAGR.",
+      "transform": [
+        {
+          "filter": "trendArrow && datum._i == datum._lastV && datum._tn > 0"
+        },
+        {
+          "filter": "trendLabel != ''"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "right",
+        "baseline": "bottom",
+        "dy": -6,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_a1",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_tLabel"
+        }
+      }
+    },
+    {
+      "description": "Plan notation footnote uses the same planLabel as the line-end name; the data field remains PL.",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && showPL && datum._lastPL > 0"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "baseline": "top",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsTextSecondary"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": 0
+        },
+        "y": {
+          "value": {
+            "expr": "height + 2 * ibcsFontSize"
+          }
+        },
+        "text": {
+          "value": {
+            "expr": "'Outlined markers: ' + planLabel + ' (plan)'"
+          }
+        }
+      }
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": null
+    }
+  }
+}

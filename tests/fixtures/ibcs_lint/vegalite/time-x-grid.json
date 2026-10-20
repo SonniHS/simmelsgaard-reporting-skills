@@ -1,0 +1,4 @@
+{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","config":{"view":{"stroke":null}},
+ "mark":"bar",
+ "encoding":{"x":{"field":"Year","type":"quantitative","scale":{"domain":[2020,2026],"zero":false}},
+  "y":{"field":"Sales","type":"quantitative","axis":{"grid":true}}}}

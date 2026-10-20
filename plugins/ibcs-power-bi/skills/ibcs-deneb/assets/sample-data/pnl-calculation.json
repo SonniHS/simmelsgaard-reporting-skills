@@ -1,0 +1,47 @@
+[
+ {
+  "Line": "Sales",
+  "Value": 12.8,
+  "Kind": "base"
+ },
+ {
+  "Line": "Other income",
+  "Value": 1.4,
+  "Kind": "delta"
+ },
+ {
+  "Line": "Personnel expenses",
+  "Value": -4.2,
+  "Kind": "delta"
+ },
+ {
+  "Line": "Material expenses",
+  "Value": -3.5,
+  "Kind": "delta"
+ },
+ {
+  "Line": "Capital expenses",
+  "Value": -3.1,
+  "Kind": "delta"
+ },
+ {
+  "Line": "Investment income",
+  "Value": 0.6,
+  "Kind": "delta"
+ },
+ {
+  "Line": "Profit before tax",
+  "Value": 4.0,
+  "Kind": "subtotal"
+ },
+ {
+  "Line": "Tax",
+  "Value": -1.3,
+  "Kind": "delta"
+ },
+ {
+  "Line": "Profit after tax",
+  "Value": 2.7,
+  "Kind": "total"
+ }
+]

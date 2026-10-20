@@ -1,0 +1,21 @@
+{
+  "name": "reporting-data",
+  "version": "0.1.0",
+  "description": "The data behind reporting: a semantic model that serves IBCS® visuals, a SQL gold layer for reporting, and source mappings for Dynamics 365 ERP.",
+  "author": {
+    "name": "Sonni Simmelsgaard",
+    "url": "https://github.com/SonniHS"
+  },
+  "homepage": "https://github.com/SonniHS/simmelsgaard-skills/tree/main/plugins/reporting-data#readme",
+  "repository": "https://github.com/SonniHS/simmelsgaard-skills",
+  "license": "CC-BY-SA-4.0 AND MIT",
+  "keywords": [
+    "semantic-model",
+    "tmdl",
+    "dax",
+    "sql",
+    "data-warehouse",
+    "dynamics-365",
+    "microsoft-fabric"
+  ]
+}

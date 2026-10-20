@@ -1,0 +1,7 @@
+{"name":"pie1","position":{"x":0,"y":80,"width":300,"height":300},
+ "visual":{"visualType":"pieChart",
+  "query":{"queryState":{"Category":{"projections":[{"field":{"Column":{"Expression":{"SourceRef":{"Entity":"Geography"}},"Property":"Country"}},"queryRef":"Geography.Country"}]},
+   "Y":{"projections":[{"field":{"Aggregation":{"Expression":{"Column":{"Expression":{"SourceRef":{"Entity":"Sales"}},"Property":"Amount"}},"Function":0}},"queryRef":"Sum(Sales.Amount)","nativeQueryRef":"Sum of Amount"}]}}},
+  "objects":{"legend":[{"properties":{"show":{"expr":{"Literal":{"Value":"true"}}}}}]},
+  "visualContainerObjects":{"dropShadow":[{"properties":{"show":{"expr":{"Literal":{"Value":"true"}}}}}],
+   "title":[{"properties":{"text":{"expr":{"Literal":{"Value":"'Total sales overview'"}}}}}]}}}

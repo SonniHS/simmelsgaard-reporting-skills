@@ -1,0 +1,42 @@
+[
+ {
+  "Category": "Europe",
+  "Kind": "base",
+  "Value": 12.8
+ },
+ {
+  "Category": "Germany",
+  "Kind": "variance",
+  "Value": -1.5
+ },
+ {
+  "Category": "Austria",
+  "Kind": "variance",
+  "Value": -1.4
+ },
+ {
+  "Category": "Italy",
+  "Kind": "variance",
+  "Value": -0.5
+ },
+ {
+  "Category": "France",
+  "Kind": "variance",
+  "Value": -0.3
+ },
+ {
+  "Category": "UK",
+  "Kind": "variance",
+  "Value": 3.0
+ },
+ {
+  "Category": "Rest",
+  "Kind": "variance",
+  "Value": -1.4
+ },
+ {
+  "Category": "Europe",
+  "Kind": "total",
+  "Value": 10.7
+ }
+]

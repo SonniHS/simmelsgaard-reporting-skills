@@ -1,0 +1,50 @@
+{
+ "$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/reportExtension/1.0.0/schema.json",
+ "name": "extension",
+ "entities": [
+  {
+   "name": "Measures",
+   "measures": [
+    {
+     "name": "Sales AC&FC",
+     "dataType": "Double",
+     "expression": "SUMX ( VALUES ( 'Date'[Month] ), IF ( [Is Closed], [Sales], [Sales FC] ) )",
+     "displayFolder": "Report"
+    },
+    {
+     "name": "Helper Hidden",
+     "dataType": "Double",
+     "expression": "[Sales] / 1E6",
+     "hidden": true
+    },
+    {
+     "name": "SVG Card Sales",
+     "dataType": "Text",
+     "dataCategory": "ImageUrl",
+     "expression": "VAR d = [Sales ΔPY] VAR c = IF ( d > 0, \"#8CB400\", \"#D00000\" ) RETURN \"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><text fill='\" & c & \"'>\" & FORMAT ( d, \"+0.0;-0.0;0.0\" ) & \"</text><rect fill='#404040'/></svg>\""
+    },
+    {
+     "name": "SVG Bars Rainbow",
+     "dataType": "Text",
+     "dataCategory": "ImageUrl",
+     "expression": "\"data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg'><rect fill='#FF8800'/><rect fill='#40F'/></svg>\""
+    },
+    {
+     "name": "SVG Pin Length",
+     "dataType": "Text",
+     "expression": "VAR w = ABS ( [Sales ΔPY%] ) * 100 RETURN \"<svg><rect width='\" & w & \"' fill='#404040'/></svg>\""
+    },
+    {
+     "name": "Sales ΔPY% Wrong",
+     "dataType": "Double",
+     "expression": "DIVIDE ( [Sales] - [Sales PY], ABS ( [Sales PY] ) )"
+    },
+    {
+     "name": "Sales Total",
+     "dataType": "Double",
+     "expression": "ABS ( [Sales] )"
+    }
+   ]
+  }
+ ]
+}

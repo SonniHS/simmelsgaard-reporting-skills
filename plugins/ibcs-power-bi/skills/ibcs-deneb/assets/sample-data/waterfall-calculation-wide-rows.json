@@ -1,0 +1,45 @@
+[
+  {
+    "Line": "Other income",
+    "Value": 2,
+    "BaseValue": null,
+    "TotalValue": 7
+  },
+  {
+    "Line": "Standard cost",
+    "Value": -4,
+    "BaseValue": 10,
+    "TotalValue": 99
+  },
+  {
+    "Line": "Operating expenses",
+    "Value": -1,
+    "BaseValue": 99,
+    "TotalValue": 7
+  },
+  {
+    "Line": "Rounding",
+    "Value": -0.01,
+    "BaseValue": 10,
+    "TotalValue": 7
+  },
+  {
+    "Line": "No change",
+    "Value": 0,
+    "BaseValue": 10,
+    "TotalValue": 7
+  },
+  {
+    "Line": "N/A",
+    "Value": null,
+    "BaseValue": null,
+    "TotalValue": null,
+    "ScaleBand": 5
+  },
+  {
+    "Line": "",
+    "Value": 100,
+    "BaseValue": 100,
+    "TotalValue": 100
+  }
+]

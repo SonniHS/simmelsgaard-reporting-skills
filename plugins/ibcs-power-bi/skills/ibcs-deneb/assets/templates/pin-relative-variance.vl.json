@@ -1,0 +1,829 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "IBCS horizontal pin chart (EX 1.1 card 8, UN 4.1): relative variance ΔPY% / ΔPL% per period as thin pins with square heads (AC solid, FC hatched), colour = impact (good / bad / neutral), variance axis in the reference scenario's notation, N/A where the relative variance cannot be interpreted.",
+  "usermeta": {
+    "ibcs": {
+      "template": "pin-relative-variance",
+      "cards": [
+        "EX 1.1 card 8",
+        "UN 4.1 relative variances"
+      ],
+      "fields": {
+        "Period": "text, category label; sort the visual by period ascending",
+        "AC": "measure, actual; BLANK where there is no actual",
+        "FC": "measure, forecast (optional)",
+        "PY": "measure, previous year (refScenario 'PY')",
+        "PL": "measure, plan/budget (refScenario 'PL'); any other code works the same way, e.g. BU: bind it under that name and set refScenario = 'BU' (plan notation: two-line axis)",
+        "Polarity": "optional measure 1 / -1 / 0; else the polarity knob",
+        "BU": "measure, budget (refScenario 'BU'); plan notation like PL",
+        "YMin": "optional measure (fraction, ≤ 0), same on every row: lowest Δ% the axis must show; wins over yMin",
+        "YMax": "optional measure (fraction, ≥ 0): highest Δ% the axis must show; wins over yMax",
+        "PxPerUnit": "optional measure, same value on every row: px per percentage point for the page's Δ% scale group; wins over pxPerUnit",
+        "ClipPct": "optional measure (fraction > 0), same on every row: |Δ%| beyond which a pin is an outlier; wins over clipPct"
+      },
+      "requiredFields": [
+        "Period"
+      ],
+      "notes": "ΔX% = (AC-REF)/REF with the SIGNED reference (never ABS). N/A when REF is blank or 0, or when REF < 0 and naOnNegativeRef is true (IBCS UN 4.1 p.54). If you pass a precomputed ΔPY% measure instead, keep the same rule in DAX. Same % scale on the page: the same pxPerUnit (px per percentage point) on every pin chart and each visual's height sized to its own Δ% range (usermeta.ibcs.layout), not the same yMin/yMax on visuals of one height. Rows with a blank Period are dropped (a constant measure such as a scale field would otherwise add a blank category). Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Outliers (UN 5.3, CH 4.4): set clipPct (fraction, e.g. 0.5 = 50%) or bind ClipPct for business-irrelevant relative outliers: the pin is cut at that value, has no head, keeps its full label, and a small triangle beyond the label points in the growth direction. Only for relative variances; never cut absolute columns or bars (CH 2.1).",
+      "knobs": [
+        "refScenario",
+        "polarity",
+        "naOnNegativeRef",
+        "ibcsLabelPad",
+        "ibcsLabelPx",
+        "periodType",
+        "stepScale",
+        "decimals",
+        "yMin",
+        "yMax",
+        "pxPerUnit",
+        "showCategoryLabels",
+        "clipPct"
+      ],
+      "layout": {
+        "valueAxis": "height",
+        "unit": "percentage point",
+        "fixedPx": 24,
+        "fixedPxNoCategoryLabels": 12,
+        "tiers": [
+          {
+            "id": "pins",
+            "range": "min(Δ%, 0) … max(Δ%, 0) in percentage points",
+            "padHigh": [
+              "ibcsLabelPx"
+            ],
+            "padLow": [
+              "ibcsLabelPx"
+            ]
+          }
+        ],
+        "rule": "container height = fixedPx + (hi − lo) × pxPerUnit + padHigh + padLow; measured with Vega-Lite 6.4.3 at ibcsFontSize 12 ; with an outlier (clipPct) add ibcsFontSize + ibcsPinHeadMax + 6 px to padHigh and padLow (the triangle beyond the label)"
+      },
+      "sampleData": "time-series-ac-fc-py-pl.json",
+      "preview": {
+        "width": 420,
+        "height": 200
+      },
+      "previewVariants": [
+        {
+          "suffix": "-pl",
+          "params": {
+            "refScenario": "PL"
+          }
+        },
+        {
+          "suffix": "-cost",
+          "params": {
+            "polarity": -1
+          }
+        },
+        {
+          "suffix": "-wide",
+          "params": {
+            "stepScale": 3.5
+          }
+        },
+        {
+          "suffix": "-outlier",
+          "params": {
+            "clipPct": 0.25
+          },
+          "sampleData": "pin-edge-cases.json"
+        }
+      ]
+    }
+  },
+  "data": {
+    "name": "dataset"
+  },
+  "width": "container",
+  "height": "container",
+  "padding": {
+    "left": 40,
+    "right": 24,
+    "top": 4,
+    "bottom": 2
+  },
+  "params": [
+    {
+      "name": "refScenario",
+      "value": "PY",
+      "description": "reference scenario: 'PY' or a plan code such as 'PL' or 'BU' (any code except PY gets the two-line plan axis); the field of that name must be bound"
+    },
+    {
+      "name": "decimals",
+      "value": 0,
+      "description": "decimals for the relative-variance labels (the token format with this precision); IBCS: at most 3 digits in charts"
+    },
+    {
+      "name": "polarity",
+      "value": 1,
+      "description": "used when the Polarity field is absent: 1, -1 or 0. Overridden per row by a Polarity field."
+    },
+    {
+      "name": "periodType",
+      "value": "month",
+      "description": "year | quarter | month | week | day: category width per period type (UN 3.3)"
+    },
+    {
+      "name": "stepScale",
+      "value": 1.5,
+      "description": "screen scaling of the token category step; keep it identical on every page"
+    },
+    {
+      "name": "yMin",
+      "value": 0,
+      "description": "lowest relative variance the scale must show, as a fraction (-0.3 = -30%); 0 = from the data"
+    },
+    {
+      "name": "yMax",
+      "value": 0,
+      "description": "highest relative variance as a fraction (0.3 = +30%); 0 = from the data. A shared DOMAIN: same yMin/yMax gives the same % scale only on pin charts of the same height. For the page's Δ% scale group use pxPerUnit instead"
+    },
+    {
+      "name": "pxPerUnit",
+      "value": 0,
+      "description": "px per percentage point (1% = 0.01) on the value axis; 0 = off. When set, the domain is the plot height ÷ pxPerUnit, anchored at the lowest pin (plus label room), so every pin chart of the page shows the same px per % point. Size the container to the data (usermeta.ibcs.layout, scripts/scale_layout.py of the ibcs-power-bi skill). If the container is too small, the data wins and the px per point shrinks: nothing is cut"
+    },
+    {
+      "name": "showCategoryLabels",
+      "value": true,
+      "description": "false hides the category labels, e.g. for a tier stacked directly above another visual that already shows them"
+    },
+    {
+      "name": "clipPct",
+      "value": 0,
+      "description": "relative outlier cut (UN 5.3, CH 4.4) as a fraction, e.g. 0.5 = 50%: pins beyond it are cut, have no head, keep their full label and get a growth triangle; 0 = off (field ClipPct wins)"
+    },
+    {
+      "name": "naOnNegativeRef",
+      "value": true,
+      "description": "show N/A when the reference is negative"
+    },
+    {
+      "name": "ibcsLabelPad",
+      "value": 0.3,
+      "description": "label room beyond the longest pin, as a share of it (pxPerUnit = 0)"
+    },
+    {
+      "name": "ibcsLabelPx",
+      "value": 18,
+      "description": "label room in px beyond a pin head, both directions (pxPerUnit > 0 only; else ibcsLabelPad)"
+    },
+    {
+      "name": "ibcsAC",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsPY",
+      "value": "#A6A6A6"
+    },
+    {
+      "name": "ibcsFCStripe",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCGround",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsFCStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsGood",
+      "value": "#8CB400"
+    },
+    {
+      "name": "ibcsBad",
+      "value": "#FF0000"
+    },
+    {
+      "name": "ibcsNeutral",
+      "value": "#0064FF"
+    },
+    {
+      "name": "ibcsText",
+      "value": "#000000"
+    },
+    {
+      "name": "ibcsAxisPY",
+      "value": "#A6A6A6"
+    },
+    {
+      "name": "ibcsAxisPL",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsAssist",
+      "value": "#808080"
+    },
+    {
+      "name": "ibcsAssistArea",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "ibcsBarRatio",
+      "value": 0.6667
+    },
+    {
+      "name": "ibcsPinRatio",
+      "value": 0.3
+    },
+    {
+      "name": "ibcsPinHeadRatio",
+      "value": 0.85
+    },
+    {
+      "name": "ibcsPinStemMin",
+      "value": 2
+    },
+    {
+      "name": "ibcsPinStemMax",
+      "value": 4
+    },
+    {
+      "name": "ibcsPinHeadMin",
+      "value": 6
+    },
+    {
+      "name": "ibcsPinHeadMax",
+      "value": 10
+    },
+    {
+      "name": "ibcsOutline",
+      "value": 1
+    },
+    {
+      "name": "ibcsPYAxisWidth",
+      "value": 3
+    },
+    {
+      "name": "ibcsPLAxisLine",
+      "value": 1
+    },
+    {
+      "name": "ibcsPLAxisGap",
+      "value": 3
+    },
+    {
+      "name": "ibcsAssistWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsFontSize",
+      "value": 12
+    },
+    {
+      "name": "ibcsFmtRelVar",
+      "value": "+.0%"
+    },
+    {
+      "name": "ibcsNA",
+      "value": "N/A"
+    },
+    {
+      "name": "ibcsHatch",
+      "value": "diagonal-stripe-3"
+    },
+    {
+      "name": "ibcsCategoryStep",
+      "value": {
+        "year": 32,
+        "quarter": 28,
+        "month": 24,
+        "week": 16,
+        "day": 12,
+        "structureRow": 20
+      }
+    },
+    {
+      "name": "bw",
+      "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)",
+      "description": "column width: 2/3 of the category, capped at the token step so every chart of this period type has the same width"
+    },
+    {
+      "name": "stemPx",
+      "expr": "clamp(ibcsPinRatio * bw, ibcsPinStemMin, ibcsPinStemMax)",
+      "description": "pin stem: token ratio × column width, clamped in px (geometry.pin.stemPx)"
+    },
+    {
+      "name": "headPx",
+      "expr": "clamp(ibcsPinHeadRatio * bw * ibcsPinRatio * 2.2, ibcsPinHeadMin, ibcsPinHeadMax)",
+      "description": "pin head edge, clamped in px (geometry.pin.headPx): wide columns never blow the pins up"
+    }
+  ],
+  "transform": [
+    {
+      "filter": "isValid(datum['Period']) && datum['Period'] !== ''"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_i"
+        }
+      ]
+    },
+    {
+      "calculate": "isValid(datum['AC']) ? datum['AC'] : datum['FC']",
+      "as": "_v"
+    },
+    {
+      "calculate": "!isValid(datum['AC']) && isValid(datum['FC'])",
+      "as": "_isFC"
+    },
+    {
+      "calculate": "datum[refScenario]",
+      "as": "_r"
+    },
+    {
+      "calculate": "isValid(datum._v) && isValid(datum._r) && datum._r != 0 && !(naOnNegativeRef && datum._r < 0)",
+      "as": "_ok"
+    },
+    {
+      "calculate": "datum._ok ? (datum._v - datum._r) / datum._r : null",
+      "as": "_p"
+    },
+    {
+      "calculate": "isValid(datum['Polarity']) ? datum['Polarity'] : polarity",
+      "as": "_pol"
+    },
+    {
+      "calculate": "!isValid(datum._p) || abs(datum._p) * 100 * pow(10, decimals) < 0.5 ? null : datum._pol == 0 ? ibcsNeutral : (datum._p * datum._pol > 0 ? ibcsGood : ibcsBad)",
+      "as": "_c"
+    },
+    {
+      "calculate": "isValid(datum['ClipPct']) && datum['ClipPct'] > 0 ? datum['ClipPct'] : clipPct",
+      "as": "_clip"
+    },
+    {
+      "calculate": "isValid(datum._p) && datum._clip > 0 && abs(datum._p) > datum._clip",
+      "as": "_out"
+    },
+    {
+      "calculate": "datum._out ? (datum._p > 0 ? datum._clip : -datum._clip) : datum._p",
+      "as": "_pd"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_out",
+          "as": "_anyOut"
+        }
+      ]
+    },
+    {
+      "calculate": "datum._isFC ? datum._i : 1e9",
+      "as": "_fcI"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_pd",
+          "as": "_pMax"
+        },
+        {
+          "op": "min",
+          "field": "_pd",
+          "as": "_pMin"
+        },
+        {
+          "op": "min",
+          "field": "_fcI",
+          "as": "_firstFC"
+        }
+      ]
+    },
+    {
+      "calculate": "max(isValid(datum._pMax) ? datum._pMax : 0, isValid(datum['YMax']) ? datum['YMax'] : yMax)",
+      "as": "_pMax"
+    },
+    {
+      "calculate": "min(isValid(datum._pMin) ? datum._pMin : 0, isValid(datum['YMin']) ? datum['YMin'] : yMin)",
+      "as": "_pMin"
+    },
+    {
+      "calculate": "(isValid(datum['PxPerUnit']) && datum['PxPerUnit'] > 0 ? datum['PxPerUnit'] : pxPerUnit) * 100",
+      "as": "_ppu"
+    },
+    {
+      "calculate": "max(abs(datum._pMax), abs(datum._pMin), 0.01)",
+      "as": "_A"
+    },
+    {
+      "calculate": "max(datum._pMax, 0) + (datum._ppu > 0 ? (ibcsLabelPx + (datum._anyOut ? ibcsFontSize + ibcsPinHeadMax + 6 : 0)) / datum._ppu : datum._A * ibcsLabelPad * (datum._anyOut ? 2.2 : 1))",
+      "as": "_yHi"
+    },
+    {
+      "calculate": "min(datum._pMin, 0) - (datum._ppu > 0 ? (ibcsLabelPx + (datum._anyOut ? ibcsFontSize + ibcsPinHeadMax + 6 : 0)) / datum._ppu : datum._A * ibcsLabelPad * (datum._anyOut ? 2.2 : 1))",
+      "as": "_yLo"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? max(datum._yHi, datum._yLo + height / datum._ppu) : datum._yHi",
+      "as": "_yTop"
+    },
+    {
+      "calculate": "datum._ok ? (abs(datum._p) * 100 * pow(10, decimals) < 0.5 ? format(0, '.' + decimals + '%') : format(datum._p, replace(ibcsFmtRelVar, /[.][0-9]+/, '.' + decimals))) : (isValid(datum._v) ? ibcsNA : '')",
+      "as": "_lbl"
+    },
+    {
+      "calculate": "datum._ok ? datum._pd : 0",
+      "as": "_ly"
+    }
+  ],
+  "encoding": {
+    "x": {
+      "field": "Period",
+      "type": "nominal",
+      "sort": null,
+      "scale": {
+        "paddingInner": {
+          "expr": "1 - ibcsBarRatio"
+        },
+        "paddingOuter": {
+          "expr": "(1 - ibcsBarRatio) / 2"
+        }
+      },
+      "axis": {
+        "title": null,
+        "domain": false,
+        "ticks": false,
+        "labelAngle": 0,
+        "labelPadding": {
+          "expr": "showCategoryLabels ? 4 : 0"
+        },
+        "orient": "bottom",
+        "labelOpacity": {
+          "expr": "showCategoryLabels ? 1 : 0"
+        },
+        "labelFontSize": {
+          "expr": "showCategoryLabels ? ibcsFontSize : 0"
+        }
+      }
+    }
+  },
+  "layer": [
+    {
+      "description": "invisible: room for the labels",
+      "mark": {
+        "type": "point",
+        "opacity": 0
+      },
+      "encoding": {
+        "y": {
+          "field": "_yTop",
+          "type": "quantitative",
+          "scale": {
+            "zero": true,
+            "nice": false
+          },
+          "axis": null
+        }
+      }
+    },
+    {
+      "mark": {
+        "type": "point",
+        "opacity": 0
+      },
+      "encoding": {
+        "y": {
+          "field": "_yLo",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "selection (cross-filtering): assisting-area band behind every mark of the selected category; no mark is dimmed (a dimmed AC reads like PY)",
+      "mark": {
+        "type": "bar",
+        "width": {
+          "expr": "bandwidth('x') / ibcsBarRatio"
+        },
+        "fill": {
+          "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : 'transparent'"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      }
+    },
+    {
+      "description": "AC -> FC separator",
+      "transform": [
+        {
+          "filter": "datum._isFC && datum._i == datum._firstFC && datum._firstFC > 1"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAssist"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAssistWidth"
+        },
+        "xOffset": {
+          "expr": "-bandwidth('x') / ibcsBarRatio / 2"
+        }
+      }
+    },
+    {
+      "description": "variance axis: PY = solid light thick line",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && refScenario == 'PY'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxisPY"
+        },
+        "strokeWidth": {
+          "expr": "ibcsPYAxisWidth"
+        }
+      },
+      "encoding": {
+        "y": {
+          "datum": 0
+        },
+        "x": {
+          "value": 0
+        },
+        "x2": {
+          "value": {
+            "expr": "width"
+          }
+        }
+      }
+    },
+    {
+      "description": "variance axis: PL/BU = two thin parallel lines",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && refScenario != 'PY'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxisPL"
+        },
+        "strokeWidth": {
+          "expr": "ibcsPLAxisLine"
+        },
+        "yOffset": {
+          "expr": "-ibcsPLAxisGap / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "datum": 0
+        },
+        "x": {
+          "value": 0
+        },
+        "x2": {
+          "value": {
+            "expr": "width"
+          }
+        }
+      }
+    },
+    {
+      "transform": [
+        {
+          "filter": "datum._i == 1 && refScenario != 'PY'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxisPL"
+        },
+        "strokeWidth": {
+          "expr": "ibcsPLAxisLine"
+        },
+        "yOffset": {
+          "expr": "ibcsPLAxisGap / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "datum": 0
+        },
+        "x": {
+          "value": 0
+        },
+        "x2": {
+          "value": {
+            "expr": "width"
+          }
+        }
+      }
+    },
+    {
+      "description": "pin body: thin, impact colour, in front of the axis; geometry follows the arithmetic sign; an outlier is cut at the clip value (UN 5.3)",
+      "transform": [
+        {
+          "filter": "datum._ok"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "strokeCap": "butt",
+        "stroke": {
+          "expr": "datum._c"
+        },
+        "strokeWidth": {
+          "expr": "stemPx"
+        },
+        "tooltip": true,
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "_pd",
+          "type": "quantitative"
+        },
+        "y2": {
+          "datum": 0
+        },
+        "tooltip": [
+          {
+            "field": "Period",
+            "type": "nominal"
+          },
+          {
+            "field": "_lbl",
+            "title": "Δ%"
+          }
+        ]
+      }
+    },
+    {
+      "description": "white ground under hatched FC heads",
+      "transform": [
+        {
+          "filter": "datum._ok && datum._isFC && !datum._out"
+        }
+      ],
+      "mark": {
+        "type": "square",
+        "filled": true,
+        "opacity": 1,
+        "fill": {
+          "expr": "ibcsFCGround"
+        },
+        "size": {
+          "expr": "headPx * headPx"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_pd",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "pin head: square in the minuend's scenario notation (AC solid dark, FC hatched)",
+      "transform": [
+        {
+          "filter": "datum._ok && !datum._out"
+        }
+      ],
+      "mark": {
+        "type": "square",
+        "filled": true,
+        "fill": {
+          "expr": "datum._isFC ? pbiPatternSVG(ibcsHatch, ibcsFCStripe, ibcsFCGround) : ibcsAC"
+        },
+        "stroke": {
+          "expr": "datum._isFC ? ibcsFCStroke : null"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "size": {
+          "expr": "headPx * headPx"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "_pd",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "labels outside the head, in the direction of the change; N/A on the axis",
+      "mark": {
+        "type": "text",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "baseline": {
+          "expr": "!datum._ok ? 'bottom' : (datum._pd >= 0 ? 'bottom' : 'top')"
+        },
+        "dy": {
+          "expr": "!datum._ok ? -4 : (datum._pd >= 0 ? -1 : 1) * (datum._out ? 2 : headPx / 2 + 2)"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_ly",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_lbl"
+        }
+      }
+    },
+    {
+      "description": "outlier marker (UN 5.3, CH 4.4): headless pin cut at the clip value, full value label, small triangle beyond the label pointing in the growth direction, impact colour",
+      "transform": [
+        {
+          "filter": "datum._ok && datum._out"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "filled": true,
+        "opacity": 1,
+        "shape": {
+          "expr": "datum._p > 0 ? 'triangle-up' : 'triangle-down'"
+        },
+        "fill": {
+          "expr": "datum._c != null ? datum._c : ibcsAC"
+        },
+        "size": {
+          "expr": "headPx * headPx"
+        },
+        "yOffset": {
+          "expr": "(datum._p > 0 ? -1 : 1) * (ibcsFontSize + headPx / 2 + 5)"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_pd",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "tier label (ΔPY% / ΔPL%) left of the axis",
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "right",
+        "baseline": "bottom",
+        "dy": -3,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "xOffset": {
+          "expr": "-bw / 2 - 4"
+        }
+      },
+      "encoding": {
+        "y": {
+          "datum": 0
+        },
+        "text": {
+          "value": {
+            "expr": "'Δ' + refScenario + '%'"
+          }
+        }
+      }
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": null
+    }
+  }
+}

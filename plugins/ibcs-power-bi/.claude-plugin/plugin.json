@@ -1,0 +1,24 @@
+{
+  "name": "ibcs-power-bi",
+  "version": "0.1.0",
+  "description": "Build IBCS®-style Power BI reports: card routes per visual, Deneb (Vega-Lite) chart templates with token sync, and SVG-in-DAX tables.",
+  "author": {
+    "name": "Sonni Simmelsgaard",
+    "url": "https://github.com/SonniHS"
+  },
+  "homepage": "https://github.com/SonniHS/simmelsgaard-skills/tree/main/plugins/ibcs-power-bi#readme",
+  "repository": "https://github.com/SonniHS/simmelsgaard-skills",
+  "license": "CC-BY-SA-4.0 AND MIT",
+  "keywords": [
+    "ibcs",
+    "power-bi",
+    "pbir",
+    "deneb",
+    "vega-lite",
+    "dax",
+    "svg"
+  ],
+  "dependencies": [
+    "ibcs"
+  ]
+}

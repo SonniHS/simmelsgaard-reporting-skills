@@ -1,0 +1,1009 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "IBCS stacked columns (D9, CO 1.1): periods on x, up to six ordered structure elements, scenario notation on the first segment, lighter grays above, inside segment values, net totals and an integrated end legend.",
+  "usermeta": {
+    "ibcs": {
+      "template": "stacked-columns",
+      "cards": [
+        "D9",
+        "CO 1.1",
+        "UN 3.2",
+        "EX 1.1 card 2"
+      ],
+      "fields": {
+        "Period": "text, period on the x axis; sort the visual by period ascending (query order is retained)",
+        "Segment": "text, structure element; at most 6 across the visual, with one row per Period/Segment; aggregate the rest upstream",
+        "SegmentOrder": "optional numeric field, consistent per Segment: ascending stack order, first element at zero; absent elements sort by Segment name after ordered elements",
+        "Value": "measure, additive segment value; negative values stack below zero; zero has no mark, BLANK has no mark or segment label",
+        "Scenario": "text, AC | FC | PY | PL | BU; identical on every row of a Period; only the first drawable ordered segment carries this notation",
+        "PxPerUnit": "optional measure, same positive value on every row: px per display unit for the page scale group; wins over pxPerUnit"
+      },
+      "requiredFields": [
+        "Period",
+        "Segment",
+        "Value"
+      ],
+      "notes": "Follows the IBCS® Standards. The first drawable structure element per period in the global SegmentOrder (or Segment name order) carries the column scenario in the stack: AC solid dark, PY light, PL/BU outlined, FC hatched. The five upper shades interpolate between the existing ibcsGray2 and ibcsAssistArea tokens; no independent palette. Thin white separators use ibcsBackground (the default page background). SegmentOrder and Scenario must be consistent; aggregate duplicate Period/Segment rows upstream. Negative segment values stack below the baseline independently of positives, in the same segment order (the first element remains at zero); totals are the signed net sum and sit above the positive stack, or below an all-negative stack. Null Value is omitted, not converted to zero; totals sum available values, and entirely blank periods are dropped. This composition template has no reference comparison, relative variance or polarity colours; the PY sample periods exercise negative, zero and null inputs without division. Rows with a blank Period or Segment, or no valid Value, are dropped; Scenario and PxPerUnit alone do not retain unknown members. FC inside labels have an ibcsBackground halo over the hatch. Inside labels need at least minLabelPx of actual rendered height; very narrow columns may need fewer decimals, scaled measures or a larger stepScale/container. The integrated legend connects the last period’s segment midpoints to names separated by at least max(legendGapPx, ibcsFontSize + 2) pixels; legendOffsetPx reserves horizontal leader room. Supply every segment in the last period; zero/blank segments there cannot be labelled. Reserve enough plot height for the legend names at this gap. One value scale spans both signs: equal pxPerUnit across visuals plus container heights sized to each visual's own signed stack range (CH 4.1/4.2); an undersized container shrinks the scale without clipping. stepScale defaults to 1.5, matching the other column templates; keep it identical across the page. Font family and number locale come from the synced Deneb config. SVG rendering is required for FC. stacked bars: use structure orientation later. Desktop interaction and hatch rendering still need verification in Deneb.",
+      "knobs": [
+        "decimals",
+        "unitDivisor",
+        "periodType",
+        "stepScale",
+        "pxPerUnit",
+        "minLabelPx",
+        "labelPad",
+        "labelPx",
+        "showCategoryLabels",
+        "legendGapPx",
+        "legendOffsetPx"
+      ],
+      "layout": {
+        "valueAxis": "height",
+        "fixedPx": 24,
+        "fixedPxNoCategoryLabels": 14,
+        "tiers": [
+          {
+            "id": "base",
+            "range": "min(0, sum of negative Value per Period) … max(0, sum of positive Value per Period), after unitDivisor",
+            "padHigh": [
+              "labelPx"
+            ],
+            "padLowIfNegative": [
+              "labelPx"
+            ]
+          }
+        ],
+        "rule": "container height = fixedPx + (hi − lo) × pxPerUnit + labelPx (+ labelPx again when lo < 0); fixedPx measured with Vega-Lite 6.4.3 at ibcsFontSize 12; use fixedPxNoCategoryLabels when showCategoryLabels = false; stepScale = 1.5 by default (month column width ≈ 24 px); reserve right padding for legendOffsetPx + 4 px + the widest segment name, and plot height at least ibcsFontSize + (visible legend names − 1) × max(legendGapPx, ibcsFontSize + 2)"
+      },
+      "sampleData": "stacked-columns.json",
+      "preview": {
+        "width": 560,
+        "height": 340
+      },
+      "previewVariants": [
+        {
+          "suffix": "-thin-fc",
+          "sampleData": "stacked-columns-thin-fc.json",
+          "preview": {
+            "width": 560,
+            "height": 340
+          },
+          "description": "Synthetic AC/FC months with thin East/South top segments, an FC period whose first segment is zero, and blank/unknown members that must disappear. Uses the default stepScale 1.5."
+        }
+      ]
+    }
+  },
+  "data": {
+    "name": "dataset"
+  },
+  "width": "container",
+  "height": "container",
+  "padding": {
+    "left": 6,
+    "right": 100,
+    "top": 4,
+    "bottom": 2
+  },
+  "params": [
+    {
+      "name": "decimals",
+      "value": 0,
+      "description": "label precision applied to ibcsFmtAbs; bind scaled measures so chart labels need at most 3 digits"
+    },
+    {
+      "name": "unitDivisor",
+      "value": 1,
+      "description": "divides Value before drawing and labelling; 1 = already scaled measures, 1000 = thousands, 1000000 = millions; put the unit in the title"
+    },
+    {
+      "name": "periodType",
+      "value": "month",
+      "description": "year | quarter | month | week | day: category width per period type (UN 3.3)"
+    },
+    {
+      "name": "stepScale",
+      "value": 1.5,
+      "description": "screen scaling of the token category step; default 1.5 matches the other column templates; keep identical across the page"
+    },
+    {
+      "name": "pxPerUnit",
+      "value": 0,
+      "description": "px per display unit after unitDivisor; 0 = auto. A positive PxPerUnit field wins. Size the container to its own signed stack range using usermeta.ibcs.layout; if too small, the data wins and the scale shrinks"
+    },
+    {
+      "name": "minLabelPx",
+      "value": 20,
+      "description": "minimum segment height in rendered pixels for an inside value label; the font height plus separators is also respected"
+    },
+    {
+      "name": "legendGapPx",
+      "value": 16,
+      "description": "minimum vertical centre-to-centre gap in pixels between end-legend names; at least ibcsFontSize + 2 is always respected"
+    },
+    {
+      "name": "legendOffsetPx",
+      "value": 18,
+      "description": "horizontal distance in pixels from the last column edge to the end of each legend leader; names start another 4 px to the right; minimum 4 px"
+    },
+    {
+      "name": "labelPad",
+      "value": 0.13,
+      "description": "total-label room as a share of the signed data range when pxPerUnit = 0"
+    },
+    {
+      "name": "labelPx",
+      "value": 18,
+      "description": "total-label room in pixels when pxPerUnit > 0"
+    },
+    {
+      "name": "showCategoryLabels",
+      "value": true,
+      "description": "false hides period labels, e.g. when another aligned visual already shows them"
+    },
+    {
+      "name": "ibcsAC",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsPY",
+      "value": "#A6A6A6"
+    },
+    {
+      "name": "ibcsPLFill",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsPLStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCStripe",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCGround",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsFCStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsGray2",
+      "value": "#7F7F7F"
+    },
+    {
+      "name": "ibcsAssistArea",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "ibcsBackground",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsText",
+      "value": "#000000"
+    },
+    {
+      "name": "ibcsTextOnDark",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsAxis",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsBarRatio",
+      "value": 0.6667
+    },
+    {
+      "name": "ibcsCategoryStep",
+      "value": {
+        "year": 32,
+        "quarter": 28,
+        "month": 24,
+        "week": 16,
+        "day": 12,
+        "structureRow": 20
+      }
+    },
+    {
+      "name": "ibcsOutline",
+      "value": 1
+    },
+    {
+      "name": "ibcsAxisWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsFontSize",
+      "value": 12
+    },
+    {
+      "name": "ibcsFmtAbs",
+      "value": ",.1f"
+    },
+    {
+      "name": "ibcsNA",
+      "value": "N/A"
+    },
+    {
+      "name": "ibcsHatch",
+      "value": "diagonal-stripe-3"
+    }
+  ],
+  "transform": [
+    {
+      "filter": "isValid(datum['Period']) && datum['Period'] !== '' && trim(toString(datum['Period'])) !== ''"
+    },
+    {
+      "filter": "isValid(datum['Segment']) && datum['Segment'] !== '' && trim(toString(datum['Segment'])) !== ''"
+    },
+    {
+      "calculate": "isValid(datum['Value']) && datum['Value'] !== '' && isFinite(toNumber(datum['Value'])) ? toNumber(datum['Value']) / unitDivisor : null",
+      "as": "_v"
+    },
+    {
+      "filter": "isValid(datum._v)"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_row"
+        }
+      ]
+    },
+    {
+      "calculate": "isValid(datum['SegmentOrder']) && datum['SegmentOrder'] !== '' && isFinite(toNumber(datum['SegmentOrder'])) ? toNumber(datum['SegmentOrder']) : 1e9",
+      "as": "_order"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "min",
+          "field": "_order",
+          "as": "_segmentOrder"
+        }
+      ],
+      "groupby": [
+        "Segment"
+      ]
+    },
+    {
+      "window": [
+        {
+          "op": "dense_rank",
+          "as": "_rank"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_segmentOrder",
+          "order": "ascending"
+        },
+        {
+          "field": "Segment",
+          "order": "ascending"
+        }
+      ]
+    },
+    {
+      "calculate": "isValid(datum._v) && datum._v != 0 ? datum._rank : 1e9",
+      "as": "_drawRank"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "min",
+          "field": "_drawRank",
+          "as": "_baseRank"
+        }
+      ],
+      "groupby": [
+        "Period"
+      ]
+    },
+    {
+      "calculate": "isValid(datum._v) ? max(datum._v, 0) : 0",
+      "as": "_positive"
+    },
+    {
+      "calculate": "isValid(datum._v) ? min(datum._v, 0) : 0",
+      "as": "_negative"
+    },
+    {
+      "calculate": "datum.__selected__ == 'on' ? 1 : 0",
+      "as": "_selected"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "min",
+          "field": "_row",
+          "as": "_periodI"
+        },
+        {
+          "op": "sum",
+          "field": "_positive",
+          "as": "_positiveTotal"
+        },
+        {
+          "op": "sum",
+          "field": "_negative",
+          "as": "_negativeTotal"
+        },
+        {
+          "op": "sum",
+          "field": "_v",
+          "as": "_sum"
+        },
+        {
+          "op": "valid",
+          "field": "_v",
+          "as": "_validCount"
+        },
+        {
+          "op": "max",
+          "field": "_selected",
+          "as": "_periodSelected"
+        }
+      ],
+      "groupby": [
+        "Period"
+      ]
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_j"
+        }
+      ],
+      "groupby": [
+        "Period"
+      ],
+      "sort": [
+        {
+          "field": "_rank",
+          "order": "ascending"
+        }
+      ]
+    },
+    {
+      "stack": "_v",
+      "groupby": [
+        "Period"
+      ],
+      "sort": [
+        {
+          "field": "_rank",
+          "order": "ascending"
+        }
+      ],
+      "offset": "zero",
+      "as": [
+        "_s0",
+        "_s1"
+      ]
+    },
+    {
+      "calculate": "(datum._s0 + datum._s1) / 2",
+      "as": "_mid"
+    },
+    {
+      "calculate": "datum._validCount > 0 ? datum._sum : null",
+      "as": "_total"
+    },
+    {
+      "calculate": "isValid(datum['PxPerUnit']) && datum['PxPerUnit'] > 0 ? datum['PxPerUnit'] : 0",
+      "as": "_fieldPpu"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "min",
+          "field": "_row",
+          "as": "_firstRow"
+        },
+        {
+          "op": "max",
+          "field": "_periodI",
+          "as": "_lastPeriodI"
+        },
+        {
+          "op": "max",
+          "field": "_positiveTotal",
+          "as": "_hi"
+        },
+        {
+          "op": "min",
+          "field": "_negativeTotal",
+          "as": "_lo"
+        },
+        {
+          "op": "max",
+          "field": "_fieldPpu",
+          "as": "_boundPpu"
+        }
+      ]
+    },
+    {
+      "calculate": "datum._boundPpu > 0 ? datum._boundPpu : pxPerUnit",
+      "as": "_ppu"
+    },
+    {
+      "calculate": "datum._lo < 0 ? datum._lo - (datum._ppu > 0 ? labelPx / datum._ppu : max(datum._hi - datum._lo, 1) * labelPad) : datum._lo",
+      "as": "_lo"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? max(datum._hi + labelPx / datum._ppu, datum._lo + height / datum._ppu) : datum._hi + max(datum._hi - datum._lo, 1) * labelPad",
+      "as": "_top"
+    },
+    {
+      "calculate": "isValid(datum._v) ? format(abs(datum._v) * pow(10, decimals) < 0.5 ? 0 : datum._v, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : ''",
+      "as": "_valueLabel"
+    },
+    {
+      "calculate": "isValid(datum._total) ? format(abs(datum._total) * pow(10, decimals) < 0.5 ? 0 : datum._total, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : ''",
+      "as": "_totalLabel"
+    }
+  ],
+  "encoding": {
+    "x": {
+      "field": "Period",
+      "type": "nominal",
+      "sort": {
+        "field": "_periodI",
+        "op": "min",
+        "order": "ascending"
+      },
+      "scale": {
+        "paddingInner": {
+          "expr": "1 - ibcsBarRatio"
+        },
+        "paddingOuter": {
+          "expr": "(1 - ibcsBarRatio) / 2"
+        }
+      },
+      "axis": {
+        "title": null,
+        "domain": false,
+        "ticks": false,
+        "labelAngle": 0,
+        "labelPadding": {
+          "expr": "showCategoryLabels ? 4 : 0"
+        },
+        "labelOpacity": {
+          "expr": "showCategoryLabels ? 1 : 0"
+        },
+        "labelFontSize": {
+          "expr": "showCategoryLabels ? ibcsFontSize : 0"
+        },
+        "labelColor": {
+          "expr": "ibcsText"
+        }
+      }
+    }
+  },
+  "layer": [
+    {
+      "description": "invisible signed extent owns the shared value scale; other layers use that scale for positions, so absent scenarios do not create empty extent domains; with pxPerUnit the domain is plot height ÷ pxPerUnit when the data fits",
+      "transform": [
+        {
+          "fold": [
+            "_lo",
+            "_top"
+          ],
+          "as": [
+            "_bound",
+            "_extent"
+          ]
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "opacity": 0,
+        "fill": {
+          "expr": "ibcsBackground"
+        },
+        "stroke": null
+      },
+      "encoding": {
+        "y": {
+          "field": "_extent",
+          "type": "quantitative",
+          "scale": {
+            "zero": true,
+            "nice": false
+          },
+          "axis": null
+        }
+      }
+    },
+    {
+      "description": "cross-filter selection: assist the whole period, without dimming scenario notation",
+      "transform": [
+        {
+          "filter": "datum._j == 1 && datum._periodSelected > 0"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "width": {
+          "expr": "bandwidth('x') / ibcsBarRatio"
+        },
+        "fill": {
+          "expr": "ibcsAssistArea"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      }
+    },
+    {
+      "description": "one continuous zero baseline, behind the columns",
+      "transform": [
+        {
+          "filter": "datum._row == datum._firstRow"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxis"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAxisWidth"
+        }
+      },
+      "encoding": {
+        "y": {
+          "datum": 0
+        },
+        "x": {
+          "value": 0
+        },
+        "x2": {
+          "value": {
+            "expr": "width"
+          }
+        }
+      }
+    },
+    {
+      "description": "opaque FC ground, before the hatched first segment",
+      "transform": [
+        {
+          "filter": "isValid(datum._v) && datum._v != 0 && datum._rank == datum._baseRank && datum.Scenario == 'FC'"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "width": {
+          "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)"
+        },
+        "fill": {
+          "expr": "ibcsFCGround"
+        }
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._s1)"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "scale('y', datum._s0)"
+          }
+        }
+      }
+    },
+    {
+      "description": "the lowest drawable structure element of each column (first non-blank, non-zero in order) carries the column scenario, even when negative",
+      "transform": [
+        {
+          "filter": "isValid(datum._v) && datum._v != 0 && datum._rank == datum._baseRank"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "width": {
+          "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)"
+        },
+        "fill": {
+          "expr": "datum.Scenario == 'FC' ? pbiPatternSVG(ibcsHatch, ibcsFCStripe, ibcsFCGround) : datum.Scenario == 'PY' ? ibcsPY : (datum.Scenario == 'PL' || datum.Scenario == 'BU') ? ibcsPLFill : ibcsAC"
+        },
+        "stroke": {
+          "expr": "datum.Scenario == 'FC' ? ibcsFCStroke : (datum.Scenario == 'PL' || datum.Scenario == 'BU') ? ibcsPLStroke : null"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._s1)"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "scale('y', datum._s0)"
+          }
+        },
+        "tooltip": [
+          {
+            "field": "Period",
+            "type": "nominal"
+          },
+          {
+            "field": "Segment",
+            "type": "nominal"
+          },
+          {
+            "field": "Scenario",
+            "type": "nominal"
+          },
+          {
+            "field": "_valueLabel",
+            "title": "Value"
+          },
+          {
+            "field": "_totalLabel",
+            "title": "Total (net)"
+          }
+        ]
+      }
+    },
+    {
+      "description": "upper structure elements: discrete segments sampled from a token-based gray ramp, lighter in stack order",
+      "transform": [
+        {
+          "filter": "isValid(datum._v) && datum._v != 0 && datum._rank != datum._baseRank"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "width": {
+          "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._s1)"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "scale('y', datum._s0)"
+          }
+        },
+        "tooltip": [
+          {
+            "field": "Period",
+            "type": "nominal"
+          },
+          {
+            "field": "Segment",
+            "type": "nominal"
+          },
+          {
+            "field": "Scenario",
+            "type": "nominal"
+          },
+          {
+            "field": "_valueLabel",
+            "title": "Value"
+          },
+          {
+            "field": "_totalLabel",
+            "title": "Total (net)"
+          }
+        ],
+        "fill": {
+          "field": "_rank",
+          "type": "quantitative",
+          "scale": {
+            "type": "linear",
+            "domain": [
+              2,
+              6
+            ],
+            "range": [
+              {
+                "expr": "ibcsGray2"
+              },
+              {
+                "expr": "ibcsAssistArea"
+              }
+            ],
+            "clamp": true,
+            "interpolate": "rgb"
+          },
+          "legend": null
+        }
+      }
+    },
+    {
+      "description": "thin white separators only at adjoining segment boundaries, not around outlined scenario segments",
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsBackground"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "xOffset": {
+          "expr": "-(min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)) / 2"
+        },
+        "x2Offset": {
+          "expr": "(min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)) / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._s0)"
+          }
+        },
+        "x2": {
+          "field": "Period"
+        }
+      },
+      "transform": [
+        {
+          "filter": "isValid(datum._v) && datum._v != 0 && datum._s0 != 0"
+        }
+      ]
+    },
+    {
+      "description": "background-coloured halo behind the drawable FC scenario segment’s inside label, so hatch stripes do not cut through text",
+      "transform": [
+        {
+          "filter": "isValid(datum._v) && datum._v != 0 && datum._rank == datum._baseRank && datum.Scenario == 'FC'"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "baseline": "middle",
+        "align": "center",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "stroke": {
+          "expr": "ibcsBackground"
+        },
+        "strokeWidth": 4,
+        "fill": {
+          "expr": "ibcsBackground"
+        },
+        "opacity": {
+          "expr": "abs(scale('y', datum._s1) - scale('y', datum._s0)) >= max(minLabelPx, ibcsFontSize + 2 * ibcsOutline) ? 1 : 0"
+        },
+        "strokeJoin": "round"
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._mid)"
+          }
+        },
+        "text": {
+          "field": "_valueLabel"
+        }
+      }
+    },
+    {
+      "description": "inside values only where the actual pixel height fits the label; no label for zero or blank segments",
+      "transform": [
+        {
+          "filter": "isValid(datum._v) && datum._v != 0"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "baseline": "middle",
+        "align": "center",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "datum._rank == datum._baseRank && datum.Scenario == 'AC' ? ibcsTextOnDark : ibcsText"
+        },
+        "opacity": {
+          "expr": "abs(scale('y', datum._s1) - scale('y', datum._s0)) >= max(minLabelPx, ibcsFontSize + 2 * ibcsOutline) ? 1 : 0"
+        }
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._mid)"
+          }
+        },
+        "text": {
+          "field": "_valueLabel"
+        }
+      }
+    },
+    {
+      "description": "signed net total above a stack that has positive segments, below an all-negative stack; a blank period shows nothing (N/A is only for relative variances)",
+      "transform": [
+        {
+          "filter": "datum._j == 1"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "baseline": {
+          "expr": "datum._positiveTotal > 0 || !(datum._negativeTotal < 0) ? 'bottom' : 'top'"
+        },
+        "dy": {
+          "expr": "datum._positiveTotal > 0 || !(datum._negativeTotal < 0) ? -2 : 2"
+        },
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._positiveTotal > 0 || !(datum._negativeTotal < 0) ? datum._positiveTotal : datum._negativeTotal)"
+          }
+        },
+        "text": {
+          "field": "_totalLabel"
+        }
+      }
+    },
+    {
+      "description": "integrated end legend: retain midpoint anchors, separate names in screen pixels and connect them with offset leaders",
+      "transform": [
+        {
+          "filter": "datum._periodI == datum._lastPeriodI && isValid(datum._v) && datum._v != 0"
+        },
+        {
+          "calculate": "scale('y', datum._mid)",
+          "as": "_legendAnchorY"
+        },
+        {
+          "window": [
+            {
+              "op": "row_number",
+              "as": "_legendIndex"
+            }
+          ],
+          "sort": [
+            {
+              "field": "_mid",
+              "order": "descending"
+            }
+          ]
+        },
+        {
+          "calculate": "clamp(datum._legendAnchorY, ibcsFontSize / 2, height - ibcsFontSize / 2) - (datum._legendIndex - 1) * max(legendGapPx, ibcsFontSize + 2)",
+          "as": "_legendBaseY"
+        },
+        {
+          "window": [
+            {
+              "op": "max",
+              "field": "_legendBaseY",
+              "as": "_legendRunningY"
+            }
+          ],
+          "sort": [
+            {
+              "field": "_mid",
+              "order": "descending"
+            }
+          ],
+          "frame": [
+            null,
+            0
+          ]
+        },
+        {
+          "calculate": "datum._legendRunningY + (datum._legendIndex - 1) * max(legendGapPx, ibcsFontSize + 2)",
+          "as": "_legendDownY"
+        },
+        {
+          "joinaggregate": [
+            {
+              "op": "max",
+              "field": "_legendDownY",
+              "as": "_legendBottomY"
+            }
+          ]
+        },
+        {
+          "calculate": "datum._legendDownY - max(0, datum._legendBottomY - height + ibcsFontSize / 2)",
+          "as": "_legendY"
+        }
+      ],
+      "layer": [
+        {
+          "description": "leaders from true segment midpoints to the separated name positions",
+          "mark": {
+            "type": "rule",
+            "stroke": {
+              "expr": "ibcsGray2"
+            },
+            "strokeWidth": {
+              "expr": "ibcsOutline"
+            }
+          },
+          "encoding": {
+            "x": {
+              "value": {
+                "expr": "scale('x', datum.Period) + bandwidth('x') / 2 + min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio) / 2 + 2"
+              }
+            },
+            "x2": {
+              "value": {
+                "expr": "scale('x', datum.Period) + bandwidth('x') / 2 + min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio) / 2 + max(legendOffsetPx, 4)"
+              }
+            },
+            "y": {
+              "value": {
+                "expr": "datum._legendAnchorY"
+              }
+            },
+            "y2": {
+              "value": {
+                "expr": "datum._legendY"
+              }
+            }
+          }
+        },
+        {
+          "mark": {
+            "type": "text",
+            "align": "left",
+            "baseline": "middle",
+            "xOffset": {
+              "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio) / 2 + max(legendOffsetPx, 4) + 4"
+            },
+            "fontSize": {
+              "expr": "ibcsFontSize"
+            },
+            "fill": {
+              "expr": "ibcsText"
+            }
+          },
+          "encoding": {
+            "y": {
+              "value": {
+                "expr": "datum._legendY"
+              }
+            },
+            "text": {
+              "field": "Segment"
+            }
+          }
+        }
+      ]
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": null
+    }
+  }
+}

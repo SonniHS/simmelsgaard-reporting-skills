@@ -1,0 +1,8 @@
+{"name":"barTime","position":{"x":320,"y":80,"width":400,"height":300},
+ "visual":{"visualType":"clusteredBarChart",
+  "query":{"queryState":{"Category":{"projections":[{"field":{"Column":{"Expression":{"SourceRef":{"Entity":"Date"}},"Property":"Month"}},"queryRef":"Date.Month"}]},
+   "Y":{"projections":[{"field":{"Measure":{"Expression":{"SourceRef":{"Entity":"Measures"}},"Property":"AC"}},"queryRef":"Measures.AC"}]}}},
+  "objects":{"valueAxis":[{"properties":{"show":{"expr":{"Literal":{"Value":"true"}}},"start":{"expr":{"Literal":{"Value":"10D"}}},"gridlineShow":{"expr":{"Literal":{"Value":"true"}}}}}],
+   "labels":[{"properties":{"show":{"expr":{"Literal":{"Value":"true"}}}}}],
+   "dataPoint":[{"properties":{"fill":{"solid":{"color":{"expr":{"Literal":{"Value":"'#7B2CBF'"}}}}}}}]},
+  "visualContainerObjects":{"border":[{"properties":{"show":{"expr":{"Literal":{"Value":"true"}}}}}]}}}

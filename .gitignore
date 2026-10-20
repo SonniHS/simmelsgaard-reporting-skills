@@ -1,0 +1,11 @@
+.DS_Store
+.claude/settings.local.json
+.venv/
+__pycache__/
+node_modules/
+*.env
+.env
+# Local-only leak denylist (private names the scan must catch; never commit)
+tests/private-denylist.txt
+# Local-only agent instructions (session routing etc.)
+CLAUDE.local.md

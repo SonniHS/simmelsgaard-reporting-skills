@@ -1,0 +1,34 @@
+{
+ "name": "deneb1",
+ "position": {
+  "x": 0,
+  "y": 400,
+  "width": 300,
+  "height": 300
+ },
+ "visual": {
+  "visualType": "deneb7E15AEF80B9E4D4F8E12924291ECE89A",
+  "objects": {
+   "vega": [
+    {
+     "properties": {
+      "jsonSpec": {
+       "expr": {
+        "Literal": {
+         "Value": "'{\"$schema\": \"https://vega.github.io/schema/vega-lite/v5.json\", \"data\": {\"name\": \"dataset\"}, \"mark\": \"arc\", \"encoding\": {\"theta\": {\"field\": \"Sales\", \"type\": \"quantitative\"}, \"color\": {\"field\": \"Region\", \"type\": \"nominal\", \"scale\": {\"scheme\": \"category10\"}}, \"x\": {\"field\": \"Region\", \"type\": \"nominal\", \"axis\": {\"labelAngle\": -45}}}}'"
+        }
+       }
+      },
+      "provider": {
+       "expr": {
+        "Literal": {
+         "Value": "'vegaLite'"
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ }
+}

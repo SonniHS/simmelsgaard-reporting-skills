@@ -1,0 +1,4 @@
+{"name":"IBCS clean","dataColors":["#404040","#A6A6A6","#FFFFFF","#7F7F7F","#BFBFBF","#D9D9D9"],
+ "good":"#8CB400","bad":"#FF0000","neutral":"#0064FF","background":"#FFFFFF","foreground":"#000000",
+ "textClasses":{"title":{"fontFace":"Segoe UI Semibold","fontSize":11},"label":{"fontFace":"Segoe UI","fontSize":9}},
+ "visualStyles":{"*":{"*":{"legend":[{"show":false}],"valueAxis":[{"show":false,"gridlineShow":false}],"border":[{"show":false}],"dropShadow":[{"show":false}],"labels":[{"show":true,"labelDisplayUnits":1000000}]}}}}

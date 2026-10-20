@@ -1,0 +1,37 @@
+[
+ {
+  "Category": "Paris",
+  "AC": 795,
+  "PL": 680,
+  "PY": 648,
+  "BU": 680
+ },
+ {
+  "Category": "Rome",
+  "AC": 618,
+  "PL": 637,
+  "PY": 684,
+  "BU": 637
+ },
+ {
+  "Category": "Berlin",
+  "AC": 592,
+  "PL": 450,
+  "PY": 459,
+  "BU": 450
+ },
+ {
+  "Category": "Madrid",
+  "AC": 410,
+  "PL": 388,
+  "PY": 402,
+  "BU": 388
+ },
+ {
+  "Category": "Vienna",
+  "AC": 233,
+  "PL": 260,
+  "PY": 251,
+  "BU": 260
+ }
+]

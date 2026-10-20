@@ -1,0 +1,4 @@
+{"name":"bubble1","position":{"x":740,"y":400,"width":300,"height":300},
+ "visual":{"visualType":"bubbleChart",
+  "query":{"queryState":{"Details":{"projections":[{"field":{"Column":{"Expression":{"SourceRef":{"Entity":"Product"}},"Property":"Line"}},"queryRef":"Product.Line"}]}}},
+  "objects":{"legend":[{"properties":{"show":{"expr":{"Literal":{"Value":"true"}}}}}]}}}

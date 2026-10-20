@@ -1,0 +1,245 @@
+[
+  {
+    "Period": null,
+    "AC": null,
+    "FC": null,
+    "PY": null,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "",
+    "AC": null,
+    "FC": null,
+    "PY": null,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "N/A",
+    "AC": null,
+    "FC": null,
+    "PY": null,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2024-01",
+    "AC": 8.4,
+    "FC": null,
+    "PY": null,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2024-02",
+    "AC": 8.9,
+    "FC": null,
+    "PY": null,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2024-03",
+    "AC": 9.2,
+    "FC": null,
+    "PY": null,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2024-04",
+    "AC": 9.7,
+    "FC": null,
+    "PY": 10.1,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2024-05",
+    "AC": 9.4,
+    "FC": null,
+    "PY": 8.8,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2024-06",
+    "AC": 10.1,
+    "FC": null,
+    "PY": 9.5,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2024-07",
+    "AC": 9.6,
+    "FC": null,
+    "PY": 10.0,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2024-08",
+    "AC": 10.2,
+    "FC": null,
+    "PY": 10.6,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2024-09",
+    "AC": 10.7,
+    "FC": null,
+    "PY": 10.1,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2024-10",
+    "AC": 10.3,
+    "FC": null,
+    "PY": 9.7,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2024-11",
+    "AC": 11.1,
+    "FC": null,
+    "PY": 11.5,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2024-12",
+    "AC": null,
+    "FC": null,
+    "PY": 11.8,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2025-01",
+    "AC": 9.1,
+    "FC": null,
+    "PY": 8.5,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2025-02",
+    "AC": 9.5,
+    "FC": null,
+    "PY": 8.9,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2025-03",
+    "AC": 9.8,
+    "FC": null,
+    "PY": 10.2,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2025-04",
+    "AC": 10.4,
+    "FC": null,
+    "PY": 10.8,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2025-05",
+    "AC": 10.0,
+    "FC": null,
+    "PY": 9.4,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2025-06",
+    "AC": 10.8,
+    "FC": null,
+    "PY": 10.2,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2025-07",
+    "AC": 10.2,
+    "FC": null,
+    "PY": 10.6,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2025-08",
+    "AC": 10.9,
+    "FC": null,
+    "PY": 11.3,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2025-09",
+    "AC": null,
+    "FC": 11.3,
+    "PY": 10.7,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2025-10",
+    "AC": null,
+    "FC": 10.9,
+    "PY": 10.3,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2025-11",
+    "AC": null,
+    "FC": 11.6,
+    "PY": 12.0,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  },
+  {
+    "Period": "2025-12",
+    "AC": null,
+    "FC": 11.9,
+    "PY": 12.3,
+    "PL": null,
+    "BU": null,
+    "YMax": 12
+  }
+]

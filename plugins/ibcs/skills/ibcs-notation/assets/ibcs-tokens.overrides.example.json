@@ -1,0 +1,71 @@
+{
+  "$description": "EXAMPLE corporate override. Copy to ibcs-tokens.overrides.json in your project and edit. Only $value (and optionally $description) of EXISTING token paths may be overridden; mark each override with src ORG. Deep-merged over ibcs-tokens.json (override wins; arrays replace wholesale). See references/tokens-in-practice.md, 'Overriding'.",
+  "color": {
+    "variance": {
+      "good": {
+        "$value": "#2E8B57",
+        "$extensions": {
+          "ibcs": {
+            "src": "ORG",
+            "ref": "Notation manual v1, §3.2",
+            "note": "Corporate green; still brighter than 'bad', CVD-checked."
+          }
+        }
+      },
+      "bad": {
+        "$value": "#C00000",
+        "$extensions": {
+          "ibcs": {
+            "src": "ORG",
+            "ref": "Notation manual v1, §3.2",
+            "note": "IBCS text says 'dark red'."
+          }
+        }
+      }
+    },
+    "marker": {
+      "highlight": {
+        "$value": "#1F4E99",
+        "$extensions": {
+          "ibcs": {
+            "src": "ORG",
+            "ref": "Notation manual v1, §3.4"
+          }
+        }
+      }
+    }
+  },
+  "typography": {
+    "family": {
+      "web": {
+        "$value": [
+          "Inter",
+          "system-ui",
+          "Segoe UI",
+          "Arial",
+          "sans-serif"
+        ],
+        "$extensions": {
+          "ibcs": {
+            "src": "ORG",
+            "ref": "Notation manual v1, §2",
+            "note": "Self-hosted, no CDN."
+          }
+        }
+      }
+    }
+  },
+  "number": {
+    "separator": {
+      "decimal": {
+        "$value": ",",
+        "$extensions": {
+          "ibcs": {
+            "src": "ORG",
+            "ref": "Notation manual v1, §4"
+          }
+        }
+      }
+    }
+  }
+}

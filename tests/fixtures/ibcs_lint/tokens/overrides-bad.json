@@ -1,0 +1,8 @@
+{
+  "$description": "Deliberately broken override for tests: brand-blue AC, PY darker than AC, good darker than bad, 0.8 bar width.",
+  "color": {
+    "scenario": { "ac": { "$value": "#1F5FBF" }, "py": { "$value": "#202020" } },
+    "variance": { "good": { "$value": "#1B5E20" }, "bad": { "$value": "#FF8A80" } }
+  },
+  "geometry": { "barWidthRatio": { "absolute": { "$value": 0.8 } } }
+}

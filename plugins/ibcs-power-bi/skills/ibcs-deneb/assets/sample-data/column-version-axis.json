@@ -1,0 +1,88 @@
+[
+  {
+    "Version": "PY",
+    "VersionOrder": 0,
+    "Scenario": "PY",
+    "Value": 7.0
+  },
+  {
+    "Version": "BU",
+    "VersionOrder": 1,
+    "Scenario": "BU",
+    "Value": 8.0
+  },
+  {
+    "Version": "FC Jan",
+    "VersionOrder": 2,
+    "Scenario": "FC",
+    "Value": 8.3
+  },
+  {
+    "Version": "FC Feb",
+    "VersionOrder": 3,
+    "Scenario": "FC",
+    "Value": 8.34
+  },
+  {
+    "Version": "FC Mar",
+    "VersionOrder": 4,
+    "Scenario": "FC",
+    "Value": 7.4,
+    "Polarity": -1
+  },
+  {
+    "Version": "FC Apr",
+    "VersionOrder": 5,
+    "Scenario": "FC",
+    "Value": 8.1,
+    "Polarity": 0
+  },
+  {
+    "Version": "FC May",
+    "VersionOrder": 6,
+    "Scenario": "FC",
+    "Value": -0.4
+  },
+  {
+    "Version": "FC Jun",
+    "VersionOrder": 7,
+    "Scenario": "FC",
+    "Value": 0.0
+  },
+  {
+    "Version": "FC Jul",
+    "VersionOrder": 8,
+    "Scenario": "FC",
+    "Value": 6.8
+  },
+  {
+    "Version": "FC Aug",
+    "VersionOrder": 9,
+    "Scenario": "FC",
+    "Value": null
+  },
+  {
+    "Version": "FC Sep",
+    "VersionOrder": 10,
+    "Scenario": "FC",
+    "Value": 7.2
+  },
+  {
+    "Version": "AC",
+    "VersionOrder": 11,
+    "Scenario": "AC",
+    "Value": 7.6
+  },
+  {
+    "Version": null,
+    "VersionOrder": -1,
+    "Scenario": "FC",
+    "Value": 999
+  },
+  {
+    "Version": "",
+    "VersionOrder": -2,
+    "Scenario": "PL",
+    "Value": 999
+  }
+]

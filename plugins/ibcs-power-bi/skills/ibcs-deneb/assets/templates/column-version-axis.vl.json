@@ -1,0 +1,1034 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "IBCS scenario columns on a version axis (forecast evolution): each version is a full-period value, with absolute deltas above on the SAME linear scale (CO 4.2, UN 4.1). Reference axis notation is local to each subtrahend.",
+  "usermeta": {
+    "ibcs": {
+      "template": "column-version-axis",
+      "cards": [
+        "EX 1.1 card 1",
+        "EX 1.1 card 7",
+        "CO 4.2",
+        "UN 4.1"
+      ],
+      "fields": {
+        "Version": "text, unique version label: e.g. PY, BU, FC Jan, FC Feb, AC. One full-period value per version; blank/null/whitespace categories are dropped before ordering or window calculations.",
+        "VersionOrder": "optional numeric column, ascending chronology; bind on every row or omit entirely to keep query order. Ties keep query order. The final AC must sort last; no alphabetical sort is imposed.",
+        "Scenario": "text, AC | FC | PL | BU | PY per version: AC solid dark, FC hatched, PL/BU outlined, PY solid light. Scenario is independent of the Version label.",
+        "Value": "measure, full-period value of that version; raw values are divided by unitDivisor before drawing and labelling. BLANK stays in the version sequence, gets no column, and invalidates deltas that use it.",
+        "Polarity": "optional measure: 1 higher is better, -1 lower is better, 0 neutral blue; wins over the polarity knob per minuend row. Colour only; direction always follows the arithmetic sign.",
+        "PxPerUnit": "optional measure, same positive value on every row: px per display unit for the value axis of both tiers; wins over pxPerUnit. Size the container to the data using layout."
+      },
+      "requiredFields": [
+        "Version",
+        "Scenario",
+        "Value"
+      ],
+      "notes": "Follows the IBCS® Standards. Values compare versions of ONE full period, not successive monthly amounts. deltaBase 'previous' subtracts the immediately preceding version (including a blank one); 'first' subtracts the first version, e.g. PL/BU. The first version has no delta. Absolute Δ = Value − reference remains valid for negative or zero references. Relative Δ% (tooltip only) = (Value − reference) / reference using the SIGNED reference, never ABS; reference <= 0 or blank (or blank Value) gives null and the ibcsNA label, with no relative mark. Variance-axis segments use the subtrahend's Scenario: PL/BU two thin lines, PY solid light, FC/AC one thin line without hatch. The minuend's Scenario determines FC hatch on delta bars. A delta rounding to 0 at decimals gets no colour, no hatch and a signless zero label. Polarity changes colour only. Values and deltas share one view and one scale, including negative values. Set the same pxPerUnit on all members of a scale group and size each visual to its own ranges (layout; scale_layout.py in the ibcs-power-bi skill); a too-small container lets data win. Unit goes in the title. Use the synced Deneb config for font family and number locale; SVG render mode for pbiPatternSVG. One unique Version per row is required; aggregate duplicates upstream. No multi-period grouping or automatic placement of AC; query order / VersionOrder must express the desired chronology. Labels do not automatically de-overlap. Render-checked outside Power BI; not yet verified in Desktop.",
+      "knobs": [
+        "deltaBase",
+        "polarity",
+        "decimals",
+        "unitDivisor",
+        "periodType",
+        "stepScale",
+        "pxPerUnit",
+        "showCategoryLabels",
+        "labelPad",
+        "tierGap",
+        "labelPx",
+        "tierGapPx"
+      ],
+      "layout": {
+        "valueAxis": "height",
+        "fixedPx": 24,
+        "fixedPxNoCategoryLabels": 12,
+        "tiers": [
+          {
+            "id": "base",
+            "range": "min(Value / unitDivisor, 0) … max(Value / unitDivisor, 0)",
+            "padHigh": [
+              "labelPx",
+              "tierGapPx"
+            ],
+            "padLowIfNegative": [
+              "labelPx"
+            ]
+          },
+          {
+            "id": "variance",
+            "range": "min(Δ, 0) … max(Δ, 0), in display units for deltaBase",
+            "padHigh": [
+              "labelPx"
+            ],
+            "padLowIfNegative": [
+              "labelPx"
+            ]
+          }
+        ],
+        "rule": "container height = fixedPx + Σ tiers ((hi − lo) × pxPerUnit + padHigh + padLowIfNegative when lo < 0); one shared value axis, anchored at the signed base minimum with label room. Measured with Vega-Lite 6.4.3 at ibcsFontSize 12; recompute variance range when deltaBase changes."
+      },
+      "sampleData": "column-version-axis.json",
+      "preview": {
+        "width": 920,
+        "height": 460
+      }
+    }
+  },
+  "data": {
+    "name": "dataset"
+  },
+  "width": "container",
+  "height": "container",
+  "padding": {
+    "left": 4,
+    "right": 4,
+    "top": 4,
+    "bottom": 2
+  },
+  "params": [
+    {
+      "name": "deltaBase",
+      "value": "previous",
+      "description": "'previous' = value minus the immediately preceding version; 'first' = value minus the first version. The first version has no delta. Blank values stay in the sequence; never skip them to find a reference."
+    },
+    {
+      "name": "polarity",
+      "value": 1,
+      "description": "1 higher is better, -1 lower is better, 0 neutral; an optional Polarity field wins per row. Polarity affects colour only, never arithmetic or geometry."
+    },
+    {
+      "name": "decimals",
+      "value": 1,
+      "description": "decimals for value and absolute-variance labels (the token formats with this precision); IBCS: at most 3 digits in charts"
+    },
+    {
+      "name": "unitDivisor",
+      "value": 1,
+      "description": "divides every value before drawing and labelling: 1 = the measures are already scaled (preferred, e.g. a scaled measure or a Scale picker), 1000 = thousands, 1000000 = millions. The unit belongs in the title (UN 2.2), never as K/M suffixes"
+    },
+    {
+      "name": "periodType",
+      "value": "month",
+      "description": "year | quarter | month | week | day: category width per period type (UN 3.3)"
+    },
+    {
+      "name": "stepScale",
+      "value": 1.5,
+      "description": "screen scaling of the token category step; keep it identical on every page"
+    },
+    {
+      "name": "pxPerUnit",
+      "value": 0,
+      "description": "Px per display unit (after unitDivisor), on the shared value axis of BOTH tiers; 0 = fit the data. The positive PxPerUnit field wins (one scale measure, same on every row). Size the container to the data using usermeta.ibcs.layout; if too small, data wins and px per unit shrinks so nothing is cut."
+    },
+    {
+      "name": "showCategoryLabels",
+      "value": true,
+      "description": "false hides the category labels, e.g. for a tier stacked directly above another visual that already shows them"
+    },
+    {
+      "name": "labelPad",
+      "value": 0.13,
+      "description": "Label room as a share of the larger tier range (pxPerUnit = 0)."
+    },
+    {
+      "name": "tierGap",
+      "value": 0.06,
+      "description": "Gap between tiers as a share of the larger tier range (pxPerUnit = 0)."
+    },
+    {
+      "name": "labelPx",
+      "value": 18,
+      "description": "Label room beyond each tier maximum and below negative minima, in px (pxPerUnit > 0)."
+    },
+    {
+      "name": "tierGapPx",
+      "value": 8,
+      "description": "Gap between tiers in px (pxPerUnit > 0)."
+    },
+    {
+      "name": "ibcsAC",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsPY",
+      "value": "#A6A6A6"
+    },
+    {
+      "name": "ibcsPLFill",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsPLStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCStripe",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCGround",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsFCStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsGood",
+      "value": "#8CB400"
+    },
+    {
+      "name": "ibcsBad",
+      "value": "#FF0000"
+    },
+    {
+      "name": "ibcsNeutral",
+      "value": "#0064FF"
+    },
+    {
+      "name": "ibcsText",
+      "value": "#000000"
+    },
+    {
+      "name": "ibcsAxis",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsAxisPY",
+      "value": "#A6A6A6"
+    },
+    {
+      "name": "ibcsAxisPL",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsAssistArea",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "ibcsBarRatio",
+      "value": 0.6667
+    },
+    {
+      "name": "ibcsOutline",
+      "value": 1
+    },
+    {
+      "name": "ibcsAxisWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsPYAxisWidth",
+      "value": 3
+    },
+    {
+      "name": "ibcsPLAxisLine",
+      "value": 1
+    },
+    {
+      "name": "ibcsPLAxisGap",
+      "value": 3
+    },
+    {
+      "name": "ibcsFontSize",
+      "value": 12
+    },
+    {
+      "name": "ibcsFmtAbs",
+      "value": ",.1f"
+    },
+    {
+      "name": "ibcsFmtVar",
+      "value": "+,.1f"
+    },
+    {
+      "name": "ibcsFmtRelVar",
+      "value": "+.0%"
+    },
+    {
+      "name": "ibcsNA",
+      "value": "N/A"
+    },
+    {
+      "name": "ibcsHatch",
+      "value": "diagonal-stripe-3"
+    },
+    {
+      "name": "ibcsCategoryStep",
+      "value": {
+        "year": 32,
+        "quarter": 28,
+        "month": 24,
+        "week": 16,
+        "day": 12,
+        "structureRow": 20
+      }
+    },
+    {
+      "name": "bw",
+      "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)",
+      "description": "column width: 2/3 of the category, capped at the token step so every chart of this period type has the same width"
+    }
+  ],
+  "transform": [
+    {
+      "filter": "isValid(datum['Version']) && datum['Version'] !== '' && trim(toString(datum['Version'])) !== ''"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_inputI"
+        }
+      ]
+    },
+    {
+      "calculate": "isValid(datum['VersionOrder']) && datum['VersionOrder'] !== '' ? toNumber(datum['VersionOrder']) : datum._inputI",
+      "as": "_sort"
+    },
+    {
+      "calculate": "isValid(datum['Value']) && datum['Value'] !== '' ? datum['Value'] / unitDivisor : null",
+      "as": "_v"
+    },
+    {
+      "calculate": "datum['Scenario'] == 'FC'",
+      "as": "_isFC"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_i"
+        },
+        {
+          "op": "lag",
+          "field": "_v",
+          "param": 1,
+          "as": "_prevV"
+        },
+        {
+          "op": "lag",
+          "field": "Scenario",
+          "param": 1,
+          "as": "_prevScenario"
+        },
+        {
+          "op": "lag",
+          "field": "Version",
+          "param": 1,
+          "as": "_prevVersion"
+        },
+        {
+          "op": "first_value",
+          "field": "_v",
+          "as": "_firstV"
+        },
+        {
+          "op": "first_value",
+          "field": "Scenario",
+          "as": "_firstScenario"
+        },
+        {
+          "op": "first_value",
+          "field": "Version",
+          "as": "_firstVersion"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_sort",
+          "order": "ascending"
+        },
+        {
+          "field": "_inputI",
+          "order": "ascending"
+        }
+      ],
+      "frame": [
+        null,
+        null
+      ],
+      "ignorePeers": true
+    },
+    {
+      "calculate": "datum._i > 1 ? (deltaBase == 'first' ? datum._firstV : datum._prevV) : null",
+      "as": "_r"
+    },
+    {
+      "calculate": "datum._i > 1 ? (deltaBase == 'first' ? datum._firstScenario : datum._prevScenario) : null",
+      "as": "_rScenario"
+    },
+    {
+      "calculate": "datum._i > 1 ? (deltaBase == 'first' ? datum._firstVersion : datum._prevVersion) : null",
+      "as": "_rVersion"
+    },
+    {
+      "calculate": "isValid(datum._v) && isValid(datum._r) ? datum._v - datum._r : null",
+      "as": "_d"
+    },
+    {
+      "calculate": "isValid(datum._v) && isValid(datum._r) && datum._r > 0 ? (datum._v - datum._r) / datum._r : null",
+      "as": "_p"
+    },
+    {
+      "calculate": "isValid(datum['Polarity']) ? datum['Polarity'] : polarity",
+      "as": "_pol"
+    },
+    {
+      "calculate": "isValid(datum['PxPerUnit']) && datum['PxPerUnit'] > 0 ? datum['PxPerUnit'] : pxPerUnit",
+      "as": "_ppu"
+    },
+    {
+      "calculate": "!isValid(datum._d) || abs(datum._d) * pow(10, decimals) < 0.5 ? null : datum._pol == 0 ? ibcsNeutral : (datum._d * datum._pol > 0 ? ibcsGood : ibcsBad)",
+      "as": "_c"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_v",
+          "as": "_maxV"
+        },
+        {
+          "op": "min",
+          "field": "_v",
+          "as": "_minV"
+        },
+        {
+          "op": "max",
+          "field": "_d",
+          "as": "_dMax"
+        },
+        {
+          "op": "min",
+          "field": "_d",
+          "as": "_dMin"
+        }
+      ]
+    },
+    {
+      "calculate": "max(isValid(datum._maxV) ? datum._maxV : 0, 0)",
+      "as": "_vHi"
+    },
+    {
+      "calculate": "min(isValid(datum._minV) ? datum._minV : 0, 0)",
+      "as": "_vLo"
+    },
+    {
+      "calculate": "max(isValid(datum._dMax) ? datum._dMax : 0, 0)",
+      "as": "_dHi"
+    },
+    {
+      "calculate": "min(isValid(datum._dMin) ? datum._dMin : 0, 0)",
+      "as": "_dLo"
+    },
+    {
+      "calculate": "max(datum._vHi - datum._vLo, datum._dHi - datum._dLo, 1)",
+      "as": "_A"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? labelPx / datum._ppu : datum._A * labelPad",
+      "as": "_lp"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? tierGapPx / datum._ppu : datum._A * tierGap",
+      "as": "_tg"
+    },
+    {
+      "calculate": "datum._vHi + datum._lp + datum._tg - datum._dLo + (datum._dLo < 0 ? datum._lp : 0)",
+      "as": "_B"
+    },
+    {
+      "calculate": "datum._vLo - (datum._vLo < 0 ? datum._lp : 0)",
+      "as": "_yLo"
+    },
+    {
+      "calculate": "datum._B + datum._dHi + datum._lp",
+      "as": "_top"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? max(datum._top, datum._yLo + height / datum._ppu) : datum._top",
+      "as": "_yTop"
+    },
+    {
+      "calculate": "isValid(datum._d) ? datum._B + datum._d : null",
+      "as": "_dEnd"
+    },
+    {
+      "calculate": "isValid(datum._dEnd) ? datum._dEnd : datum._B",
+      "as": "_dLabelY"
+    },
+    {
+      "calculate": "isValid(datum._v) ? format(abs(datum._v) * pow(10, decimals) < 0.5 ? 0 : datum._v, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : ibcsNA",
+      "as": "_vLabel"
+    },
+    {
+      "calculate": "isValid(datum._d) ? (abs(datum._d) * pow(10, decimals) < 0.5 ? format(0, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : format(datum._d, replace(ibcsFmtVar, /[.][0-9]+/, '.' + decimals))) : ibcsNA",
+      "as": "_dLabel"
+    },
+    {
+      "calculate": "isValid(datum._p) ? (abs(datum._p) * 100 * pow(10, decimals) < 0.5 ? format(0, replace(replace(ibcsFmtRelVar, '+', ''), /[.][0-9]+/, '.' + decimals)) : format(datum._p, replace(ibcsFmtRelVar, /[.][0-9]+/, '.' + decimals))) : ibcsNA",
+      "as": "_pLabel"
+    }
+  ],
+  "encoding": {
+    "x": {
+      "field": "Version",
+      "type": "nominal",
+      "sort": {
+        "field": "_i",
+        "op": "min",
+        "order": "ascending"
+      },
+      "scale": {
+        "paddingInner": {
+          "expr": "1 - ibcsBarRatio"
+        },
+        "paddingOuter": {
+          "expr": "(1 - ibcsBarRatio) / 2"
+        }
+      },
+      "axis": {
+        "title": null,
+        "domain": false,
+        "ticks": false,
+        "labelAngle": 0,
+        "labelPadding": {
+          "expr": "showCategoryLabels ? 4 : 0"
+        },
+        "labelOpacity": {
+          "expr": "showCategoryLabels ? 1 : 0"
+        },
+        "labelFontSize": {
+          "expr": "showCategoryLabels ? ibcsFontSize : 0"
+        },
+        "labelColor": {
+          "expr": "ibcsText"
+        }
+      }
+    }
+  },
+  "layer": [
+    {
+      "description": "Invisible upper extent; the ONE shared linear y scale covers both tiers. With pxPerUnit, its domain spans at least plot height / pxPerUnit. Other marks reuse this scale with scale() for pixel positions, so an empty scenario/delta layer cannot contribute an infinite extent.",
+      "mark": {
+        "type": "point",
+        "opacity": 0
+      },
+      "encoding": {
+        "y": {
+          "field": "_yTop",
+          "type": "quantitative",
+          "scale": {
+            "zero": true,
+            "nice": false
+          },
+          "axis": null
+        }
+      }
+    },
+    {
+      "description": "Invisible lower extent includes negative columns and their labels.",
+      "mark": {
+        "type": "point",
+        "opacity": 0
+      },
+      "encoding": {
+        "y": {
+          "field": "_yLo",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "Cross-filter selection: assisting-area band behind the selected version; no dimming of scenario notation.",
+      "transform": [
+        {
+          "filter": "datum.__selected__ == 'on'"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "width": {
+          "expr": "bandwidth('x') / ibcsBarRatio"
+        },
+        "fill": {
+          "expr": "ibcsAssistArea"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "value": 0
+        },
+        "y2": {
+          "value": {
+            "expr": "height"
+          }
+        }
+      }
+    },
+    {
+      "description": "Value baseline, behind all columns; the same zero applies to positive and negative values.",
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxis"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAxisWidth"
+        }
+      },
+      "encoding": {
+        "y": {
+          "datum": 0
+        },
+        "x": {
+          "value": 0
+        },
+        "x2": {
+          "value": {
+            "expr": "width"
+          }
+        }
+      }
+    },
+    {
+      "description": "Variance axis segment: PY subtrahend is solid light.",
+      "transform": [
+        {
+          "filter": "datum._i > 1 && (datum._rScenario == 'PY')"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxisPY"
+        },
+        "strokeWidth": {
+          "expr": "ibcsPYAxisWidth"
+        }
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._B)"
+          }
+        },
+        "x": {
+          "value": {
+            "expr": "scale('x', datum['Version']) + bandwidth('x') / 2 - bandwidth('x') / ibcsBarRatio / 2"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "scale('x', datum['Version']) + bandwidth('x') / 2 + bandwidth('x') / ibcsBarRatio / 2"
+          }
+        }
+      }
+    },
+    {
+      "description": "Variance axis segment: PL/BU subtrahend has two thin lines (upper).",
+      "transform": [
+        {
+          "filter": "datum._i > 1 && (datum._rScenario == 'PL' || datum._rScenario == 'BU')"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxisPL"
+        },
+        "strokeWidth": {
+          "expr": "ibcsPLAxisLine"
+        },
+        "yOffset": {
+          "expr": "-ibcsPLAxisGap / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._B)"
+          }
+        },
+        "x": {
+          "value": {
+            "expr": "scale('x', datum['Version']) + bandwidth('x') / 2 - bandwidth('x') / ibcsBarRatio / 2"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "scale('x', datum['Version']) + bandwidth('x') / 2 + bandwidth('x') / ibcsBarRatio / 2"
+          }
+        }
+      }
+    },
+    {
+      "description": "Variance axis segment: PL/BU subtrahend has two thin lines (lower).",
+      "transform": [
+        {
+          "filter": "datum._i > 1 && (datum._rScenario == 'PL' || datum._rScenario == 'BU')"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxisPL"
+        },
+        "strokeWidth": {
+          "expr": "ibcsPLAxisLine"
+        },
+        "yOffset": {
+          "expr": "ibcsPLAxisGap / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._B)"
+          }
+        },
+        "x": {
+          "value": {
+            "expr": "scale('x', datum['Version']) + bandwidth('x') / 2 - bandwidth('x') / ibcsBarRatio / 2"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "scale('x', datum['Version']) + bandwidth('x') / 2 + bandwidth('x') / ibcsBarRatio / 2"
+          }
+        }
+      }
+    },
+    {
+      "description": "Variance axis segment: FC or AC subtrahend is ONE thin line, never hatched.",
+      "transform": [
+        {
+          "filter": "datum._i > 1 && (datum._rScenario == 'FC' || datum._rScenario == 'AC')"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxis"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAxisWidth"
+        }
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._B)"
+          }
+        },
+        "x": {
+          "value": {
+            "expr": "scale('x', datum['Version']) + bandwidth('x') / 2 - bandwidth('x') / ibcsBarRatio / 2"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "scale('x', datum['Version']) + bandwidth('x') / 2 + bandwidth('x') / ibcsBarRatio / 2"
+          }
+        }
+      }
+    },
+    {
+      "description": "Each column is the full-period value of one version: FC hatched, PY solid light, PL/BU outlined, AC solid dark.",
+      "transform": [
+        {
+          "filter": "isValid(datum._v)"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "width": {
+          "expr": "bw"
+        },
+        "fill": {
+          "expr": "datum._isFC ? pbiPatternSVG(ibcsHatch, ibcsFCStripe, ibcsFCGround) : datum['Scenario'] == 'PY' ? ibcsPY : (datum['Scenario'] == 'PL' || datum['Scenario'] == 'BU') ? ibcsPLFill : ibcsAC"
+        },
+        "stroke": {
+          "expr": "datum._isFC ? ibcsFCStroke : (datum['Scenario'] == 'PL' || datum['Scenario'] == 'BU') ? ibcsPLStroke : null"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._v)"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "scale('y', 0)"
+          }
+        },
+        "tooltip": [
+          {
+            "field": "Version",
+            "type": "nominal"
+          },
+          {
+            "field": "Scenario",
+            "type": "nominal"
+          },
+          {
+            "field": "_vLabel",
+            "title": "Value"
+          },
+          {
+            "field": "_rVersion",
+            "title": "Reference version",
+            "type": "nominal"
+          },
+          {
+            "field": "_dLabel",
+            "title": "Δ"
+          },
+          {
+            "field": "_pLabel",
+            "title": "Δ%"
+          }
+        ]
+      }
+    },
+    {
+      "description": "Column labels outside the arithmetic end; blank Value gets N/A on zero, without a column.",
+      "mark": {
+        "type": "text",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "baseline": {
+          "expr": "isValid(datum._v) && datum._v < 0 ? 'top' : 'bottom'"
+        },
+        "dy": {
+          "expr": "isValid(datum._v) && datum._v < 0 ? 3 : -3"
+        }
+      },
+      "transform": [
+        {
+          "calculate": "isValid(datum._v) ? datum._v : 0",
+          "as": "_vLabelY"
+        }
+      ],
+      "encoding": {
+        "y": {
+          "field": "_vLabelY",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_vLabel"
+        },
+        "tooltip": [
+          {
+            "field": "Version",
+            "type": "nominal"
+          },
+          {
+            "field": "Scenario",
+            "type": "nominal"
+          },
+          {
+            "field": "_vLabel",
+            "title": "Value"
+          },
+          {
+            "field": "_rVersion",
+            "title": "Reference version",
+            "type": "nominal"
+          },
+          {
+            "field": "_dLabel",
+            "title": "Δ"
+          },
+          {
+            "field": "_pLabel",
+            "title": "Δ%"
+          }
+        ]
+      }
+    },
+    {
+      "description": "Absolute delta columns on the SAME scale and width as the values; geometry = signed arithmetic, colour = impact. FC minuend uses impact-coloured hatch. Rounded zero has no mark or hatch.",
+      "transform": [
+        {
+          "filter": "isValid(datum._d) && isValid(datum._c)"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "width": {
+          "expr": "bw"
+        },
+        "fill": {
+          "expr": "datum._isFC ? pbiPatternSVG(ibcsHatch, datum._c, ibcsFCGround) : datum._c"
+        },
+        "stroke": {
+          "expr": "datum._isFC ? datum._c : null"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._B)"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "scale('y', datum._dEnd)"
+          }
+        },
+        "tooltip": [
+          {
+            "field": "Version",
+            "type": "nominal"
+          },
+          {
+            "field": "Scenario",
+            "type": "nominal"
+          },
+          {
+            "field": "_vLabel",
+            "title": "Value"
+          },
+          {
+            "field": "_rVersion",
+            "title": "Reference version",
+            "type": "nominal"
+          },
+          {
+            "field": "_dLabel",
+            "title": "Δ"
+          },
+          {
+            "field": "_pLabel",
+            "title": "Δ%"
+          }
+        ]
+      }
+    },
+    {
+      "description": "Delta labels outside the arithmetic end; positive deltas have +, rounded zero has no sign. Missing minuend/reference gets N/A and no delta mark; the first version has no comparison.",
+      "transform": [
+        {
+          "filter": "datum._i > 1"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "baseline": {
+          "expr": "isValid(datum._d) && datum._d < 0 ? 'top' : 'bottom'"
+        },
+        "dy": {
+          "expr": "isValid(datum._d) && datum._d < 0 ? 3 : -3"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_dLabelY",
+          "type": "quantitative"
+        },
+        "text": {
+          "field": "_dLabel"
+        },
+        "tooltip": [
+          {
+            "field": "Version",
+            "type": "nominal"
+          },
+          {
+            "field": "Scenario",
+            "type": "nominal"
+          },
+          {
+            "field": "_vLabel",
+            "title": "Value"
+          },
+          {
+            "field": "_rVersion",
+            "title": "Reference version",
+            "type": "nominal"
+          },
+          {
+            "field": "_dLabel",
+            "title": "Δ"
+          },
+          {
+            "field": "_pLabel",
+            "title": "Δ%"
+          }
+        ]
+      }
+    },
+    {
+      "description": "Integrated tier label in the first version slot, which has no delta; tooltips identify each reference version and relative delta.",
+      "transform": [
+        {
+          "filter": "datum._i == 1"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "align": "left",
+        "baseline": "bottom",
+        "dy": -3
+      },
+      "encoding": {
+        "x": {
+          "value": 0
+        },
+        "y": {
+          "field": "_B",
+          "type": "quantitative"
+        },
+        "text": {
+          "value": {
+            "expr": "deltaBase == 'first' ? 'Δ ' + datum._firstVersion : 'Δ previous'"
+          }
+        }
+      }
+    }
+  ],
+  "resolve": {
+    "scale": {
+      "y": "shared"
+    }
+  },
+  "config": {
+    "view": {
+      "stroke": null
+    }
+  }
+}

@@ -1,0 +1,20 @@
+[
+  {
+    "Line": "Base",
+    "Kind": "base",
+    "Value": 1234567.89,
+    "ScaleBand": 1000000
+  },
+  {
+    "Line": "Addition",
+    "Kind": "delta",
+    "Value": 2345678.12,
+    "ScaleBand": 1000000
+  },
+  {
+    "Line": "Result",
+    "Kind": "total",
+    "Value": 3580246.01,
+    "ScaleBand": 1000000
+  }
+]

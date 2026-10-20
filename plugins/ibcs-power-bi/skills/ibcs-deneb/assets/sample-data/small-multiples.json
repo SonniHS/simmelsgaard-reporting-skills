@@ -1,0 +1,338 @@
+[
+ {
+  "Panel": "Germany",
+  "Period": "Jun",
+  "AC": 59,
+  "FC": null,
+  "PY": 52,
+  "PL": 61
+ },
+ {
+  "Panel": "Germany",
+  "Period": "Jul",
+  "AC": 54,
+  "FC": null,
+  "PY": 53,
+  "PL": 53
+ },
+ {
+  "Panel": "Germany",
+  "Period": "Aug",
+  "AC": 54,
+  "FC": null,
+  "PY": 53,
+  "PL": 49
+ },
+ {
+  "Panel": "Germany",
+  "Period": "Sep",
+  "AC": 61,
+  "FC": null,
+  "PY": 53,
+  "PL": 56
+ },
+ {
+  "Panel": "Germany",
+  "Period": "Oct",
+  "AC": 61,
+  "FC": null,
+  "PY": 64,
+  "PL": 56
+ },
+ {
+  "Panel": "Germany",
+  "Period": "Nov",
+  "AC": null,
+  "FC": 57,
+  "PY": 57,
+  "PL": 62
+ },
+ {
+  "Panel": "Germany",
+  "Period": "Dec",
+  "AC": null,
+  "FC": 63,
+  "PY": 60,
+  "PL": 69
+ },
+ {
+  "Panel": "France",
+  "Period": "Jun",
+  "AC": 41,
+  "FC": null,
+  "PY": 44,
+  "PL": 39
+ },
+ {
+  "Panel": "France",
+  "Period": "Jul",
+  "AC": 43,
+  "FC": null,
+  "PY": 38,
+  "PL": 41
+ },
+ {
+  "Panel": "France",
+  "Period": "Aug",
+  "AC": 53,
+  "FC": null,
+  "PY": 47,
+  "PL": 54
+ },
+ {
+  "Panel": "France",
+  "Period": "Sep",
+  "AC": 50,
+  "FC": null,
+  "PY": 47,
+  "PL": 50
+ },
+ {
+  "Panel": "France",
+  "Period": "Oct",
+  "AC": 42,
+  "FC": null,
+  "PY": 36,
+  "PL": 40
+ },
+ {
+  "Panel": "France",
+  "Period": "Nov",
+  "AC": null,
+  "FC": 51,
+  "PY": 49,
+  "PL": 49
+ },
+ {
+  "Panel": "France",
+  "Period": "Dec",
+  "AC": null,
+  "FC": 49,
+  "PY": 47,
+  "PL": 47
+ },
+ {
+  "Panel": "Italy",
+  "Period": "Jun",
+  "AC": 38,
+  "FC": null,
+  "PY": 39,
+  "PL": 36
+ },
+ {
+  "Panel": "Italy",
+  "Period": "Jul",
+  "AC": 36,
+  "FC": null,
+  "PY": 35,
+  "PL": 39
+ },
+ {
+  "Panel": "Italy",
+  "Period": "Aug",
+  "AC": 37,
+  "FC": null,
+  "PY": 34,
+  "PL": 41
+ },
+ {
+  "Panel": "Italy",
+  "Period": "Sep",
+  "AC": 31,
+  "FC": null,
+  "PY": 30,
+  "PL": 33
+ },
+ {
+  "Panel": "Italy",
+  "Period": "Oct",
+  "AC": 31,
+  "FC": null,
+  "PY": 30,
+  "PL": 28
+ },
+ {
+  "Panel": "Italy",
+  "Period": "Nov",
+  "AC": null,
+  "FC": 37,
+  "PY": 39,
+  "PL": 38
+ },
+ {
+  "Panel": "Italy",
+  "Period": "Dec",
+  "AC": null,
+  "FC": 39,
+  "PY": 36,
+  "PL": 41
+ },
+ {
+  "Panel": "Spain",
+  "Period": "Jun",
+  "AC": 31,
+  "FC": null,
+  "PY": 31,
+  "PL": 31
+ },
+ {
+  "Panel": "Spain",
+  "Period": "Jul",
+  "AC": 33,
+  "FC": null,
+  "PY": 36,
+  "PL": 33
+ },
+ {
+  "Panel": "Spain",
+  "Period": "Aug",
+  "AC": 31,
+  "FC": null,
+  "PY": 27,
+  "PL": 32
+ },
+ {
+  "Panel": "Spain",
+  "Period": "Sep",
+  "AC": 31,
+  "FC": null,
+  "PY": 34,
+  "PL": 33
+ },
+ {
+  "Panel": "Spain",
+  "Period": "Oct",
+  "AC": 28,
+  "FC": null,
+  "PY": 27,
+  "PL": 29
+ },
+ {
+  "Panel": "Spain",
+  "Period": "Nov",
+  "AC": null,
+  "FC": 26,
+  "PY": 25,
+  "PL": 24
+ },
+ {
+  "Panel": "Spain",
+  "Period": "Dec",
+  "AC": null,
+  "FC": 27,
+  "PY": 23,
+  "PL": 28
+ },
+ {
+  "Panel": "Netherlands",
+  "Period": "Jun",
+  "AC": 19,
+  "FC": null,
+  "PY": 17,
+  "PL": 19
+ },
+ {
+  "Panel": "Netherlands",
+  "Period": "Jul",
+  "AC": 23,
+  "FC": null,
+  "PY": 20,
+  "PL": 23
+ },
+ {
+  "Panel": "Netherlands",
+  "Period": "Aug",
+  "AC": 21,
+  "FC": null,
+  "PY": 22,
+  "PL": 22
+ },
+ {
+  "Panel": "Netherlands",
+  "Period": "Sep",
+  "AC": 23,
+  "FC": null,
+  "PY": 21,
+  "PL": 23
+ },
+ {
+  "Panel": "Netherlands",
+  "Period": "Oct",
+  "AC": 20,
+  "FC": null,
+  "PY": 21,
+  "PL": 22
+ },
+ {
+  "Panel": "Netherlands",
+  "Period": "Nov",
+  "AC": null,
+  "FC": 19,
+  "PY": 17,
+  "PL": 18
+ },
+ {
+  "Panel": "Netherlands",
+  "Period": "Dec",
+  "AC": null,
+  "FC": 19,
+  "PY": 18,
+  "PL": 19
+ },
+ {
+  "Panel": "Others",
+  "Period": "Jun",
+  "AC": 37,
+  "FC": null,
+  "PY": 31,
+  "PL": 36
+ },
+ {
+  "Panel": "Others",
+  "Period": "Jul",
+  "AC": 38,
+  "FC": null,
+  "PY": 38,
+  "PL": 41
+ },
+ {
+  "Panel": "Others",
+  "Period": "Aug",
+  "AC": 42,
+  "FC": null,
+  "PY": 41,
+  "PL": 43
+ },
+ {
+  "Panel": "Others",
+  "Period": "Sep",
+  "AC": 42,
+  "FC": null,
+  "PY": 36,
+  "PL": 45
+ },
+ {
+  "Panel": "Others",
+  "Period": "Oct",
+  "AC": 43,
+  "FC": null,
+  "PY": 46,
+  "PL": 46
+ },
+ {
+  "Panel": "Others",
+  "Period": "Nov",
+  "AC": null,
+  "FC": 39,
+  "PY": 37,
+  "PL": 36
+ },
+ {
+  "Panel": "Others",
+  "Period": "Dec",
+  "AC": null,
+  "FC": 42,
+  "PY": 36,
+  "PL": 38
+ }
+]

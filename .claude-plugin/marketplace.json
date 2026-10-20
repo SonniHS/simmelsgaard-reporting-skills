@@ -1,0 +1,71 @@
+{
+  "name": "simmelsgaard-skills",
+  "owner": {
+    "name": "Sonni Simmelsgaard",
+    "url": "https://github.com/SonniHS"
+  },
+  "metadata": {
+    "description": "Skills and agents for business reporting that follows the IBCS® Standards: notation, page design, Power BI, Microsoft Fabric apps and the data behind them.",
+    "version": "0.1.0"
+  },
+  "plugins": [
+    {
+      "name": "ibcs",
+      "source": "./plugins/ibcs",
+      "description": "IBCS®-style business reporting: notation (scenarios, variances, colours, tokens), page composition with a visual spec, web chart components, and a review checklist with a linter.",
+      "category": "data-visualization",
+      "tags": [
+        "ibcs",
+        "business-reporting",
+        "notation",
+        "dashboard-design",
+        "design-tokens",
+        "data-visualization"
+      ]
+    },
+    {
+      "name": "ibcs-power-bi",
+      "source": "./plugins/ibcs-power-bi",
+      "description": "Build IBCS®-style Power BI reports: card routes per visual, Deneb (Vega-Lite) chart templates with token sync, and SVG-in-DAX tables.",
+      "category": "data-visualization",
+      "tags": [
+        "ibcs",
+        "power-bi",
+        "pbir",
+        "deneb",
+        "vega-lite",
+        "dax",
+        "svg"
+      ]
+    },
+    {
+      "name": "fabric-apps",
+      "source": "./plugins/fabric-apps",
+      "description": "Build and deploy IBCS®-style reporting apps on Microsoft Fabric, and package Power BI content as org apps.",
+      "category": "data-visualization",
+      "tags": [
+        "ibcs",
+        "microsoft-fabric",
+        "fabric-apps",
+        "react",
+        "typescript",
+        "org-apps"
+      ]
+    },
+    {
+      "name": "reporting-data",
+      "source": "./plugins/reporting-data",
+      "description": "The data behind reporting: a semantic model that serves IBCS® visuals, a SQL gold layer for reporting, and source mappings for Dynamics 365 ERP.",
+      "category": "data-engineering",
+      "tags": [
+        "semantic-model",
+        "tmdl",
+        "dax",
+        "sql",
+        "data-warehouse",
+        "dynamics-365",
+        "microsoft-fabric"
+      ]
+    }
+  ]
+}

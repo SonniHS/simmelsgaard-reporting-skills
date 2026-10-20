@@ -1,0 +1,19 @@
+# Power BI features this plugin relies on (as of 2026-10)
+
+Checked 2026-10 against Microsoft Learn and the Power BI Desktop release notes (August 2026
+release, report theme schema 2.157, Deneb 2.0.0). Power BI changes monthly: re-check anything
+marked preview or "rolling out" before you depend on it.
+
+| Feature | Status as of 2026-10 | Used for | Docs |
+|---|---|---|---|
+| Visual calculations + custom totals | GA (May 2026) | per-visual Δ, Δ%, running sums | [visual calculations](https://learn.microsoft.com/power-bi/transform-model/desktop-visual-calculations-overview) |
+| DAX user-defined functions | GA (June 2026), compatibility level ≥ 1702 | a reusable `Svg.*` function block | [DAX UDFs](https://learn.microsoft.com/dax/best-practices/dax-user-defined-functions) |
+| Overlapping series for bar/column (`layout.clusteredGapOverlaps`) | available | AC in front of PY/PL with offset | [axis and layout](https://learn.microsoft.com/power-bi/visuals/power-bi-visualization-customize-x-axis-and-y-axis) |
+| Error bars (by field or %, marker shapes incl. triangle) | available | compromise scenario markers | [Analytics pane](https://learn.microsoft.com/power-bi/transform-model/desktop-analytics-pane) |
+| Outer padding for bar/column/line/waterfall | GA (Aug 2026) | consistent category width | [latest update](https://learn.microsoft.com/power-bi/fundamentals/desktop-latest-update) |
+| Modern visual defaults and the Theme pane | GA (Aug 2026); the base theme no longer overrides fonts | theme fonts apply consistently | same |
+| Button slicer showing SVG images | GA (Oct 2025) | single SVG charts | [update archive](https://learn.microsoft.com/power-bi/fundamentals/desktop-latest-update-archive) |
+| Sparklines in table/matrix | GA (Jun 2025) | basic trends (no scenario coding) | same |
+| PBIR as the default report format | rolling out in the Service, Desktop to follow | file-based authoring | same |
+| Pattern / hatched fills in **core** visuals | **not available** (the schema contains an undocumented pattern property; do not rely on it) | FC hatch → Deneb or SVG | — |
+| Deneb 2.0 (Vega 6.4.0 / Vega-Lite 6.4.3) | AppSource custom visual; `pbiPatternSVG()` pattern fills need the SVG renderer | IBCS charts | [deneb.guide](https://deneb.guide/) |

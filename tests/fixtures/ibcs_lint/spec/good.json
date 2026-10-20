@@ -1,0 +1,171 @@
+{
+ "ibcsVisualSpec": "1.0",
+ "page": {
+  "id": "sales",
+  "name": "Sales",
+  "kind": "message",
+  "media": [
+   "web-app"
+  ],
+  "context": {
+   "slicers": [
+    {
+     "id": "period",
+     "field": "'Date'[Month]",
+     "titleLine": 3
+    }
+   ],
+   "period": {
+    "type": "month",
+    "asOf": "'Date'[IsClosedPeriod]"
+   }
+  },
+  "message": {
+   "type": "detection",
+   "source": "template",
+   "text": "Net sales are 152.3 mEUR, +8.3 mEUR vs PY.",
+   "highlights": [
+    {
+     "kind": "ellipse",
+     "target": {
+      "visual": "k1",
+      "row": "Net sales",
+      "variance": "dpy"
+     }
+    }
+   ]
+  },
+  "title": {
+   "who": "ABC Group",
+   "what": [
+    {
+     "measure": "Net sales",
+     "unit": "mEUR"
+    }
+   ],
+   "when": "{period} PY and AC"
+  },
+  "footer": {
+   "sources": [
+    "ERP"
+   ],
+   "asOf": "[Reference Date]"
+  }
+ },
+ "scaleGroups": [
+  {
+   "id": "meur",
+   "unit": "mEUR",
+   "kind": "absolute",
+   "members": [
+    "v2.base",
+    "v2.dbu"
+   ]
+  },
+  {
+   "id": "pct",
+   "unit": "%",
+   "kind": "relative",
+   "members": [
+    "v2.dbup"
+   ]
+  }
+ ],
+ "visuals": [
+  {
+   "id": "k1",
+   "type": "kpi-cards",
+   "data": {
+    "rows": [
+     {
+      "line": "Net sales",
+      "type": "measure",
+      "measure": "ns",
+      "variances": [
+       "dpy"
+      ]
+     }
+    ],
+    "measures": [
+     {
+      "id": "ns",
+      "kind": "absolute",
+      "polarity": 1
+     }
+    ],
+    "variances": [
+     {
+      "id": "dpy",
+      "code": "ΔPY",
+      "measure": "ns",
+      "minuend": "AC",
+      "subtrahend": "PY",
+      "kind": "absolute"
+     }
+    ]
+   }
+  },
+  {
+   "id": "v2",
+   "type": "grouped-column",
+   "data": {
+    "category": {
+     "field": "'Date'[Month]",
+     "kind": "time"
+    },
+    "measures": [
+     {
+      "id": "ns",
+      "kind": "absolute",
+      "polarity": 1
+     }
+    ],
+    "variances": [
+     {
+      "id": "dbu-fc",
+      "code": "ΔBU",
+      "measure": "ns",
+      "minuend": "AC&FC",
+      "subtrahend": "BU",
+      "kind": "absolute"
+     }
+    ]
+   },
+   "tiers": [
+    {
+     "id": "base",
+     "type": "grouped-column",
+     "values": [
+      "ns.BU",
+      "ns.AC&FC",
+      "ns.PY"
+     ],
+     "scaleGroup": "meur",
+     "position": "base",
+     "draw": {
+      "ns.BU": "overlap",
+      "ns.AC&FC": "primary",
+      "ns.PY": "triangle"
+     }
+    },
+    {
+     "id": "dbu",
+     "type": "variance-column",
+     "values": [
+      "dbu-fc"
+     ],
+     "scaleGroup": "meur",
+     "position": "above"
+    }
+   ],
+   "markers": [
+    {
+     "kind": "separator",
+     "at": "asOf"
+    }
+   ]
+  }
+ ],
+ "deviations": [],
+ "openQuestions": []
+}

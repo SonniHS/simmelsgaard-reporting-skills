@@ -1,0 +1,579 @@
+[
+  {
+    "Panel": "Panel A",
+    "Period": "Jan",
+    "AC": 8,
+    "FC": null,
+    "PY": 10,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel A",
+    "Period": "Feb",
+    "AC": 7,
+    "FC": null,
+    "PY": 6,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel A",
+    "Period": "Mar",
+    "AC": 7,
+    "FC": null,
+    "PY": 6,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel A",
+    "Period": "Apr",
+    "AC": 7,
+    "FC": null,
+    "PY": 6,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel A",
+    "Period": "May",
+    "AC": 7,
+    "FC": null,
+    "PY": 6,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel A",
+    "Period": "Jun",
+    "AC": 8,
+    "FC": null,
+    "PY": 7,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel A",
+    "Period": "Jul",
+    "AC": 7,
+    "FC": null,
+    "PY": 6,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel A",
+    "Period": "Aug",
+    "AC": 7,
+    "FC": null,
+    "PY": 6,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel A",
+    "Period": "Sep",
+    "AC": 8,
+    "FC": null,
+    "PY": 7,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel A",
+    "Period": "Oct",
+    "AC": null,
+    "FC": 8,
+    "PY": 7,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel A",
+    "Period": "Nov",
+    "AC": null,
+    "FC": 7,
+    "PY": 6,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel A",
+    "Period": "Dec",
+    "AC": null,
+    "FC": 7,
+    "PY": 6,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "N/A",
+    "Period": "Jan",
+    "AC": null,
+    "FC": null,
+    "PY": null,
+    "PL": null,
+    "PxPerUnit": 9,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "",
+    "Period": "Jan",
+    "AC": 999,
+    "FC": null,
+    "PY": null,
+    "PL": null,
+    "PxPerUnit": 9
+  },
+  {
+    "Panel": "Blank period",
+    "Period": null,
+    "AC": 999,
+    "FC": null,
+    "PY": null,
+    "PL": null,
+    "PxPerUnit": 9
+  },
+  {
+    "Panel": "Panel B",
+    "Period": "Jan",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel B",
+    "Period": "Feb",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel B",
+    "Period": "Mar",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel B",
+    "Period": "Apr",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel B",
+    "Period": "May",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel B",
+    "Period": "Jun",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel B",
+    "Period": "Jul",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel B",
+    "Period": "Aug",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel B",
+    "Period": "Sep",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel B",
+    "Period": "Oct",
+    "AC": null,
+    "FC": 4,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel B",
+    "Period": "Nov",
+    "AC": null,
+    "FC": 4,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel B",
+    "Period": "Dec",
+    "AC": null,
+    "FC": 4,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 1
+  },
+  {
+    "Panel": "Panel C",
+    "Period": "Jan",
+    "AC": 6,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel C",
+    "Period": "Feb",
+    "AC": 5,
+    "FC": null,
+    "PY": 4,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel C",
+    "Period": "Mar",
+    "AC": 6,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel C",
+    "Period": "Apr",
+    "AC": 6,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel C",
+    "Period": "May",
+    "AC": 5,
+    "FC": null,
+    "PY": 4,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel C",
+    "Period": "Jun",
+    "AC": 6,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel C",
+    "Period": "Jul",
+    "AC": 6,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel C",
+    "Period": "Aug",
+    "AC": 5,
+    "FC": null,
+    "PY": 4,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel C",
+    "Period": "Sep",
+    "AC": 6,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel C",
+    "Period": "Oct",
+    "AC": null,
+    "FC": 5,
+    "PY": 4,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel C",
+    "Period": "Nov",
+    "AC": null,
+    "FC": 6,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel C",
+    "Period": "Dec",
+    "AC": null,
+    "FC": 6,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "Jan",
+    "AC": 3,
+    "FC": null,
+    "PY": 2,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "Feb",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "Mar",
+    "AC": 3,
+    "FC": null,
+    "PY": 2,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "Apr",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "May",
+    "AC": 3,
+    "FC": null,
+    "PY": 2,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "Jun",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "Jul",
+    "AC": 3,
+    "FC": null,
+    "PY": 2,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "Aug",
+    "AC": 4,
+    "FC": null,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "Sep",
+    "AC": 3,
+    "FC": null,
+    "PY": 2,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "Oct",
+    "AC": null,
+    "FC": 4,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "Nov",
+    "AC": null,
+    "FC": 3,
+    "PY": 2,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "Dec",
+    "AC": null,
+    "FC": 4,
+    "PY": 3,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Reference only",
+    "Period": "Jan",
+    "AC": null,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Reference only",
+    "Period": "Feb",
+    "AC": null,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Reference only",
+    "Period": "Mar",
+    "AC": null,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Reference only",
+    "Period": "Apr",
+    "AC": null,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Reference only",
+    "Period": "May",
+    "AC": null,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Reference only",
+    "Period": "Jun",
+    "AC": null,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Reference only",
+    "Period": "Jul",
+    "AC": null,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Reference only",
+    "Period": "Aug",
+    "AC": null,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Reference only",
+    "Period": "Sep",
+    "AC": null,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Reference only",
+    "Period": "Oct",
+    "AC": null,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Reference only",
+    "Period": "Nov",
+    "AC": null,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Reference only",
+    "Period": "Dec",
+    "AC": null,
+    "FC": null,
+    "PY": 5,
+    "PL": null,
+    "ShowTotal": 0
+  },
+  {
+    "Panel": "Panel D",
+    "Period": "Unknown period",
+    "AC": null,
+    "FC": null,
+    "PY": null,
+    "PL": null,
+    "PxPerUnit": 9
+  }
+]

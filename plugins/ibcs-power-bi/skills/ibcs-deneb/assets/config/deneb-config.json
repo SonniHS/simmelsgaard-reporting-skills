@@ -1,0 +1,66 @@
+{
+  "autosize": {
+    "type": "fit",
+    "contains": "padding"
+  },
+  "background": null,
+  "font": "Segoe UI",
+  "view": {
+    "stroke": "transparent"
+  },
+  "padding": 4,
+  "locale": {
+    "number": {
+      "decimal": ".",
+      "thousands": " ",
+      "grouping": [
+        3
+      ],
+      "currency": [
+        "",
+        ""
+      ],
+      "minus": "-",
+      "nan": "N/A"
+    }
+  },
+  "axis": {
+    "grid": false,
+    "domain": false,
+    "ticks": false,
+    "title": null,
+    "labelFont": "Segoe UI",
+    "labelFontSize": 12,
+    "labelColor": "#000000",
+    "labelPadding": 4
+  },
+  "legend": {
+    "disable": true
+  },
+  "text": {
+    "font": "Segoe UI",
+    "fontSize": 12,
+    "fill": "#000000"
+  },
+  "header": {
+    "labelFont": "Segoe UI",
+    "labelFontSize": 13,
+    "labelColor": "#000000",
+    "labelAnchor": "start",
+    "labelPadding": 2,
+    "title": null
+  },
+  "title": {
+    "font": "Segoe UI",
+    "fontSize": 13,
+    "color": "#000000",
+    "anchor": "start",
+    "fontWeight": "normal"
+  },
+  "bar": {
+    "stroke": null
+  },
+  "line": {
+    "strokeWidth": 3
+  }
+}

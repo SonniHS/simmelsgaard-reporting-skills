@@ -1,0 +1,6 @@
+{"name":"scatter1","position":{"x":320,"y":400,"width":400,"height":300},
+ "visual":{"visualType":"scatterChart",
+  "query":{"queryState":{"Details":{"projections":[{"field":{"Column":{"Expression":{"SourceRef":{"Entity":"Product"}},"Property":"Line"}},"queryRef":"Product.Line"}]},
+   "Play":{"projections":[{"field":{"Column":{"Expression":{"SourceRef":{"Entity":"Date"}},"Property":"Year"}},"queryRef":"Date.Year"}]}}},
+  "objects":{"legend":[{"properties":{"show":{"expr":{"Literal":{"Value":"true"}}}}}],
+   "valueAxis":[{"properties":{"axisScale":{"expr":{"Literal":{"Value":"'Log'"}}}}}]}}}

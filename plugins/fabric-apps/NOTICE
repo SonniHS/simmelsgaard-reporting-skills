@@ -1,0 +1,59 @@
+simmelsgaard-skills
+Copyright (c) 2026 Sonni Simmelsgaard
+
+LICENSING (by file type, the same in every plugin)
+
+  Prose: SKILL.md, agents/*.md, references/*.md, README.md files
+      Creative Commons Attribution-ShareAlike 4.0 International (CC BY-SA 4.0)
+      See LICENSE-CC-BY-SA-4.0. Adaptations must be shared under the same licence.
+
+  Code and data: scripts/, assets/ (templates, token files, sample data,
+  previews), tests/, the JSON manifests, and code and configuration in fenced
+  code blocks inside the Markdown files (DAX, SQL, TMDL, JSON, YAML, TypeScript)
+      MIT License. See LICENSE-MIT.
+
+  Each plugin ships a copy of this NOTICE and of both licence texts, because an
+  installed plugin contains only its own directory. Paths below are relative to
+  the repository root: https://github.com/SonniHS/simmelsgaard-skills
+
+IBCS® STANDARDS
+
+  The prose in this repository is derived in part from the International
+  Business Communication Standards (IBCS®), Version 2.0, published by the
+  IBCS Association (https://www.ibcs.com) under CC BY-SA 4.0. Page citations
+  such as "IBCS v2.0, p. 42" refer to that publication. The text here is our
+  own summary and interpretation, not a copy of the Standards; no pages or
+  figures from the IBCS Standards document are reproduced.
+
+  IBCS® is a registered trademark of IBCS Institute. These skills follow the
+  IBCS® Standards; they are not affiliated with or certified by IBCS Institute,
+  and make no claim of IBCS certification.
+
+  Token files (ibcs-tokens.json and its examples) are data under the MIT
+  License. Their values follow the IBCS Standards v2.0: values the Standards
+  state are cited, values measured from IBCS figures and our own defaults where
+  the Standards are silent are marked as such in each token's provenance field.
+
+  Changes: the IBCS rules were restated, condensed and turned into
+  implementation guidance (tokens, chart templates, review checks) for
+  Power BI, web apps and Microsoft Fabric.
+
+OTHER THIRD-PARTY MATERIAL
+
+  plugins/fabric-apps/skills/ibcs-fabric-app/references/deploy-and-operate.md
+      The GitHub Actions workflow (the YAML block in section 2) is adapted from
+      the Microsoft Learn article "Deploy a Fabric app with GitHub Actions",
+      source docs/apps/deploy-github-actions.md in
+      https://github.com/MicrosoftDocs/fabric-docs (ms.date 2026-05-16).
+      Code in that repository is licensed under its LICENSE-CODE:
+      The MIT License (MIT), Copyright (c) Microsoft Corporation.
+      The MIT permission notice is the text in LICENSE-MIT, applied with
+      Microsoft's copyright line above. The surrounding prose is our own.
+
+  Org app definition examples in plugins/fabric-apps follow the structure of
+  Microsoft's published schema; the examples themselves are our own.
+
+  No other third-party material is bundled. Tools referred to by name (Microsoft Power BI, Microsoft
+  Fabric, Deneb, Vega-Lite, Microsoft Dynamics 365) are trademarks of their
+  owners and are only described, not redistributed. For the Microsoft Fabric
+  CLI, use Microsoft's own skills from https://github.com/microsoft/fabric-cli.

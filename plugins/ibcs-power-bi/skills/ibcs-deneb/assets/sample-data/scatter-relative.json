@@ -1,0 +1,127 @@
+[
+  {
+    "Element": "Item A",
+    "X": -0.14,
+    "Y": -0.09,
+    "Size": 120
+  },
+  {
+    "Element": "Item B",
+    "X": -0.11,
+    "Y": -0.15,
+    "Size": 85
+  },
+  {
+    "Element": "Item C",
+    "X": -0.08,
+    "Y": -0.04,
+    "Size": 70
+  },
+  {
+    "Element": "Item D",
+    "X": -0.04,
+    "Y": -0.09,
+    "Size": 100
+  },
+  {
+    "Element": "Item E",
+    "X": -0.02,
+    "Y": 0.05,
+    "Size": 65
+  },
+  {
+    "Element": "Item F",
+    "X": 0.03,
+    "Y": -0.03,
+    "Size": 115
+  },
+  {
+    "Element": "Item G",
+    "X": 0.06,
+    "Y": 0.07,
+    "Size": 150
+  },
+  {
+    "Element": "Item H",
+    "X": 0.11,
+    "Y": 0.13,
+    "Size": 90
+  },
+  {
+    "Element": "Item I",
+    "X": 0.15,
+    "Y": 0.09,
+    "Size": 110
+  },
+  {
+    "Element": "Item J",
+    "X": 0.18,
+    "Y": 0.19,
+    "Size": 80
+  },
+  {
+    "Element": "Item K",
+    "X": -0.16,
+    "Y": 0.02,
+    "Size": 55
+  },
+  {
+    "Element": "Item L",
+    "X": -0.1,
+    "Y": 0.1,
+    "Size": 95
+  },
+  {
+    "Element": "Item M",
+    "X": 0.01,
+    "Y": 0.15,
+    "Size": 75
+  },
+  {
+    "Element": "Item N",
+    "X": 0.08,
+    "Y": -0.13
+  },
+  {
+    "Element": "Item O",
+    "X": 0.14,
+    "Y": -0.04,
+    "Size": 60
+  },
+  {
+    "Element": "Item P",
+    "X": -0.03,
+    "Y": -0.02,
+    "Size": 45
+  },
+  {
+    "Element": "Negative reference",
+    "X": null,
+    "Y": 0.04,
+    "Size": 50,
+    "XRef": -40,
+    "YRef": 100
+  },
+  {
+    "Element": "Zero reference",
+    "X": 0.02,
+    "Y": null,
+    "Size": 40,
+    "XRef": 100,
+    "YRef": 0
+  },
+  {
+    "Element": "Blank reference",
+    "X": null,
+    "Y": null,
+    "Size": 30,
+    "XRef": null,
+    "YRef": null
+  },
+  {
+    "Element": null,
+    "X": 9,
+    "Y": -9,
+    "Size": 10000
+  }
+]

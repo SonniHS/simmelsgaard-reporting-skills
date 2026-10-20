@@ -1,0 +1,65 @@
+[
+ {
+  "Period": "Jun",
+  "AC": 5.8,
+  "FC": null,
+  "PY": 5.1,
+  "PL": 5.5,
+  "BU": 5.5,
+  "Comment": null
+ },
+ {
+  "Period": "Jul",
+  "AC": 6.1,
+  "FC": null,
+  "PY": 5.9,
+  "PL": 5.6,
+  "BU": 5.6,
+  "Comment": null
+ },
+ {
+  "Period": "Aug",
+  "AC": 4.6,
+  "FC": null,
+  "PY": 5.0,
+  "PL": 5.2,
+  "BU": 5.2,
+  "Comment": "1"
+ },
+ {
+  "Period": "Sep",
+  "AC": 6.5,
+  "FC": null,
+  "PY": 5.9,
+  "PL": 5.5,
+  "BU": 5.5,
+  "Comment": null
+ },
+ {
+  "Period": "Oct",
+  "AC": 5.2,
+  "FC": null,
+  "PY": 4.9,
+  "PL": 5.9,
+  "BU": 5.9,
+  "Comment": null
+ },
+ {
+  "Period": "Nov",
+  "AC": null,
+  "FC": 4.9,
+  "PY": 5.6,
+  "PL": 4.1,
+  "BU": 4.1,
+  "Comment": "2"
+ },
+ {
+  "Period": "Dec",
+  "AC": null,
+  "FC": 6.0,
+  "PY": 5.4,
+  "PL": 5.6,
+  "BU": 5.6,
+  "Comment": null
+ }
+]

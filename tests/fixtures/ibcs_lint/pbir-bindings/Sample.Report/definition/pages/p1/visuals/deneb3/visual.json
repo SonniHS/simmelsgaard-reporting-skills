@@ -1,0 +1,104 @@
+{
+ "name": "deneb3",
+ "position": {
+  "x": 620,
+  "y": 520,
+  "width": 600,
+  "height": 300
+ },
+ "visual": {
+  "visualType": "deneb7E15AEF80B9E4D4F8E12924291ECE89A",
+  "query": {
+   "queryState": {
+    "dataset": {
+     "projections": [
+      {
+       "field": {
+        "Column": {
+         "Expression": {
+          "SourceRef": {
+           "Entity": "Date"
+          }
+         },
+         "Property": "Month Short"
+        }
+       },
+       "queryRef": "Date.Month Short",
+       "nativeQueryRef": "Month Short",
+       "displayName": "Period"
+      },
+      {
+       "field": {
+        "Measure": {
+         "Expression": {
+          "SourceRef": {
+           "Schema": "extension",
+           "Entity": "_Measures"
+          }
+         },
+         "Property": "Sales Period"
+        }
+       },
+       "queryRef": "_Measures.Sales Period",
+       "nativeQueryRef": "Sales Period",
+       "displayName": "AC"
+      },
+      {
+       "field": {
+        "Measure": {
+         "Expression": {
+          "SourceRef": {
+           "Schema": "extension",
+           "Entity": "_Measures"
+          }
+         },
+         "Property": "Sales Period"
+        }
+       },
+       "queryRef": "_Measures.Sales Period",
+       "nativeQueryRef": "Sales Period",
+       "displayName": "YMax"
+      }
+     ]
+    }
+   }
+  },
+  "objects": {
+   "vega": [
+    {
+     "properties": {
+      "jsonSpec": {
+       "expr": {
+        "Literal": {
+         "Value": "'{\"$schema\": \"https://vega.github.io/schema/vega-lite/v6.json\", \"data\": {\"name\": \"dataset\"}, \"config\": {\"view\": {\"stroke\": null}}, \"params\": [{\"name\": \"pxPerUnit\", \"value\": 8}, {\"name\": \"yMax\", \"value\": 63}], \"transform\": [{\"calculate\": \"datum['AC']\", \"as\": \"_v\"}], \"mark\": \"bar\", \"encoding\": {\"x\": {\"field\": \"Period\", \"type\": \"nominal\"}, \"y\": {\"field\": \"_v\", \"type\": \"quantitative\"}}}'"
+        }
+       }
+      },
+      "provider": {
+       "expr": {
+        "Literal": {
+         "Value": "'vegaLite'"
+        }
+       }
+      }
+     }
+    }
+   ]
+  },
+  "visualContainerObjects": {
+   "title": [
+    {
+     "properties": {
+      "text": {
+       "expr": {
+        "Literal": {
+         "Value": "'Sales by company'"
+        }
+       }
+      }
+     }
+    }
+   ]
+  }
+ }
+}

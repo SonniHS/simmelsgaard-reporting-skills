@@ -1,0 +1,332 @@
+[
+  {
+    "Period": "Jan",
+    "Segment": "Element A",
+    "SegmentOrder": 1,
+    "Value": 38,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Jan",
+    "Segment": "Element B",
+    "SegmentOrder": 2,
+    "Value": 25,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Jan",
+    "Segment": "Element C",
+    "SegmentOrder": 3,
+    "Value": 18,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Jan",
+    "Segment": "Element D",
+    "SegmentOrder": 4,
+    "Value": 12,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Jan",
+    "Segment": "East",
+    "SegmentOrder": 5,
+    "Value": 1,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Jan",
+    "Segment": "South",
+    "SegmentOrder": 6,
+    "Value": 0.5,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Feb",
+    "Segment": "Element A",
+    "SegmentOrder": 1,
+    "Value": 40,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Feb",
+    "Segment": "Element B",
+    "SegmentOrder": 2,
+    "Value": 24,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Feb",
+    "Segment": "Element C",
+    "SegmentOrder": 3,
+    "Value": 19,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Feb",
+    "Segment": "Element D",
+    "SegmentOrder": 4,
+    "Value": 11,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Feb",
+    "Segment": "East",
+    "SegmentOrder": 5,
+    "Value": 0.7,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Feb",
+    "Segment": "South",
+    "SegmentOrder": 6,
+    "Value": 0.4,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Mar",
+    "Segment": "Element A",
+    "SegmentOrder": 1,
+    "Value": 42,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Mar",
+    "Segment": "Element B",
+    "SegmentOrder": 2,
+    "Value": 26,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Mar",
+    "Segment": "Element C",
+    "SegmentOrder": 3,
+    "Value": 18,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Mar",
+    "Segment": "Element D",
+    "SegmentOrder": 4,
+    "Value": 12,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Mar",
+    "Segment": "East",
+    "SegmentOrder": 5,
+    "Value": 0.9,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Mar",
+    "Segment": "South",
+    "SegmentOrder": 6,
+    "Value": 0.3,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Apr",
+    "Segment": "Element A",
+    "SegmentOrder": 1,
+    "Value": 0,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "Apr",
+    "Segment": "Element B",
+    "SegmentOrder": 2,
+    "Value": 35,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "Apr",
+    "Segment": "Element C",
+    "SegmentOrder": 3,
+    "Value": 25,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "Apr",
+    "Segment": "Element D",
+    "SegmentOrder": 4,
+    "Value": 15,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "Apr",
+    "Segment": "East",
+    "SegmentOrder": 5,
+    "Value": 1.2,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "Apr",
+    "Segment": "South",
+    "SegmentOrder": 6,
+    "Value": 0.6,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "May",
+    "Segment": "Element A",
+    "SegmentOrder": 1,
+    "Value": 43,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "May",
+    "Segment": "Element B",
+    "SegmentOrder": 2,
+    "Value": 28,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "May",
+    "Segment": "Element C",
+    "SegmentOrder": 3,
+    "Value": 19,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "May",
+    "Segment": "Element D",
+    "SegmentOrder": 4,
+    "Value": 13,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "May",
+    "Segment": "East",
+    "SegmentOrder": 5,
+    "Value": 0.8,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "May",
+    "Segment": "South",
+    "SegmentOrder": 6,
+    "Value": 0.5,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "Jun",
+    "Segment": "Element A",
+    "SegmentOrder": 1,
+    "Value": 44,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "Jun",
+    "Segment": "Element B",
+    "SegmentOrder": 2,
+    "Value": 29,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "Jun",
+    "Segment": "Element C",
+    "SegmentOrder": 3,
+    "Value": 20,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "Jun",
+    "Segment": "Element D",
+    "SegmentOrder": 4,
+    "Value": 14,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "Jun",
+    "Segment": "East",
+    "SegmentOrder": 5,
+    "Value": 1,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "Jun",
+    "Segment": "South",
+    "SegmentOrder": 6,
+    "Value": 0.4,
+    "Scenario": "FC"
+  },
+  {
+    "Period": "N/A",
+    "Segment": "Element A",
+    "SegmentOrder": 1,
+    "Value": null,
+    "Scenario": "FC",
+    "PxPerUnit": 9999
+  },
+  {
+    "Period": "N/A",
+    "Segment": "Element B",
+    "SegmentOrder": 2,
+    "Value": null,
+    "Scenario": "FC",
+    "PxPerUnit": 9999
+  },
+  {
+    "Period": "N/A",
+    "Segment": "Element C",
+    "SegmentOrder": 3,
+    "Value": null,
+    "Scenario": "FC",
+    "PxPerUnit": 9999
+  },
+  {
+    "Period": "N/A",
+    "Segment": "Element D",
+    "SegmentOrder": 4,
+    "Value": null,
+    "Scenario": "FC",
+    "PxPerUnit": 9999
+  },
+  {
+    "Period": "N/A",
+    "Segment": "East",
+    "SegmentOrder": 5,
+    "Value": null,
+    "Scenario": "FC",
+    "PxPerUnit": 9999
+  },
+  {
+    "Period": "N/A",
+    "Segment": "South",
+    "SegmentOrder": 6,
+    "Value": null,
+    "Scenario": "FC",
+    "PxPerUnit": 9999
+  },
+  {
+    "Period": "Jun",
+    "Segment": "N/A",
+    "SegmentOrder": 0,
+    "Value": null,
+    "Scenario": "FC",
+    "PxPerUnit": 9999
+  },
+  {
+    "Period": null,
+    "Segment": "Element A",
+    "SegmentOrder": 1,
+    "Value": 9999,
+    "Scenario": "AC",
+    "PxPerUnit": 9999
+  },
+  {
+    "Period": " ",
+    "Segment": "Element A",
+    "SegmentOrder": 1,
+    "Value": 9999,
+    "Scenario": "AC"
+  },
+  {
+    "Period": "Jun",
+    "Segment": " ",
+    "SegmentOrder": 1,
+    "Value": 9999,
+    "Scenario": "FC"
+  }
+]

@@ -1,0 +1,10 @@
+{"name":"colOk","position":{"x":740,"y":80,"width":500,"height":300},
+ "visual":{"visualType":"clusteredColumnChart",
+  "query":{"queryState":{"Category":{"projections":[{"field":{"Column":{"Expression":{"SourceRef":{"Entity":"Date"}},"Property":"Month"}},"queryRef":"Date.Month"}]},
+   "Y":{"projections":[{"field":{"Measure":{"Expression":{"SourceRef":{"Entity":"Measures"}},"Property":"PY"}},"queryRef":"Measures.PY"},
+                       {"field":{"Measure":{"Expression":{"SourceRef":{"Entity":"Measures"}},"Property":"AC"}},"queryRef":"Measures.AC"}]}}},
+  "objects":{"legend":[{"properties":{"show":{"expr":{"Literal":{"Value":"false"}}}}}],
+   "valueAxis":[{"properties":{"show":{"expr":{"Literal":{"Value":"false"}}},"start":{"expr":{"Literal":{"Value":"0D"}}}}}],
+   "labels":[{"properties":{"show":{"expr":{"Literal":{"Value":"true"}}},"labelDisplayUnits":{"expr":{"Literal":{"Value":"1000000D"}}}}}],
+   "dataPoint":[{"properties":{"fill":{"solid":{"color":{"expr":{"Literal":{"Value":"'#A6A6A6'"}}}}}},"selector":{"metadata":"Measures.PY"}},
+                {"properties":{"fill":{"solid":{"color":{"expr":{"Literal":{"Value":"'#404040'"}}}}}},"selector":{"metadata":"Measures.AC"}}]}}}

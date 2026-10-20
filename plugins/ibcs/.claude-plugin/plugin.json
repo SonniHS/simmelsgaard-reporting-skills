@@ -1,0 +1,20 @@
+{
+  "name": "ibcs",
+  "version": "0.1.0",
+  "description": "IBCS®-style business reporting: notation (scenarios, variances, colours, tokens), page composition with a visual spec, web chart components, and a review checklist with a linter.",
+  "author": {
+    "name": "Sonni Simmelsgaard",
+    "url": "https://github.com/SonniHS"
+  },
+  "homepage": "https://github.com/SonniHS/simmelsgaard-skills/tree/main/plugins/ibcs#readme",
+  "repository": "https://github.com/SonniHS/simmelsgaard-skills",
+  "license": "CC-BY-SA-4.0 AND MIT",
+  "keywords": [
+    "ibcs",
+    "business-reporting",
+    "notation",
+    "dashboard-design",
+    "design-tokens",
+    "data-visualization"
+  ]
+}

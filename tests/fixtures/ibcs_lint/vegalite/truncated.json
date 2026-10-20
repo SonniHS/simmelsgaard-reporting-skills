@@ -1,0 +1,4 @@
+{"$schema":"https://vega.github.io/schema/vega-lite/v5.json","config":{"view":{"stroke":null}},
+ "mark":"bar",
+ "encoding":{"x":{"field":"Month","type":"ordinal"},
+  "y":{"field":"Sales","type":"quantitative","scale":{"zero":false}}}}
