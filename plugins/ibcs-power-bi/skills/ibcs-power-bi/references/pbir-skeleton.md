@@ -239,11 +239,14 @@ Microsoft's PBIR validator rejects `fontSize` there (end-to-end test, as of 2026
    "selection": [{"properties": {"singleSelect": {"expr": {"Literal": {"Value": "false"}}},
      "selectAllCheckboxEnabled": {"expr": {"Literal": {"Value": "true"}}}}}],
    "header": [{"properties": {"show": {"expr": {"Literal": {"Value": "true"}}},
-     "text": {"expr": {"Literal": {"Value": "'Period (months; none = Jan..last closed month)'"}}},
+     "text": {"expr": {"Literal": {"Value": "'Period'"}}},
      "textSize": {"expr": {"Literal": {"Value": "9D"}}}}}],
    "items": [{"properties": {"textSize": {"expr": {"Literal": {"Value": "9D"}}}}}]}}
 ```
 
+- **Short header.** Keep the slicer header to the field name ("Period", "Company"): a header
+  longer than the slicer is cut off (`ibcs_lint` flags it). Rules such as "none selected = first
+  month .. last closed month" go into the page footnote.
 - **No "(Blank)" or unknown member in the list.** A dimension slicer lists every member of its
   column, including blank (rows of the fact without a match) and the model's unknown member
   ("Unknown", "N/A", key −1). Give the slicer a visual-level filter that excludes them: a
