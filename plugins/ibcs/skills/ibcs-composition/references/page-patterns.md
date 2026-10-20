@@ -25,7 +25,7 @@
 │ visual v1              │ visual v2                  ① annotation area    │ 12-col grid,
 │                        │                                                 │ gutter 12 px
 ├──────────────────────────────────────────────────────────────────────────┤
-│ Sources · data as of 2026-10-12 06:00 · *footnotes                       │ footer ≈20 px
+│ *footnotes (full width, sized to the text) · sources · data as of …      │ footer
 └──────────────────────────────────────────────────────────────────────────┘
 ```
 
@@ -34,7 +34,21 @@
 - Key message 13 pt/17 px, title lines 11 pt/14 px (same size, measure bold), data labels
   9 pt/12 px. Smallest legible size, then use the space for context (CO 1–3).
 - Slicers in a collapsible pane or a slim strip **below** the header, never over the title.
-- No logo, background band, frame or shadow; branding belongs to the app shell.
+- No logo, background band, frame or shadow inside the page's content; branding belongs to the
+  app shell. *(ours)* A **page shell** is allowed as the page's frame: a neutral light canvas
+  (grey without hue) with the content on white cards (header, KPI row, one card per chart block,
+  footnotes), the cards edge-free (no border, shadow, radius or colour), 12 px apart, and at most
+  one logo in the header card's corner. Inside a card the white-page rules hold; data never sits
+  on the canvas. Power BI: `ibcs-power-bi` references/page-shell.md; web: the app's layout
+  component.
+- **Footnotes** *(ours, UN 2.5)*: full width under the charts, in their own block (the footnote
+  card), the block sized to its text: never a scroll box (not printed, not read). One short line
+  per note, numbered like the references in the title, chips and charts (¹ ² …), the source and
+  data timestamp as the last line. Longer definitions (formulas, entity names, compromises) go to
+  a definitions/details page linked from the block, or into the tooltip of the visual they explain.
+- **Control labels** *(ours)*: slicer/filter headers are short nouns ("Company", "Period"); what
+  "all" or "none selected" means goes into the scope line or a footnote, never into a header that
+  the control cuts.
 
 ## 2. Page archetypes
 

@@ -53,6 +53,23 @@ Optional per template member (the docs' extra paddings, so nothing is cut or squ
                              (0 if never). The base tier's hi becomes max(hi, max(v0, v1) + e) and the
                              arrow and its label add ibcsFontSize + 10 + trendLiftPx (+ ibcsFontSize + 10
                              with a trendLabel, else 4) px (an upper bound: exact when the arrow is the top)
+Label room and width (gap: clipped value labels, squashed columns):
+    "visual": "v2Columns"    the visual folder name; passed through to the output (--json), so
+                             `ibcs_lint.py pbir <Report> --layout out.json` can check each visual's size
+    "longestValueLabel": "+12.4%"
+                             the longest formatted value label of the member (or "valueLabelChars": 6);
+                             needs 7 px per character + 6 px. Horizontal templates (value axis = width):
+                             the label room right of the bars (and left of negative ones) is the tier's
+                             first padHigh knob (ibcsLabelPx, labelPx, labelRoom); when it is smaller the
+                             member is sized with the larger value and the output says which knob to set
+                             ("setParams"). Column templates: compared with the category slot
+                             ((widthPx − crossFixedPx) / categoryCount) when widthPx and categoryCount
+                             are given; a label wider than its slot collides with its neighbours.
+                             svg members: compared with "labelRoomPx" (the px the SVG keeps for labels)
+    "widthPx": 1040          the visual's current size in the other dimension: warns when it is smaller
+                             than the computed other dimension (categoryCount), i.e. columns squashed
+Warnings go to stderr and into "warnings" of the --json output; treat every warning as a defect.
+
 Small multiples (template small-multiples-columns, value axis = panel height): the container value is
 the panel height (set knob panelHeight to it, or pxPerUnit on the visual); give "panels" and "columns"
 (default 3), optionally "panelTotals": true, to also get the visual height = panel rows × (panel +
@@ -100,6 +117,37 @@ def load_template(name: str, tdir: Path) -> dict:
         sys.exit(f"template {name!r} has no usermeta.ibcs.layout: it does not support pxPerUnit")
     params = {p["name"]: p.get("value") for p in spec.get("params", []) if "value" in p}
     return {"layout": layout, "params": params}
+
+
+def label_need_px(m: dict) -> float | None:
+    """Width of the member's longest value label: 7 px per character + 6 (12 px Segoe UI)."""
+    if "longestValueLabel" in m:
+        return 7.0 * len(str(m["longestValueLabel"])) + 6
+    if "valueLabelChars" in m:
+        return 7.0 * int(m["valueLabelChars"]) + 6
+    return None
+
+
+def label_room(m: dict, tdir: Path) -> tuple[dict, list[str]]:
+    """Knob values a horizontal member needs so its value labels fit, plus warnings."""
+    need = label_need_px(m)
+    if need is None or m.get("template", "svg") == "svg":
+        if need is not None and "labelRoomPx" in m and float(m["labelRoomPx"]) < need:
+            return {}, [f"member {m['id']}: value labels need {math.ceil(need)} px, the SVG keeps "
+                        f"{m['labelRoomPx']} px (labelRoomPx): widen the SVG's label room"]
+        return {}, []
+    t = load_template(m["template"], tdir)
+    lay, params = t["layout"], {**t["params"], **m.get("params", {})}
+    if lay["valueAxis"] != "width":
+        return {}, []
+    out, warns = {}, []
+    for tier in lay["tiers"]:
+        knob = (tier.get("padHigh") or [None])[0]
+        if knob and float(params.get(knob) or 0) < need and knob not in out:
+            out[knob] = math.ceil(need)
+            warns.append(f"member {m['id']}: value labels need {math.ceil(need)} px, knob {knob} is "
+                         f"{params.get(knob)}: set {knob} = {math.ceil(need)} (sized with it)")
+    return out, warns
 
 
 def px_sum(names, params) -> float:
@@ -224,6 +272,14 @@ def main() -> int:
     g = json.loads(Path(a.group).read_text(encoding="utf-8"))
     tdir = Path(a.templates)
     members = g.get("members") or sys.exit("no members")
+    warnings: dict[str, list[str]] = {m["id"]: [] for m in members}
+    set_params: dict[str, dict] = {}
+    for m in members:
+        knobs, warns = label_room(m, tdir)
+        if knobs:
+            set_params[m["id"]] = knobs
+            m["params"] = {**m.get("params", {}), **knobs}   # size with the label room it needs
+        warnings[m["id"]] += warns
     parts = {m["id"]: member_parts(m, tdir) for m in members}
     shared = [m for m in members if not parts[m["id"]].get("pending") and parts[m["id"]]["range"]]
 
@@ -250,11 +306,30 @@ def main() -> int:
                "dataRange": round(p["range"], 6), "dataPx": round(plot, 1),
                "containerPx": math.ceil(plot + p["fixed"] - 1e-6),
                "fitsMaxPx": (math.ceil(plot + p["fixed"] - 1e-6) <= m["maxPx"]) if m.get("maxPx") else None}
+        if m.get("visual"):
+            row["visual"] = m["visual"]
+        if set_params.get(m["id"]):
+            row["setParams"] = set_params[m["id"]]
         if "cross" in p:
             row["crossPx"] = p["cross"]
+            if m.get("widthPx") is not None and float(m["widthPx"]) < p["cross"]:
+                warnings[m["id"]].append(f"member {m['id']}: the visual is {m['widthPx']} px, its "
+                                         f"{m['categoryCount']} categories need {p['cross']} px: columns are squashed")
+        need = label_need_px(m)
+        if need is not None and p["dim"] == "height" and m.get("widthPx") and m.get("categoryCount"):
+            slot = (float(m["widthPx"]) - float(m.get("crossFixedPx", 30))) / int(m["categoryCount"])
+            if need > slot:
+                warnings[m["id"]].append(f"member {m['id']}: value labels need {math.ceil(need)} px, a "
+                                         f"category slot is {slot:.0f} px: widen the visual, use fewer "
+                                         f"decimals or a larger unit")
+        if warnings[m["id"]]:
+            row["warnings"] = warnings[m["id"]]
         if "panelRows" in p:
             row["visualHeightPx"] = math.ceil(p["panelRows"] * (row["containerPx"] + p["panelExtra"]) + p["panelFixed"])
         rows.append(row)
+    for r in rows:
+        for w in r.get("warnings", []):
+            print(f"warning: {w}", file=sys.stderr)
     if a.json:
         print(json.dumps({"pxPerUnit": ppu, "members": rows}, indent=2))
         return 0

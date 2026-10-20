@@ -4,7 +4,9 @@
 Targets
   pbir      a Power BI PBIR report folder (<name>.Report or its definition/ folder), including
             its report-level measures (definition/reportExtensions.json), the bindings to them,
-            table image columns and the Deneb specs embedded in visual.json
+            table image columns, the Deneb specs embedded in visual.json and their scale groups
+            (--layout: scale_layout.py --json output; each visual must have that size and px per
+            unit), slicer headers / titles that would be cut, and a page shell's canvas
   theme     a Power BI report theme JSON
   vegalite  a Vega-Lite spec JSON (Fabric App / Deneb)
   tokens    an ibcs-tokens.json (+ --overrides) guardrail check
@@ -17,7 +19,7 @@ Targets
 Usage
   python3 -I ibcs_lint.py [auto|pbir|theme|vegalite|tokens|spec|dom] PATH
                           [--tokens TOKENS.json] [--overrides OVERRIDES.json]
-                          [--format md|json]
+                          [--format md|json] [--layout LAYOUT.json ...]
 
 The script never writes, renames or deletes anything. It flags only what metadata can
 show; a clean result does not mean the page is IBCS-compliant (see the ibcs-review skill
@@ -843,10 +845,12 @@ def lint_visual_bindings(vfile: dict, v: dict, vloc: str, report_measures: dict)
             for e in objects.get("columnWidth") or []:
                 ref = ((e.get("selector") or {}).get("metadata")) or ""
                 w = literal((e.get("properties") or {}).get("value"))
-                if ref in image_cols and is_number(w) and w < img_w:
-                    add("LINT", "-", "S", "check", vloc, f"image column {ref} is {w:g} px wide, grid.imageWidth {img_w:g} px",
+                if ref in image_cols and is_number(w) and w < img_w + 20:
+                    add("LINT", "-", "S", "fail" if w >= img_w else "check", vloc,
+                        f"image column {ref} is {w:g} px wide, grid.imageWidth {img_w:g} px",
                         "grid.imageWidth applies to every image column: give the SVGs of one table the same width "
-                        "and make each image column at least that wide, or the images are clipped.")
+                        "and make each image column at least imageWidth + 20 px, or the images are clipped and the "
+                        "service draws a stray '.' at the right end of every row (KPI cards: one card per visual).")
 
 
 SCALE_FIELD = re.compile(r"max|min|scale|pxperunit|divisor", re.I)
@@ -866,7 +870,133 @@ def lint_deneb_scale(spec: dict, loc: str, dataset: list):
                 "transform filter the blank category (\"isValid(datum['Period']) && datum['Period'] !== ''\").")
 
 
-def lint_pbir(path: Path, tokens=None):
+# value axis of the bundled ibcs-deneb templates (usermeta.ibcs.template); relative templates (pins,
+# scatter) have their own % scale and are not members of a unit scale group
+DENEB_VALUE_AXIS = {"column-two-tier-variance": "height", "column-version-axis": "height",
+                    "stacked-columns": "height", "line-scenarios": "height",
+                    "small-multiples-columns": "height", "bar-structure-variance": "width",
+                    "waterfall-variance": "width", "waterfall-calculation": "width"}
+DOMAIN_FIELD = re.compile(r"^(?:YMax|YMin|XMax|XMin|VarMin|VarMax)$")
+DOMAIN_KNOBS = ("yMax", "xMax", "varMin", "varMax")
+CHAR_PX = 7          # ≈ px per character at 9–12 pt Segoe UI (scale_layout.py uses the same estimate)
+SIZE_TOLERANCE_PX = 2
+
+
+def deneb_info(vfile: dict, spec: dict, dataset_fields: list) -> dict:
+    """What the scale-group checks need from one embedded Deneb spec."""
+    ibcs = (spec.get("usermeta") or {}).get("ibcs") or {}
+    params = {p.get("name"): p.get("value") for p in spec.get("params") or [] if isinstance(p, dict)}
+    pos = vfile.get("position") or {}
+    domains = sorted(f"{e}[{p}]" for lbl, e, p in dataset_fields if DOMAIN_FIELD.match(lbl or ""))
+    domains += [f"{k}={params[k]:g}" for k in DOMAIN_KNOBS if is_number(params.get(k)) and params[k] != 0]
+    ppu = params.get("pxPerUnit") if is_number(params.get("pxPerUnit")) and params.get("pxPerUnit") else None
+    ppu_field = next((f"{e}[{p}]" for lbl, e, p in dataset_fields if (lbl or "").lower() == "pxperunit"), None)
+    return {"template": str(ibcs.get("template") or ""), "params": params,
+            "height": pos.get("height"), "width": pos.get("width"), "domains": domains,
+            "ppu": ppu, "ppuField": ppu_field,
+            "own": params.get("periodType") == "year" or bool(params.get("scaleBand"))}
+
+
+def lint_scale_groups(infos: dict, ploc: str, layout_rows: dict):
+    """CH 4.1 / UN 4.1 for the bundled Deneb templates on one page: one px per unit per unit and
+    every visual sized to its own data. The linter cannot see the queried data, so it checks the
+    mechanism: domain knobs are not a scale, px per unit is set and equal, and (with --layout) each
+    visual has the size scale_layout.py computed."""
+    absolute = {n: i for n, i in infos.items() if i["template"] in DENEB_VALUE_AXIS}
+    # 1. a shared domain (YMax field or yMax knob) on visuals of different size = different scales
+    by_domain: dict[str, list[str]] = {}
+    for n, i in absolute.items():
+        for d in i["domains"]:
+            by_domain.setdefault(d, []).append(n)
+    for d, names in sorted(by_domain.items()):
+        no_ppu = [n for n in names if not (absolute[n]["ppu"] or absolute[n]["ppuField"])]
+        if not no_ppu:
+            continue
+        ext = {n: absolute[n][DENEB_VALUE_AXIS[absolute[n]["template"]]] for n in names}
+        if len(names) > 1 and len({round(float(v or 0)) for v in ext.values()}) > 1:
+            add("G8", "CH 4.1, CH 4.2", "M", "fail", f"{ploc}: {', '.join(names)}",
+                f"domain {d} shared by visuals of different size ({', '.join(f'{n} {v:g} px' for n, v in ext.items())})",
+                "A shared domain is not a shared scale: set one pxPerUnit (knob or PxPerUnit field) on every member "
+                "and size each visual with scale_layout.py.")
+        else:
+            add("G8", "CH 4.1, CH 4.2", "S", "fail", f"{ploc}: {', '.join(no_ppu)}",
+                f"value domain {d} without pxPerUnit",
+                "A domain is not a scale: with SVG measures, native visuals or Deneb visuals of another size on the "
+                "same unit the charts are on different scales (and a small chart is mostly empty). Use pxPerUnit "
+                "and size each visual with scale_layout.py; keep a domain only for visuals of identical size.")
+    # 2. px per unit set and equal across the group (own-scale members excepted)
+    plain = {n: i for n, i in absolute.items() if not i["own"]}
+    missing = [n for n, i in plain.items() if not (i["ppu"] or i["ppuField"]) and not i["domains"]]
+    if len(absolute) > 1 and missing:
+        add("G8", "CH 4.1", "S", "check", f"{ploc}: {', '.join(missing)}",
+            "absolute Deneb visuals without pxPerUnit: each fits its own data (auto scale)",
+            "Same unit on the page = one px per unit on every member (scale_layout.py); different units: ignore.")
+    values = {i["ppu"] for i in plain.values() if i["ppu"]}
+    fields = {i["ppuField"] for i in plain.values() if i["ppuField"]}
+    if len(values) > 1 or len(fields) > 1:
+        add("G8", "CH 4.1", "S", "check", ploc,
+            "different px per unit: " + ", ".join(f"{n} {i['ppu'] or i['ppuField']}" for n, i in plain.items()
+                                                    if i["ppu"] or i["ppuField"]),
+            "Members of one unit share one px per unit; a different unit is a different group (confirm).")
+    # 3. a Total / year visual on its own scale is marked (scale band or footnote)
+    group_ppu = values | fields
+    for n, i in absolute.items():
+        if i["params"].get("periodType") == "year" and group_ppu and \
+                (i["ppu"] or i["ppuField"]) not in group_ppu and not i["params"].get("scaleBand"):
+            add("F6", "UN 5.2, CH 4.3", "S", "check", f"{ploc} / {n}",
+                "Total/year visual on its own scale without a scale band",
+                "Mark the different scale: the same scaleBand value here and in the months, or a footnote.")
+    # 4. sizes computed by scale_layout.py (--layout)
+    for n, row in layout_rows.items():
+        if n not in infos:
+            continue
+        i = infos[n]
+        dim = row.get("dimension")
+        dim = "height" if dim in ("height", "panelHeight") and "visualHeightPx" not in row else dim
+        want = row.get("visualHeightPx") or row.get("containerPx")
+        have = i.get("height") if dim in ("height", "panelHeight") else i.get("width")
+        if is_number(want) and is_number(have) and abs(float(have) - float(want)) > SIZE_TOLERANCE_PX:
+            add("G8", "CH 4.1, CH 4.2", "M", "fail", f"{ploc} / {n}",
+                f"{dim} {have:g} px, scale_layout.py computed {want:g} px",
+                "Set the visual's position to the computed size (to_pbir.py --pos), or recompute the group.")
+        lppu = row.get("_pxPerUnit")
+        if lppu and not row.get("own") and i["ppu"] and abs(float(i["ppu"]) - float(lppu)) > 1e-6:
+            add("G8", "CH 4.1", "M", "fail", f"{ploc} / {n}", f"pxPerUnit {i['ppu']:g}, the group's is {lppu:g}",
+                "Set the group's px per unit on every member.")
+        for k, v in (row.get("setParams") or {}).items():
+            if is_number(i["params"].get(k)) and float(i["params"][k]) < float(v):
+                add("LINT", "-", "S", "fail", f"{ploc} / {n}", f"knob {k} = {i['params'][k]:g}, labels need {v}",
+                    f"Set {k} = {v} (scale_layout.py setParams): value labels are cut otherwise.")
+    for n in layout_rows:
+        if n not in infos and not layout_rows[n].get("_page_mismatch"):
+            layout_rows[n]["_unseen"] = layout_rows[n].get("_unseen", 0) + 1
+
+
+def header_text(objects: dict) -> str | None:
+    t = obj_prop(objects, "header", "text")
+    return t if isinstance(t, str) else None
+
+
+def lint_truncation(vfile: dict, v: dict, vt: str, vloc: str, objects: dict, vco: dict):
+    """Slicer headers and visual titles that do not fit their visual are cut with an ellipsis."""
+    width = (vfile.get("position") or {}).get("width")
+    if not is_number(width):
+        return
+    texts = []
+    if vt == "slicer":
+        texts.append(("slicer header", header_text(objects)))
+    title = obj_prop(vco, "title", "text")
+    if obj_prop(vco, "title", "show") is not False:
+        texts.append(("title", title if isinstance(title, str) else None))
+    for what, text in texts:
+        if text and CHAR_PX * len(text) + 16 > float(width):
+            add("LINT", "UN 2.2", "S", "fail", vloc,
+                f"{what} '{text[:60]}' ({len(text)} chars) is cut at {width:g} px",
+                "Short slicer titles (Company, Period); the explanation ('all = …', 'none = …') goes into the scope "
+                f"chips or a footnote. Fits about {int((float(width) - 16) // CHAR_PX)} characters.")
+
+
+def lint_pbir(path: Path, tokens=None, layouts=None):
     d = find_definition(path)
     if d is None:
         print(f"error: no PBIR definition/report.json under {path}", file=sys.stderr)
@@ -880,7 +1010,8 @@ def lint_pbir(path: Path, tokens=None):
         cands = list((report_root / "StaticResources").glob(f"**/{name}")) + \
             list((report_root / "StaticResources").glob(f"**/{name}.json"))
         if cands:
-            lint_theme(load_json(cands[0]), cands[0].relative_to(report_root.parent), tokens)
+            theme_doc = load_json(cands[0])
+            lint_theme(theme_doc, cands[0].relative_to(report_root.parent), tokens)
         else:
             add("A5", "SI 2.2", "I", "check", "report.json:themeCollection", f"custom theme '{name}' not found", "Check StaticResources/RegisteredResources.")
     else:
@@ -888,16 +1019,36 @@ def lint_pbir(path: Path, tokens=None):
             "Default theme = rainbow palette; apply a theme generated from the IBCS tokens.")
 
     report_measures = lint_report_extensions(d, palette, tokens)
+    theme_doc = locals().get("theme_doc") or {}
+    star = ((theme_doc.get("visualStyles") or {}).get("*") or {}).get("*") or {}
+    theme_card = any(e.get("show") is True for e in star.get("background", []) or [] if isinstance(e, dict)) and \
+        all(is_white(e.get("color", {}).get("solid", {}).get("color", "#FFFFFF"))
+            for e in star.get("background", []) or [] if isinstance(e, dict))
+    layout_rows: dict[str, dict] = {}
+    for lf in layouts or []:
+        doc = load_json(Path(lf))
+        for r in doc.get("members", []):
+            if r.get("visual"):
+                layout_rows[r["visual"]] = dict(r, _pxPerUnit=doc.get("pxPerUnit"),
+                                                own=r.get("own") or r.get("dataRange") == 0)
 
     for page_json in sorted((d / "pages").glob("*/page.json")):
         page = load_json(page_json)
         pname = page.get("displayName") or page_json.parent.name
         ploc = f"page '{pname}'"
+        canvas = False   # page shell: neutral light canvas behind white cards
         for obj in ("background", "outspace"):
             col = obj_prop(page.get("objects") or {}, obj, "color")
             transp = obj_prop(page.get("objects") or {}, obj, "transparency") or 0
             if isinstance(col, str) and col.startswith("#") and not is_white(col) and transp < 100:
-                add("A2", "SI 1.2", "S", "fail", f"{ploc}:{obj}", f"{col} (transparency {transp:g}%)", "White page, no wallpaper.")
+                if hex_to_rgb(col) and saturation(col) < 0.06 and rel_lum(col) > 0.75:
+                    canvas = True
+                    add("A2", "SI 1.2", "I", "check", f"{ploc}:{obj}", f"neutral canvas {col}",
+                        "Page shell (cards): every visual needs a white background so no data sits on the canvas.")
+                else:
+                    add("A2", "SI 1.2", "S", "fail", f"{ploc}:{obj}", f"{col} (transparency {transp:g}%)",
+                        "White page, or a neutral light canvas behind white cards (page shell); no wallpaper.")
+        deneb_infos: dict[str, dict] = {}
         has_text = False
         for vj in sorted(page_json.parent.glob("visuals/*/visual.json")):
             vfile = load_json(vj)
@@ -910,6 +1061,15 @@ def lint_pbir(path: Path, tokens=None):
             if not vt:
                 continue
             lint_visual_bindings(vfile, v, vloc, report_measures)
+            lint_truncation(vfile, v, vtl, vloc, objects, vco)
+            if canvas and vtl not in ("shape", "basicshape", "image", "actionbutton"):
+                bg_show = obj_prop(vco, "background", "show")
+                bg_col = obj_prop(vco, "background", "color")
+                white = bg_show is True and (not isinstance(bg_col, str) or is_white(bg_col)) or \
+                    (bg_show is None and theme_card)
+                if not white:
+                    add("A2", "SI 1.2", "S", "fail", vloc, "visual without a white background on a grey canvas",
+                        "Page shell: white background on every visual (theme --shell cards), so data never sits on grey.")
             if vtl == "textbox":
                 has_text = True
                 txt = textbox_text(v)
@@ -1021,10 +1181,20 @@ def lint_pbir(path: Path, tokens=None):
                         dspec = json.loads(raw)
                         lint_vegalite(dspec, f"{vloc} deneb", palette, dataset)
                         lint_deneb_scale(dspec, f"{vloc} deneb", dataset)
+                        deneb_infos[vj.parent.name] = deneb_info(
+                            vfile, dspec, [(lbl, e, p) for r, e, p, lbl in fields if r == "dataset"])
                     except json.JSONDecodeError:
                         add("LINT", "-", "I", "check", vloc, "Deneb spec not parseable JSON", "Review the spec manually.")
         if not has_text:
             add("C2", "UN 2.2", "M", "check", ploc, "no text box or visual title found", "Add the three-line page title (who / what / when).")
+        lint_scale_groups(deneb_infos, ploc, {n: r for n, r in layout_rows.items() if n in deneb_infos})
+        for n in deneb_infos:
+            if n in layout_rows:
+                layout_rows[n]["_seen"] = True
+    for n, r in layout_rows.items():
+        if not r.get("_seen"):
+            add("LINT", "-", "I", "check", f"--layout member {r.get('id')}", f"visual '{n}' not found among the Deneb visuals",
+                "Check the member's \"visual\" name (the visual folder name).")
 
 
 # ----------------------------------------------------------------------------- visual spec
@@ -1500,6 +1670,9 @@ def main(argv=None):
     ap.add_argument("--no-overrides", action="store_true", help="ignore any overrides file")
     ap.add_argument("--theme", help="extra token layer (e.g. a dark-mode variant), merged after --overrides")
     ap.add_argument("--format", default="md", choices=["md", "json"])
+    ap.add_argument("--layout", action="append", default=[], metavar="LAYOUT.json",
+                    help="pbir: scale_layout.py --json output (members with \"visual\"); each visual must have "
+                         "the computed size and px per unit (repeat per scale group)")
     a = ap.parse_args(argv)
     path = Path(a.path)
     if not path.exists():
@@ -1548,7 +1721,7 @@ def main(argv=None):
         else:
             tokens = load_tokens(tok_path, ovr) if tok_path else None
             if target == "pbir":
-                lint_pbir(path, tokens)
+                lint_pbir(path, tokens, a.layout)
             elif target == "theme":
                 lint_theme(load_json(path), path.name, tokens)
             elif target == "vegalite":

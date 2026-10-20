@@ -214,9 +214,9 @@ then `npm run tokens`. Keep the script's name `gen_tokens.mjs` so the docs stay 
 ## 9. Defaults to switch off in any generic library
 
 Per-chart auto-scaled axes; value axes and gridlines instead of direct labels; legend boxes
-(label series at the line end or first/last column instead); a hue per scenario; green/red by
+(label series at the end of the series instead, right of the last period); a hue per scenario; green/red by
 sign instead of by impact; `ABS()` in relative variances; side-by-side instead of overlapped
-comparison columns; rounded corners, shadows, gradients; animation; tooltips as the only way to
+comparison columns; rounded corners, shadows, gradients on marks (an app's card surfaces are UI chrome, not marks); animation; tooltips as the only way to
 read values; category labels rotated 45°.
 
 ## 10. Verify before you hand over

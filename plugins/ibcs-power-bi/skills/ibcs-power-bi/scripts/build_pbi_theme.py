@@ -6,6 +6,12 @@
     python3 -I scripts/build_pbi_theme.py --check --out-dir ./theme   # exit 1 if the files are stale (CI)
     python3 -I scripts/build_pbi_theme.py --theme-overrides my-theme-fragment.json
     python3 scripts/build_pbi_theme.py --validate --schema reportThemeSchema-2.157.json   # needs jsonschema
+    python3 -I scripts/build_pbi_theme.py --shell cards           # page shell: grey canvas, white cards
+
+--shell cards (references/page-shell.md): the page background becomes a neutral light canvas
+(--canvas, default #F3F3F3) and every visual gets a white background (color.background.page) with
+--card-padding px left and right (default 12; top/bottom 0 so the visuals of one card stack
+seamlessly). Still no borders, shadows or rounded corners: the cards are a layout grouping only.
 
 Paths to this script are relative to the ibcs-power-bi skill; run it from your project directory.
 --tokens defaults to the token file bundled with the sibling ibcs-deneb skill
@@ -54,7 +60,12 @@ def solid(color: str) -> dict:
     return {"solid": {"color": color}}
 
 
-def build_theme(t: dict, variant: str = "standard", file_name: str | None = None) -> dict:
+CANVAS = "#F3F3F3"      # page shell canvas: neutral (no hue), light enough to read as "paper" behind white cards
+CARD_PADDING_PX = 12
+
+
+def build_theme(t: dict, variant: str = "standard", file_name: str | None = None,
+                shell: dict | None = None) -> dict:
     """file_name: the theme's file name including .json. Microsoft's PBIR validator requires the
     theme's "name" to equal the file name that report.json registers (PBIR_THEME_FILE_NAME_MISMATCH),
     so the name is the file name, not a display label."""
@@ -84,9 +95,12 @@ def build_theme(t: dict, variant: str = "standard", file_name: str | None = None
     line_px = g(t, "stroke.line.absolutePx")
     marker = max(2, round(line_px * g(t, "stroke.line.markerToLineRatio") / 2))
     row_px = g(t, "layout.table.rowHeightPx")
+    canvas = (shell or {}).get("canvas", page_bg)
+    pad = (shell or {}).get("padding", 0)
 
+    card = shell is not None
     no_chrome = {
-        "background": [{"show": False}],
+        "background": [{"show": True, "color": solid(page_bg), "transparency": 0}] if card else [{"show": False}],
         "border": [{"show": False}],
         "dropShadow": [{"show": False}],
     }
@@ -114,13 +128,13 @@ def build_theme(t: dict, variant: str = "standard", file_name: str | None = None
                     "fontColor": solid(text), "bold": False, "alignment": "left",
                 }],
                 "subTitle": [{"fontFamily": fam_regular, "fontSize": size("label"), "fontColor": solid(text2)}],
-                "padding": [{"top": 0, "bottom": 0, "left": 0, "right": 0}],
+                "padding": [{"top": 0, "bottom": 0, "left": pad, "right": pad}],
             }
         },
         "page": {
             "*": {
-                "background": [{"color": solid(page_bg), "transparency": 0}],
-                "outspace": [{"color": solid(page_bg), "transparency": 0}],
+                "background": [{"color": solid(canvas), "transparency": 0}],
+                "outspace": [{"color": solid(canvas), "transparency": 0}],
             }
         },
         "columnChart": {"*": {"categoryAxis": [{"innerPadding": abs_pad}],
@@ -158,8 +172,8 @@ def build_theme(t: dict, variant: str = "standard", file_name: str | None = None
             }],
             "categoryAxis": [{"innerPadding": abs_pad}],
         }},
-        "pivotTable": {"*": _table_styles(t, fam_regular, fam_emph, text, rule, rule_light, row_px, matrix=True)},
-        "tableEx": {"*": _table_styles(t, fam_regular, fam_emph, text, rule, rule_light, row_px, matrix=False)},
+        "pivotTable": {"*": _table_styles(t, fam_regular, fam_emph, text, rule, rule_light, row_px, matrix=True, card=card)},
+        "tableEx": {"*": _table_styles(t, fam_regular, fam_emph, text, rule, rule_light, row_px, matrix=False, card=card)},
         "textbox": {"*": {**no_chrome}},
         "cardVisual": {"*": {**no_chrome}},
     }
@@ -200,11 +214,13 @@ def build_theme(t: dict, variant: str = "standard", file_name: str | None = None
     return theme
 
 
-def _table_styles(t, fam, fam_emph, text, rule, rule_light, row_px, matrix: bool) -> dict:
+def _table_styles(t, fam, fam_emph, text, rule, rule_light, row_px, matrix: bool, card: bool = False) -> dict:
     g = ibcs_tokens.get
     s = g(t, "typography.size.label.pt")
     styles = {
-        "background": [{"show": False}],
+        # page shell: tables are cards too, so their rows never sit on the grey canvas
+        "background": [{"show": True, "color": solid(g(t, "color.background.page")), "transparency": 0}]
+        if card else [{"show": False}],
         "border": [{"show": False}],
         "dropShadow": [{"show": False}],
         # Thin light row separators, no vertical grid (EX 1.2, notation-spec rule_light)
@@ -243,7 +259,7 @@ REQUIRED_TOP = ["name", "dataColors", "good", "bad", "neutral", "foreground", "b
                 "textClasses", "visualStyles"]
 
 
-def key_check(theme: dict) -> list[str]:
+def key_check(theme: dict, shell: bool = False) -> list[str]:
     errs: list[str] = []
     for k in REQUIRED_TOP:
         if k not in theme:
@@ -266,7 +282,7 @@ def key_check(theme: dict) -> list[str]:
         ("categoryAxis", "gridlineShow"): False,
         ("labels", "show"): True,
         ("labels", "labelDisplayUnits"): 1,  # 1 = None; 0 would be Auto ("K"/"M" suffixes)
-        ("background", "show"): False,
+        ("background", "show"): shell,   # page shell: white cards; otherwise no backgrounds
         ("border", "show"): False,
         ("dropShadow", "show"): False,
     }
@@ -350,6 +366,11 @@ def main() -> int:
     ap.add_argument("--name", default="ibcs-pbi-theme",
                     help="file stem (default ibcs-pbi-theme); the theme's \"name\" is set to the file name")
     ap.add_argument("--variants", default="standard,cvd", help="comma list of standard,cvd,bw")
+    ap.add_argument("--shell", choices=["none", "cards"], default="none",
+                    help="cards = page shell: neutral canvas, white visual backgrounds (references/page-shell.md)")
+    ap.add_argument("--canvas", default=CANVAS, help=f"--shell cards: page canvas colour (default {CANVAS})")
+    ap.add_argument("--card-padding", type=int, default=CARD_PADDING_PX,
+                    help=f"--shell cards: left/right padding of every visual in px (default {CARD_PADDING_PX})")
     ap.add_argument("--check", action="store_true", help="exit 1 if generated files are stale")
     ap.add_argument("--validate", action="store_true", help="validate against the theme JSON schema")
     ap.add_argument("--schema", default=SCHEMA_URL, help="schema path or URL for --validate")
@@ -360,16 +381,21 @@ def main() -> int:
     frag = json.loads(Path(a.theme_overrides).read_text(encoding="utf-8")) if a.theme_overrides else None
     variants = [v.strip() for v in a.variants.split(",") if v.strip()]
 
+    shell = None
+    if a.shell == "cards":
+        if not HEX.match(a.canvas):
+            sys.exit(f"--canvas must be #RRGGBB, is {a.canvas}")
+        shell = {"canvas": a.canvas, "padding": a.card_padding}
     out_dir = Path(a.out_dir)
     status = 0
     for variant in variants:
         suffix = "" if variant == "standard" else f"-{variant}"
         path = out_dir / f"{a.name}{suffix}.json"
-        theme = build_theme(tok, variant, path.name)
+        theme = build_theme(tok, variant, path.name, shell)
         if frag:
             theme = deep_merge(theme, frag)
             theme["name"] = path.name  # a fragment must not break the name = file name rule
-        errs = key_check(theme)
+        errs = key_check(theme, shell is not None)
         if a.validate:
             errs += [f"schema: {e}" for e in schema_validate(theme, a.schema)]
         body = json.dumps(theme, indent=2, ensure_ascii=False) + "\n"

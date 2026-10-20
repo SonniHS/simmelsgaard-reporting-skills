@@ -36,9 +36,12 @@ for message/structure/density).
 
    ```sh
    python3 -I "${CLAUDE_SKILL_DIR}/scripts/ibcs_lint.py" <path> --format md \
-       [--tokens ibcs-tokens.json] [--overrides ibcs-tokens.overrides.json]
+       [--tokens ibcs-tokens.json] [--overrides ibcs-tokens.overrides.json] [--layout layout.json]
    #   <path> = PBIR folder (*.Report: report measures in reportExtensions.json, bindings to
-   #              them, table image columns, embedded Deneb specs)
+   #              them, table image columns, embedded Deneb specs, scale groups of the Deneb
+   #              templates, slicer headers / titles that would be cut, the page shell canvas)
+   #   --layout = `scale_layout.py --json` output of a scale group (ibcs-power-bi, members with
+   #              "visual"): each Deneb visual must have that size and px per unit (repeatable)
    #            | theme .json | Vega-Lite .json | tokens .json
    #            | visual spec .yaml/.json (target `spec`: visual-spec-format §10, rule IDs V1..V17)
    #            | rendered page .html/.svg (target `dom`: marks with data-role, see below)

@@ -56,7 +56,7 @@ section instead and say so in your summary.
 | Pick a "bold, distinctive" tone and signature detail | One house notation for every page and app of the organisation; no decoration | IBCS v2.0, SI 1–2, UN |
 | Characterful heading font from a CDN `<link>` | Token font stack (`system-ui, "Segoe UI", …`); a brand font only self-hosted (`@font-face` with a local file) via your `ibcs-tokens.overrides.json` | SI 2.3; privacy |
 | Customise primary colour, radius, colourful cards | Chart colours only from the IBCS token file (default in the `ibcs-notation` skill, plugin `ibcs`, plus your overrides); scenarios in grey patterns; colour = impact or highlight only | UN 3.2, UN 4.1, SI 2.2 |
-| Vary card spans, avoid "spreadsheet" grids, layered effects | Grid from the visual spec, equal panels where comparison matters, no shadows, frames or gradients | CO 2, CH 4, SI 2.1 |
+| Vary card spans, avoid "spreadsheet" grids, layered effects | Grid from the visual spec, equal panels where comparison matters; no shadows, frames or gradients on marks. Cards as UI chrome (white surface, small radius, 1 px elevation on a tinted canvas) are fine: [references/report-shell.md](references/report-shell.md) | CO 2, CH 4, SI 2.1 |
 | Light/dark toggle | No dark charts. A dark shell may surround a white "paper" surface; default and print are white | SI 1.2 |
 | CSS theme colours drive charts | Never let a CSS theme recolour scenario or variance marks; pass token colours explicitly | UN |
 | Skeletons and destructive banners in brand style | States per §5 (title block stays, neutral text, no red banners: red means bad variance) | UN 4.1 |
@@ -91,13 +91,16 @@ flow, spacing tokens for non-data UI.
    data on a user's behalf, and never add mock data (the template forbids it).
 2. **Install the IBCS layer**: a chart layer that meets the `ibcs-web-charts` contract (module
    layout: [references/chart-layer.md](references/chart-layer.md)), the token module and CSS
-   generated from the IBCS token file, and a page frame. Remove the template's font links and
-   dark-mode toggle (§0). Wrap each page in a white paper surface and one scale registry.
+   generated from the IBCS token file, and the report shell (header row, filter bar, page frame,
+   cards, footer: [references/report-shell.md](references/report-shell.md)). Remove the template's
+   font links and dark-mode toggle (§0). Give each page one scale registry.
 3. **Queries**: one `.dax` file per visual **grain** from the spec's data shape, adapted from the
    per-card DAX in `semantic-model-ibcs`; test each from the terminal before wiring it
    (`npx fabric-app-data query <alias> --file <file>`, no app item needed).
    Rules and the wiring pattern: [references/queries-and-data.md](references/queries-and-data.md).
-4. **Pages**: compose from [references/app-patterns.md](references/app-patterns.md): header (key
+4. **Pages**: compose from [references/app-patterns.md](references/app-patterns.md) inside the
+   shell of [references/report-shell.md](references/report-shell.md) (its §11 is a worked recipe
+   for a Key figures page): header (key
    message + title block with active filters in line 1 and period/scenarios in line 3), visuals in
    the spec's grid, footnote with sources and the data timestamp. Map each spec visual type to a
    chart role in `ibcs-web-charts` and each scale group to one unit key.
@@ -183,6 +186,7 @@ related items, so grant semantic-model access to the same Entra groups
 - [references/architecture.md](references/architecture.md): embed vs native vs hybrid; what changes between reports, org apps, embedded and Fabric Apps.
 - [references/app-patterns.md](references/app-patterns.md): archetypes, grid, selectors and title wiring, period grammar, URL state, message sources, hub pages.
 - [references/queries-and-data.md](references/queries-and-data.md): data paths and dev loop; spec → `.dax` → factory → adapter → chart; query-scoped measures; batching, caching, throttling, OLS, portal value shapes.
+- [references/report-shell.md](references/report-shell.md): the frame around every page: header row, filter bar with "compare with", headline, KPI and chart cards, footer, layout tokens, breakpoints, state; recipe for a Key figures page from scratch.
 - [references/chart-layer.md](references/chart-layer.md): module layout of an IBCS chart layer (tokens → scale registry → pure layout → SVG renderer) and the tests that replace `validate:visual`.
-- [references/page-quality.md](references/page-quality.md): page quality rubric (value, proportions, both widths).
+- [references/page-quality.md](references/page-quality.md): page quality rubric (value, proportions, both widths) and the shell checks.
 - [references/deploy-and-operate.md](references/deploy-and-operate.md): environments, `rayfin up`, GitHub Actions, capacity/region/licensing, release checklist, monitoring, rollback.

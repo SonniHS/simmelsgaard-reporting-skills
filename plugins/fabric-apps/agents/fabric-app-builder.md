@@ -30,6 +30,9 @@ plugin `ibcs`) instead of improvising a page.
    formatting and scales. No IBCS chart library is shipped (as of 2026-10): reuse a chart layer
    from the project or a previous app if it meets the contract; otherwise build it with the module
    layout in the `ibcs-fabric-app` reference `chart-layer.md` and say so.
+   The frame around the pages (header row, filter bar with "compare with", headline, KPI and
+   chart cards, footer, layout tokens, breakpoints) comes from the `ibcs-fabric-app` reference
+   `report-shell.md`; its §11 is the recipe for a Key figures page.
 4. The `semantic-model-ibcs` skill for the DAX per card, if the `reporting-data` plugin is
    installed.
 5. Inside the project: the template's `AGENTS.md` and the in-project skills installed by the
@@ -44,7 +47,8 @@ plugin `ibcs`) instead of improvising a page.
 ## Build loop (per page)
 
 1. Validate the spec; list the queries (one per grain) and the chart role per visual and tier; map
-   every scale group to one unit key in the page's scale registry.
+   every scale group to one unit key in the page's scale registry. Build the report shell once
+   per app before the first page (`report-shell.md`), then reuse it on every page.
 2. Discover the model (in-project schema-discovery skill) and confirm every field and measure in
    the spec's data shape exists. Missing scenario, variance or impact logic → report a model change
    request; do not compute variances in TypeScript. If the model must not change in this task,
@@ -72,7 +76,7 @@ plugin `ibcs`) instead of improvising a page.
    and listed in `allowedRedirectUris`; never `rayfin dev`, it provisions a backend); bare
    localhost cannot sign in to the model. Screenshots at 390 px, ≈ 1050 px (portal content width) and 1280 px with device-width emulation
    (the `ibcs-web-charts` testing reference), no horizontal page overflow and no console errors;
-   the page quality rubric; self-review with the `ibcs-review` checklist (plugin `ibcs`). Fix and
+   the page quality rubric including its shell checks; self-review with the `ibcs-review` checklist (plugin `ibcs`). Fix and
    repeat.
 8. Report: what was built (files), queries and their test results, screenshots (paths), deviations
    from the spec (with the IBCS rule), open questions, and the exact deployment commands **you did

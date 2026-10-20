@@ -41,7 +41,9 @@ visual spec.
      format string, tested as `DEFINE MEASURE` first), footnote it, and list it for the model
      owner.
 2. Generate the assets from the tokens: the theme with
-   `${CLAUDE_PLUGIN_ROOT}/skills/ibcs-power-bi/scripts/build_pbi_theme.py` and, if the
+   `${CLAUDE_PLUGIN_ROOT}/skills/ibcs-power-bi/scripts/build_pbi_theme.py` (with `--shell cards`
+   for the page shell, `ibcs-power-bi` references/page-shell.md, unless the user wants a plain
+   white page) and, if the
    organisation has an `ibcs-tokens.overrides.json`, a synced Deneb template set with
    `${CLAUDE_PLUGIN_ROOT}/skills/ibcs-deneb/scripts/sync_tokens.py --overrides … --out …`. Colours, sizes and formats come
    only from the tokens (IBCS defaults unless overrides exist).
@@ -52,6 +54,14 @@ visual spec.
    (custom theme resource + `report.json` reference).
 4. For each page: create page.json at the spec canvas; header (key message, three-line title,
    descriptive only), footer (footnotes, source, data as of); then each visual at its grid slot.
+   Page shell: the grid and visual recipes of `page-shell.md` (header card with the SVG key
+   message, one visual per KPI card, chart cards with the title inside, a footnote card sized to
+   its text, never a scroll box). Short slicer headers; their "all = …" meaning in the scope chips.
+4a. **Scale sizing (mandatory for absolute charts):** write each same-unit scale group as
+   `group.json` (members with `visual`, ranges of the widest filter context, `longestValueLabel`,
+   `categoryCount`, and their own `maxPx`), run `scale_layout.py group.json --json > layout.json`,
+   and take every member's px per unit, size (+ padding) and `setParams` from it. Never share a
+   `YMax`/`XMax` domain across visuals of different size or with SVG measures in place of this.
 5. Route each visual by `ibcs-power-bi` §2. Native: set the properties from `card-routes.md`.
    Deneb: `${CLAUDE_PLUGIN_ROOT}/skills/ibcs-deneb/scripts/to_pbir.py` with `--field` mappings,
    the spec's knobs (`pxPerUnit` on every member of a same-unit scale group with the container
@@ -60,7 +70,8 @@ visual spec.
    `pinTier` for a Δ% pin tier above the columns in the same visual, `showBase: false` for a
    second variance tier), `--sort`, `--filter`, `--title`. Slicers: `textSize`, a visual-level
    filter without blank and unknown members, one `syncGroup` per field across pages; dynamic
-   texts on `cardVisual` (`pbir-skeleton.md` §6, §9). KPI cards and structure tables with pins: SVG measures in one
+   texts on `cardVisual` (`pbir-skeleton.md` §6, §9). KPI cards: one `tableEx` per card
+   (page-shell.md §4). Structure tables with pins: SVG measures in one
    `tableEx` (`ibcs-svg-dax`, one GEOM block; JSON in `pbir-skeleton.md` §9). Missing measures:
    in the model when the task includes it, else report measures (step 1); list them (name,
    intent) for the model owner either way. After the visuals: `report_measures.py <report> --fix`
@@ -71,7 +82,9 @@ visual spec.
    shared `deviations`: give each entry `medium: powerbi`, or keep them in a sibling file
    `<spec name>.deviations.powerbi.yaml`, so one medium's compromise is not read as the other's.
 7. Validate: `jq empty` on every changed JSON (or `python3 -m json.tool <file> > /dev/null` if jq
-   is not installed); `report_measures.py <report> --check`; a PBIP validator where available;
+   is not installed); `report_measures.py <report> --check`; `ibcs_lint.py pbir <report>
+   --layout layout.json` (ibcs-review; no failed rule: sizes, px per unit, label room, cut
+   headers, image column widths); a PBIP validator where available;
    `build_pbi_theme.py --check` and `sync_tokens.py --check`; a live-data preview of each Deneb
    visual (`render-previews.mjs --visual`); then the `ibcs-review` skill on the result if
    available.

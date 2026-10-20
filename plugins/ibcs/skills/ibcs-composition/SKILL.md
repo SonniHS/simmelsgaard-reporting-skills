@@ -180,7 +180,8 @@ shape each visual needs goes to the model author (the `semantic-model-ibcs` skil
 - [ ] Goal level, audience, page kind (`message`/`analysis`) recorded — SA 1
 - [ ] Key message: complete sentence, precise numbers + comparison, right type, top slot — SA 3, UN 2.1
 - [ ] Every claim visible on the page; cited value highlighted — SA 4.1, SA 4.3
-- [ ] Sources + data timestamp + footnotes on the page — SA 4.4, UN 2.5
+- [ ] Sources + data timestamp + footnotes on the page: full width, sized to the text, short; long
+      definitions on a details page or tooltip — SA 4.4, UN 2.5
 - [ ] Three-line title; filters in line 1; descriptive only; subtitles carry only differences — UN 2.2
 - [ ] Pyramid storyline; MECE lists with remainder; consistent wording — ST 1–4
 - [ ] Everything needed is on this page/screen without clicking — CO 5

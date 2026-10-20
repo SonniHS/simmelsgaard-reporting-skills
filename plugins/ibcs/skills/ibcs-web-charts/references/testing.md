@@ -58,7 +58,11 @@ collided at 1050. Along with screenshots, assert:
   height and the check fails on text nobody sees (ours, 2026-10);
 - no chart below a minimum height, no console errors, no `NaN`/`undefined` in the page text;
 - **no text collides and no text is clipped** in any chart (below) — page scroll and console
-  checks alone pass a page whose legend sits on its labels;
+  checks alone pass a page whose legend sits on its labels; include the chart's own box: every
+  label's `getBBox()` lies inside the SVG's `viewBox` (a variance label cut at the right edge,
+  "+2." for "+2.9", passes every overlap check);
+- series labels of a chart over time sit right of its last period (behaviour contract §1),
+  once;
 - the print media rendering (PDF) still contains hatching and the footnote.
 
 Review new snapshots by eye next to the matching figures in your copy of the IBCS Standards

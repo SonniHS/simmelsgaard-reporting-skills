@@ -32,7 +32,7 @@
           "TotalValue"
         ]
       ],
-      "notes": "Value is the contribution to the total, not necessarily the source measure delta: for a cost line in a margin bridge bind −ΔCOS with Polarity +1. A cost increase therefore contributes a negative step (unfavourable), and a cost reduction contributes a positive step (favourable). Polarity changes only impact colour; geometry always follows the contribution sign. Include a remainder row (e.g. Rest) so base + Σ contribution = total. If they do not reconcile, the arrow label shows the difference with a '!'. Two waterfalls of one unit: the same pxPerUnit and labelWidth, and each visual's width sized to its own range (usermeta.ibcs.layout). Rounded-zero rule: abs(value) × 10^decimals < 0.5 is labelled 0 without sign and gets no impact colour. Input formats: (1) explicit Kind rows, with base/total values in Value; (2) one model row per element, Value as the signed contribution, optional Kind omitted, and BaseValue/TotalValue measures repeated on element rows. The template uses the first non-null value of each anchor independently in visual row order, creates each missing anchor once, and keeps explicit base/total rows when present. baseLabel/totalLabel name only the synthesized bars. Repeated anchor measures must be constant in the current filter context. Blank categories and rows whose Value, BaseValue and TotalValue are all null are dropped; zero is a value, and an anchor-only row is retained. PxPerUnit alone do not retain an unknown N/A member. Scale band (CH 4.3): set scaleBand (or bind ScaleBand) to the same round value in every chart of the unit whose scales differ (e.g. a waterfall by month next to one by entity at another px per unit). Highlight (UN 5.1): knob highlight = the row label, or field Highlight = 1 on that row, draws the blue ellipse around its value label; one highlighted value per chart, the one the key message names.",
+      "notes": "Value is the contribution to the total, not necessarily the source measure delta: for a cost line in a margin bridge bind −ΔCOS with Polarity +1. A cost increase therefore contributes a negative step (unfavourable), and a cost reduction contributes a positive step (favourable). Polarity changes only impact colour; geometry always follows the contribution sign. Include a remainder row (e.g. Rest) so base + Σ contribution = total. If they do not reconcile, the arrow label shows the difference with a '!'. Two waterfalls of one unit: the same pxPerUnit and labelWidth, and each visual's width sized to its own range (usermeta.ibcs.layout). Rounded-zero rule: abs(value) × 10^decimals < 0.5 is labelled 0 without sign and gets no impact colour. Input formats: (1) explicit Kind rows, with base/total values in Value; (2) one model row per element, Value as the signed contribution, optional Kind omitted, and BaseValue/TotalValue measures repeated on element rows. The template uses the first non-null value of each anchor independently in visual row order, creates each missing anchor once, and keeps explicit base/total rows when present. baseLabel/totalLabel name only the synthesized bars. Repeated anchor measures must be constant in the current filter context. Blank categories and rows whose Value, BaseValue and TotalValue are all null are dropped; zero is a value, and an anchor-only row is retained. PxPerUnit alone do not retain an unknown N/A member. Scale band (CH 4.3): set scaleBand (or bind ScaleBand) to the same round value in every chart of the unit whose scales differ (e.g. a waterfall by month next to one by entity at another px per unit). Highlight (UN 5.1): knob highlight = the row label, or field Highlight = 1 on that row, draws the blue ellipse around its value label; one highlighted value per chart, the one the key message names. With pxPerUnit = 0 the scale leaves room for the widest label (measured like bar-structure-variance) beyond the 34 px right padding, so labels are never cut at the visual edge.",
       "knobs": [
         "refScenario",
         "minuend",
@@ -186,6 +186,11 @@
       "name": "ibcsLabelPx",
       "value": 30,
       "description": "label room in px right of the longest bar (pxPerUnit > 0 only)"
+    },
+    {
+      "name": "ibcsCharWidth",
+      "value": 0.6,
+      "description": "estimated width of one label character as a share of ibcsFontSize; with pxPerUnit = 0 the value scale leaves room inside the plot for the widest label beyond the 34 px right padding, so labels are never cut at the visual edge"
     },
     {
       "name": "labelWidth",
@@ -600,7 +605,24 @@
       "as": "_ppu"
     },
     {
-      "calculate": "datum._ppu > 0 ? max(datum._xmax + ibcsLabelPx / datum._ppu, width / datum._ppu) : datum._xmax",
+      "calculate": "length(datum._lbl)",
+      "as": "_lblLen"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_lblLen",
+          "as": "_lblLenMax"
+        }
+      ]
+    },
+    {
+      "calculate": "max(0, (isValid(datum._lblLenMax) ? datum._lblLenMax : 0) * ibcsFontSize * ibcsCharWidth + 8 - 34)",
+      "as": "_room"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? max(datum._xmax + max(ibcsLabelPx, datum._room) / datum._ppu, width / datum._ppu) : datum._xmax + datum._room * datum._xmax / max(width - datum._room, 1)",
       "as": "_xhi"
     },
     {

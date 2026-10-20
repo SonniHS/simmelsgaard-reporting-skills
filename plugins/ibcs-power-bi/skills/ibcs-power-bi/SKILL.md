@@ -35,6 +35,9 @@ References:
 - [references/theme.md](references/theme.md) — what the generated theme sets and cannot set.
 - [references/matrix.md](references/matrix.md) — IBCS tables as a native matrix.
 - [references/feature-status.md](references/feature-status.md) — Power BI features this relies on, dated.
+- [references/page-shell.md](references/page-shell.md) — the page shell: neutral canvas with white
+  cards, header card (bold key message with coloured numbers, title, logo slot, slicers), KPI card
+  row, chart cards, footnote card, with exact px for a 1280 px page.
 - [references/pbir-skeleton.md](references/pbir-skeleton.md) — PBIP files, `definition.pbir`
   connection forms, theme registration, report measures, dynamic text, slicer defaults, tall
   pages, verified JSON for slicer / text box / `tableEx` / interactions, verifying after publishing.
@@ -92,20 +95,40 @@ Full table, `visual.json` properties and licensing: [references/card-routes.md](
 
 ## 3. Pages
 
-Layout logic comes from `ibcs-composition`. Power BI specifics (values from the `layout.*` tokens):
+Layout logic comes from `ibcs-composition`. Power BI specifics (values from the `layout.*` tokens).
+For a finished look, build the page in the **page shell** ([references/page-shell.md](references/page-shell.md)):
+theme `--shell cards`, header card, one card per KPI, chart cards with the title inside, a
+footnote card sized to its text. Without the shell the page is white and the bands below apply.
 
 - Canvas 1280×720 (16:9) by default; a taller page (e.g. 1280×1120, `displayOption`
   `FitToWidth`, readers scroll) when the spec asks for it ([pbir-skeleton.md](references/pbir-skeleton.md) §8).
   Page `background` and wallpaper = the token page colour.
-- Header band ~64 px: the **key message** (a separate text box: the evaluation lives here), then
+- Header band ~64 px (page shell: the header card): the **key message** (a separate visual: the
+  evaluation lives here; bold with impact-coloured numbers as the SVG measure of ibcs-svg-dax
+  skeleton 7, or a bold text card), then
   the **title block** (UN 2.2) as a text box or dynamic-title measure: line 1 who (unit and
   filters), line 2 what (**measure in bold** + unit), line 3 when (period, scenarios,
   variances). The title is descriptive only.
 - Grid: margin 16 px, gutter 12 px; visuals snapped to it; tiers of one chart aligned and the same
   width (or one Deneb visual).
-- Footer band ~20 px: footnotes (definitions, `*` notes, compromises such as "FC not hatched"),
-  **source**, and **data as of** (a measure on the model's refresh/as-of table, ISO 8601
-  `YYYY-MM-DD hh:mm`). Mandatory when the page is exported or printed.
+- Footer: footnotes (definitions, `*` notes, compromises such as "FC not hatched"), **source**,
+  and **data as of** (a measure on the model's refresh/as-of table, ISO 8601 `YYYY-MM-DD hh:mm`).
+  Mandatory when the page is exported or printed. Full width under the charts, the text box sized
+  to its text (never a scroll box); notes short, long definitions on a details page or in a
+  tooltip (page-shell.md §6).
+- Slicer headers short ("Company", "Period"): the meaning of "all" or "none selected" goes into
+  the scope chips or a footnote. A header longer than about (width − 16) / 7 characters is cut.
+- **Scale sizing is a build step, not advice** (gap seen in a test: a month chart bound a shared
+  `YMax` = the largest company bar, so the months were short and their Δ bars slivers). For every
+  page with absolute charts: write the scale group (`group.json`, each member with its `visual`
+  name, its ranges and `longestValueLabel`), run `scale_layout.py group.json --json > layout.json`,
+  set every member's `pxPerUnit` and size from it, and lint with
+  `ibcs_lint.py pbir <name>.Report --layout layout.json` (ibcs-review): a visual whose size or
+  px per unit differs from layout.json, or a shared domain on visuals of different size, fails.
+  Give each member its own `maxPx` (the space it may take, e.g. 330 px of height for the months,
+  640 px of width for the bars): the tightest member sets the px per unit. Do not use a single
+  `maxExtentPx` across horizontal and vertical members: the member with the largest range (often
+  the bars) then squeezes the months.
 - Same unit, same scale (UN 4.1, CH 4.1) = the same **px per unit**, each chart sized to its own
   data (CH 4.2): a chart with smaller values gets a smaller visual, never the larger chart's
   domain max at the same size (that leaves the small chart's plot mostly empty). For the scale
@@ -204,11 +227,12 @@ Input: a visual spec file per page in your project (for example
    Deneb: `${CLAUDE_SKILL_DIR}/../ibcs-deneb/scripts/to_pbir.py` with `--field` mappings, the
    spec's knobs, `--sort` (period order), `--filter` (static visual filters) and `--title`;
    scale-group members get `--param pxPerUnit=…` and `--pos` with the size from
-   `scripts/scale_layout.py` (§3).
+   `scripts/scale_layout.py --json` (§3; mandatory for absolute charts) plus their padding, and
+   any `setParams` it prints (label room) as `--param`.
 5. Record every compromise in the page footnote and in the spec's `deviations`.
 6. Validate (`jq empty` on changed JSON, or `python3 -m json.tool <file> > /dev/null` if jq is not
-   installed; `scripts/report_measures.py <name>.Report --check`; a PBIP validator where
-   available), preview each Deneb visual with live data (`render-previews.mjs --visual`), open in
+   installed; `scripts/report_measures.py <name>.Report --check`; `ibcs_lint.py pbir <name>.Report
+   --layout layout.json` without failed rules; a PBIP validator where available), preview each Deneb visual with live data (`render-previews.mjs --visual`), open in
    Desktop, compare with the spec, then run the `ibcs-review` skill.
 7. After publishing (only when the user asks), look at the rendered page: in a browser (*See
    details* on an error names the fields), or without one through *Export To File* as PDF with a
@@ -236,7 +260,12 @@ skill (plugin `fabric-apps`). What matters for the report builder:
       axis in the reference scenario's notation (or footnoted).
 - [ ] Same scale for the same unit on the page (absolute variances included): one px per unit,
       each visual sized to its own range (no empty domain above a small chart), or scaling
-      indicators where that is not sensible.
+      indicators where that is not sensible; sizes from `scale_layout.py --json`, lint `--layout` clean.
+- [ ] Value labels fit (scale_layout `longestValueLabel`, no `warnings`); slicer headers and
+      titles not cut; image columns ≥ `imageWidth` + 20 px (no stray "." marks).
+- [ ] Page shell (when used): canvas neutral, every visual white, cards edge to edge inside and
+      12 px apart, header card with message + title (+ logo), one visual per KPI card, footnote
+      card sized to its text (page-shell.md).
 - [ ] Bar width 2/3 (absolute) and 1/3 (relative); category width fixed per period type on the page.
 - [ ] Title block (who / what / when), separate key message, footnotes, source, data as of.
 - [ ] No legend boxes, value axes, 3-D, shadows or decorative colour; gridlines only where they

@@ -15,7 +15,7 @@ description: >
 # IBCS SVG-in-DAX measures
 
 Status (as of 2026-10): **no finished measure library.** This skill fixes the scope and the rules
-and gives six skeleton measures ([references/svg-skeletons.md](references/svg-skeletons.md)):
+and gives seven skeleton measures ([references/svg-skeletons.md](references/svg-skeletons.md)):
 the KPI card, the AC/BU/PY bar, the absolute variance bar and the budget progress bar are
 render-checked with sample values
 (their pattern ran against a live model in an end-to-end test); the pin and the column skeletons
@@ -58,6 +58,7 @@ own SVG document, so `<defs>` ids such as `url(#h)` never clash between cells.
 | Waterfall bar per report line | cards 28, 29 in a matrix |
 | Indexed sparkline on a shared scale | CO 4.4: omit sparklines that are not scaled properly |
 | Scenario header marker (thick light / thick dark / double / hatched rule) | EX 1.2 column headers |
+| Key message with impact-coloured numbers (skeleton 7): bold sentence, variance numbers in the text impact colours, ≤ 2 lines | UN 2.1, SA 4.3; a text box cannot colour a value by its sign |
 
 ## Preview harness
 

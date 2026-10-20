@@ -9,6 +9,7 @@ Starting points, not a library. Test status per skeleton (as of 2026-10):
 | 3 AC/FC columns (slicer or card) | written for illustration; **untested** |
 | 4 KPI card (absolute, percentage-point and ratio variants, highlight ellipse) | ran against a live model and rendered in the Power BI service in an end-to-end test |
 | 5 AC bar, BU outlined behind, PY triangle | SVG markup render-checked with sample values; the same pattern ran against a live model in an end-to-end test |
+| 7 Key message (bold, impact-coloured numbers, two lines) | SVG markup render-checked with sample values (one line, two lines, overflow); **not yet run in the service** (the data-URI-in-`tableEx` route is the one skeleton 4 proved) |
 
 "Render-checked" means: the string the DAX builds was reproduced with literal sample values and
 drawn with `scripts/svg_preview.py` in headless Chrome. Before use, evaluate each measure against
@@ -46,6 +47,7 @@ Shared conventions:
 - [4. KPI card (one card per measure)](#4-kpi-card-one-card-per-measure)
 - [5. AC bar in front of an outlined BU bar, PY triangle](#5-ac-bar-in-front-of-an-outlined-bu-bar-py-triangle)
 - [6. Budget progress bar (BAC, budget to date, AC to date)](#6-budget-progress-bar-bac-budget-to-date-ac-to-date)
+- [7. Key message with impact-coloured numbers](#7-key-message-with-impact-coloured-numbers)
 - [Shared row geometry (GEOM) and px per unit](#shared-row-geometry-geom-and-px-per-unit)
 - [Preview harness](#preview-harness)
 
@@ -223,7 +225,9 @@ The visual-spec type `kpi-cards` is a transposed variance table: one card per me
 label, unit, the AC value, then one line per comparison with Δ% and Δ and the scenario code.
 Power BI route: one SVG measure per card, all cards as image columns of one `tableEx` (one
 row, `grid.imageWidth` / `imageHeight` = the card size, column headers off or the measure name),
-so the cards share one visual, one font and one baseline.
+so the cards share one visual, one font and one baseline. In the page shell
+([page-shell.md](../../ibcs-power-bi/references/page-shell.md) §4) each card is its own `tableEx`
+on its own white card instead (SVG 210 × 104, coordinates there), so the canvas shows between them.
 
 ```dax
 SVG KPI Card Revenue =
@@ -436,6 +440,91 @@ IF ( NOT ISBLANK ( _AC ) || NOT ISBLANK ( _BAC ),
 
 Column header: "AC ■ BAC ▭ budget to date |" so the legend stays integrated. Negative actuals
 (credits) draw no AC bar; show them in the variance column instead.
+
+## 7. Key message with impact-coloured numbers
+
+The key message (UN 2.1) as one bold sentence whose variance numbers carry the text impact
+colours (`color.variance.goodText` / `badText` / `neutralText`), the rest black: the reader sees
+at a glance which numbers are good or bad. A Power BI text box cannot colour a value by its sign,
+and the new card colours a whole value, not parts of a sentence (as of 2026-10), so the sentence
+is an SVG text with one `<tspan>` per part. It wraps at part boundaries onto at most `_Lines`
+lines; a message that needs more ends in "…" (visible, so it gets shortened, never silently cut:
+UN 2.1 wants at most two lines). Placement and size: the header card of
+[page-shell.md](../../ibcs-power-bi/references/page-shell.md) (one image column in a `tableEx`,
+`grid.imageWidth` = `_W`, `imageHeight` = `_Lines × _LineH + 4`, column width ≥ `_W` + 20).
+
+Parts are the template slots of the message (`ibcs-composition`): text parts in `_Text`, each
+signed variance its own part with `_Imp ( Δ )`. Line breaks happen only between parts, so keep a
+number and its unit in one part. A part that starts a new line loses its leading space.
+
+```dax
+SVG Key Message =
+-- TOKENS
+VAR _Text = "#000000"  VAR _GoodT = "#5A7A00"  VAR _BadT = "#D00000"  VAR _NeutralT = "#0064FF"   -- *Text variants
+VAR _FontEm = "Segoe UI Semibold"
+-- CONFIG
+VAR _W = 1032  VAR _Size = 17  VAR _Lines = 2    -- width px, key message 13 pt ≈ 17 px, max lines (UN 2.1)
+VAR _LineH = ROUND ( _Size * 1.3, 0 )
+VAR _Budget = INT ( _W / ( _Size * 0.58 ) )      -- characters per line (Segoe UI Semibold ≈ 0.58 em per char)
+VAR _Pol = 1  VAR _Div = 1E6  VAR _Fmt = "#,0.0"  VAR _Dec = 1
+VAR _AC = [Revenue]  VAR _DPY = ROUND ( ( _AC - [Revenue PY] ) / _Div, _Dec )
+VAR _PPY = IF ( [Revenue PY] > 0, ROUND ( DIVIDE ( _AC - [Revenue PY], [Revenue PY] ), 3 ) )   -- BLANK = N/A
+-- impact text colour of a rounded variance (rounded zero: black)
+VAR _K1 = SWITCH ( TRUE (), _DPY = 0, _Text, _Pol = 0, _NeutralT, _DPY * _Pol > 0, _GoodT, _BadT )
+VAR _Num = IF ( _DPY = 0, "0.0", FORMAT ( _DPY, "+" & _Fmt & ";-" & _Fmt, "en-US" ) ) & " mEUR ("
+    & IF ( ISBLANK ( _PPY ), "N/A", FORMAT ( _PPY, "+0.0%;-0.0%", "en-US" ) ) & ")"
+-- PARTS (text, colour); add or drop blocks of three VARs as the template needs
+VAR _T1 = "Revenue " & [Period Label] & " is " & FORMAT ( _AC / _Div, _Fmt, "en-US" ) & " mEUR, "
+VAR _T2 = _Num                                       VAR _C2 = _K1
+VAR _T3 = " vs PY; " & [Largest Gap Entity] & " has the largest gap to BU ("   VAR _C3 = _Text
+VAR _T4 = [Largest Gap Text]                         VAR _C4 = [Largest Gap Colour]
+VAR _T5 = ")."                                       VAR _C5 = _Text
+-- LAYOUT (greedy: a part goes to the next line when it does not fit)
+VAR _E1 = SUBSTITUTE ( SUBSTITUTE ( _T1, "&", "&amp;" ), "<", "&lt;" )
+VAR _L1 = LEN ( _T1 )  VAR _N1 = 1
+VAR _X1 = "<tspan fill='" & _Text & "'>" & _E1 & "</tspan>"
+VAR _B2 = _L1 + LEN ( _T2 ) > _Budget
+VAR _S2 = IF ( _B2 && LEFT ( _T2, 1 ) = " ", MID ( _T2, 2, 999 ), _T2 )
+VAR _L2 = IF ( _B2, 0, _L1 ) + LEN ( _S2 )  VAR _N2 = _N1 + IF ( _B2, 1 )
+VAR _X2 = IF ( _N2 <= _Lines, IF ( _B2, "<tspan x='0' dy='" & _LineH & "'", "<tspan" ) & " fill='" & _C2 & "'>"
+    & SUBSTITUTE ( SUBSTITUTE ( _S2, "&", "&amp;" ), "<", "&lt;" ) & "</tspan>" )
+VAR _B3 = _L2 + LEN ( _T3 ) > _Budget
+VAR _S3 = IF ( _B3 && LEFT ( _T3, 1 ) = " ", MID ( _T3, 2, 999 ), _T3 )
+VAR _L3 = IF ( _B3, 0, _L2 ) + LEN ( _S3 )  VAR _N3 = _N2 + IF ( _B3, 1 )
+VAR _X3 = IF ( _N3 <= _Lines, IF ( _B3, "<tspan x='0' dy='" & _LineH & "'", "<tspan" ) & " fill='" & _C3 & "'>"
+    & SUBSTITUTE ( SUBSTITUTE ( _S3, "&", "&amp;" ), "<", "&lt;" ) & "</tspan>" )
+VAR _B4 = _L3 + LEN ( _T4 ) > _Budget
+VAR _S4 = IF ( _B4 && LEFT ( _T4, 1 ) = " ", MID ( _T4, 2, 999 ), _T4 )
+VAR _L4 = IF ( _B4, 0, _L3 ) + LEN ( _S4 )  VAR _N4 = _N3 + IF ( _B4, 1 )
+VAR _X4 = IF ( _N4 <= _Lines, IF ( _B4, "<tspan x='0' dy='" & _LineH & "'", "<tspan" ) & " fill='" & _C4 & "'>"
+    & SUBSTITUTE ( SUBSTITUTE ( _S4, "&", "&amp;" ), "<", "&lt;" ) & "</tspan>" )
+VAR _B5 = _L4 + LEN ( _T5 ) > _Budget
+VAR _S5 = IF ( _B5 && LEFT ( _T5, 1 ) = " ", MID ( _T5, 2, 999 ), _T5 )
+VAR _N5 = _N4 + IF ( _B5, 1 )
+VAR _X5 = IF ( _N5 <= _Lines, IF ( _B5, "<tspan x='0' dy='" & _LineH & "'", "<tspan" ) & " fill='" & _C5 & "'>"
+    & SUBSTITUTE ( SUBSTITUTE ( _S5, "&", "&amp;" ), "<", "&lt;" ) & "</tspan>" )
+VAR _Cut = IF ( _N5 > _Lines, "<tspan fill='" & _Text & "'>…</tspan>" )
+VAR _H = _Lines * _LineH + 4
+RETURN
+    "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='" & _W & "' height='" & _H
+    & "' viewBox='0 0 " & _W & " " & _H & "'><text x='0' y='" & _Size & "' font-family='" & _FontEm
+    & "' font-weight='600' font-size='" & _Size & "' xml:space='preserve'>"
+    & _X1 & _X2 & _X3 & _X4 & _X5 & _Cut & "</text></svg>"
+```
+
+- `[Period Label]`, `[Largest Gap Entity]`, `[Largest Gap Text]` ("-3.4 mEUR") and
+  `[Largest Gap Colour]` (the same `SWITCH` as `_K1` on that gap) are placeholders for your
+  message bindings; a verdict word ("in line with") needs its declared threshold (`ibcs-composition` §2).
+- The width estimate (0.58 em per character) is a little generous for Segoe UI Semibold; check
+  the longest real message once in the preview harness and lower `_Budget` if a line runs out.
+- Avoid a `%` directly followed by two hex digits in the text (`%20` would be URL-decoded in the
+  data URI); a `%` followed by a space, `)` or `<` is safe (skeleton 4 prints `+5.8%` this way).
+- Accessibility: an image is not read as text. Bind the plain-text message measure to the
+  table's alt text (Format → General → Alt text → fx in Desktop; copy the resulting JSON) and keep
+  it as the tooltip.
+- **Fallback** (proven in an end-to-end test): the plain-text message in a `cardVisual` with
+  `value.bold` true ([pbir-skeleton.md](../../ibcs-power-bi/references/pbir-skeleton.md) §6):
+  bold, but every number black.
 
 ## Shared row geometry (GEOM) and px per unit
 

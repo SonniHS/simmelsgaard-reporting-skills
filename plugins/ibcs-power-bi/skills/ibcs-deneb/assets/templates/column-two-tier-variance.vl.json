@@ -49,6 +49,7 @@
         "triangleScenario",
         "showCategoryLabels",
         "fcLabel",
+        "legendSide",
         "scaleBand",
         "showBase",
         "pinTier",
@@ -189,7 +190,7 @@
           "note": "showBase false with pinTier: a ΔPL + ΔPL% pair without the base."
         }
       ],
-      "notes": "Same unit, same scale (CH 4.1) means the same px per unit, not the same domain: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field from one DAX measure) and size each visual's height to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill computes it), so a chart with smaller values is shorter (CH 4.2). yMax, varMin, varMax only share a domain: use them for visuals of the same height that must show the same range, never to align a smaller chart with a larger one. A Total / extension column (e.g. the year next to its months) is a separate visual with periodType 'year'; when its values need another scale, mark it with a scaling indicator or a footnote. Same column width across visuals (e.g. the month chart and its total): set barPx. Values are drawn as delivered: bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Period or no value in AC, FC, PY, PL, BU, refScenario or triangleScenario are dropped, even if constant scale measures are present; reference-only periods remain. The integrated reference legend names the first period with a nonblank reference value, including zero. periodLabel: auto preserves category labels unchanged; month formats YYYY-MM as Jan..Dec with the year below the first visible month of each year and a thin separator at subsequent year boundaries; short formats YYYY-MM as mm. Other category formats are left unchanged. When showCategoryLabels is false, year labels and year separators are hidden too. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Comment markers (UN 2.4): bind Comment (e.g. a DAX SWITCH returning 1, 2 … for the periods the comments explain) and print the same numbers in circles in the comment text box; the marker sits above the value label, so keep ibcsTierGapPx large enough when a variance tier is stacked above. Variance-only tier (showBase false): only the variance axis, variance columns and labels and the tier label are drawn; stack it above a chart that shows the base, with showCategoryLabels false when the visual below shows them. Pin tier (pinTier true): ΔX% = (AC&FC − REF) / REF with the signed reference, N/A when REF is blank or 0, or negative while naOnNegativeRef is true; drawn as pins above the absolute variance tier in the same view, so base, ΔX and ΔX% always share the category axis and stay together when a filter changes the data (separate stacked visuals each anchor their own plot and drift apart). The pins have their own % scale: pinPxPerUnit px per percentage point (the same on every pin tier and pin chart of the page), else pinShare of the base tier. Outlier clipping (clipPct) exists only in pin-relative-variance.",
+      "notes": "Same unit, same scale (CH 4.1) means the same px per unit, not the same domain: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field from one DAX measure) and size each visual's height to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill computes it), so a chart with smaller values is shorter (CH 4.2). yMax, varMin, varMax only share a domain: use them for visuals of the same height that must show the same range, never to align a smaller chart with a larger one. A Total / extension column (e.g. the year next to its months) is a separate visual with periodType 'year'; when its values need another scale, mark it with a scaling indicator or a footnote. Same column width across visuals (e.g. the month chart and its total): set barPx. Values are drawn as delivered: bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Period or no value in AC, FC, PY, PL, BU, refScenario or triangleScenario are dropped, even if constant scale measures are present; reference-only periods remain. The integrated reference legend names the first period with a nonblank reference value, including zero. periodLabel: auto preserves category labels unchanged; month formats YYYY-MM as Jan..Dec with the year below the first visible month of each year and a thin separator at subsequent year boundaries; short formats YYYY-MM as mm. Other category formats are left unchanged. When showCategoryLabels is false, year labels and year separators are hidden too. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Comment markers (UN 2.4): bind Comment (e.g. a DAX SWITCH returning 1, 2 … for the periods the comments explain) and print the same numbers in circles in the comment text box; the marker sits above the value label, so keep ibcsTierGapPx large enough when a variance tier is stacked above. Variance-only tier (showBase false): only the variance axis, variance columns and labels and the tier label are drawn; stack it above a chart that shows the base, with showCategoryLabels false when the visual below shows them. Pin tier (pinTier true): ΔX% = (AC&FC − REF) / REF with the signed reference, N/A when REF is blank or 0, or negative while naOnNegativeRef is true; drawn as pins above the absolute variance tier in the same view, so base, ΔX and ΔX% always share the category axis and stay together when a filter changes the data (separate stacked visuals each anchor their own plot and drift apart). The pins have their own % scale: pinPxPerUnit px per percentage point (the same on every pin tier and pin chart of the page), else pinShare of the base tier. Outlier clipping (clipPct) exists only in pin-relative-variance. Integrated legend (legendSide, default 'end'): the scenario names sit right of the last column at their own marks (triangle tip, upper part of the reference column, middle of the AC/FC column), spread at least ibcsFontSize + 2 px apart and kept inside the base tier; a series of AC months followed by FC months is named AC&FC; the right padding (46 px) holds 'AC&FC'. legendSide 'start' keeps AC and the reference left of the first column and FC right of the last. Names are taken from the last row: a scenario without a value in the last period is not named.",
       "previewGroups": [
         {
           "suffix": "-scale-group",
@@ -226,7 +227,7 @@
   "height": "container",
   "padding": {
     "left": 40,
-    "right": 30,
+    "right": 46,
     "top": 4,
     "bottom": 2
   },
@@ -315,6 +316,11 @@
       "name": "fcLabel",
       "value": "FC",
       "description": "integrated-legend name of the hatched (forecast) columns: 'FC' for forecast months; 'AC&FC' on a Total / extension visual whose column is the year of actual plus forecast (bind that measure as FC so it is hatched)"
+    },
+    {
+      "name": "legendSide",
+      "value": "end",
+      "description": "where the integrated scenario legend sits: 'end' = right of the last column, each name at its own mark (triangle, reference, AC/FC), spread so names never overlap; a series of AC then FC months is named AC&FC there; 'start' = AC and the reference left of the first column, FC right of the last (previous behaviour)"
     },
     {
       "name": "showBase",
@@ -1502,8 +1508,11 @@
       }
     },
     {
-      "description": "integrated legend: reference scenario name left of the first column, at the height of the first period that has a reference value (a series starting without PY still names PY)",
+      "description": "integrated legend: reference scenario name left of the first column, at the height of the first period that has a reference value (a series starting without PY still names PY) (legendSide 'start')",
       "transform": [
+        {
+          "filter": "legendSide != 'end'"
+        },
         {
           "filter": "showBase"
         },
@@ -1559,8 +1568,11 @@
       }
     },
     {
-      "description": "integrated legend: AC left of the first column (upper), reference name below it",
+      "description": "integrated legend: AC left of the first column (upper), reference name below it (legendSide 'start')",
       "transform": [
+        {
+          "filter": "legendSide != 'end'"
+        },
         {
           "filter": "showBase"
         },
@@ -1631,8 +1643,11 @@
       }
     },
     {
-      "description": "integrated legend: FC right of the last forecast column",
+      "description": "integrated legend: FC right of the last forecast column (legendSide 'start')",
       "transform": [
+        {
+          "filter": "legendSide != 'end'"
+        },
         {
           "filter": "showBase"
         },
@@ -1705,8 +1720,11 @@
       }
     },
     {
-      "description": "integrated legend: triangle scenario name left of the first triangle",
+      "description": "integrated legend: triangle scenario name left of the first triangle (legendSide 'start')",
       "transform": [
+        {
+          "filter": "legendSide != 'end'"
+        },
         {
           "filter": "showBase"
         },
@@ -1737,6 +1755,150 @@
           "value": {
             "expr": "triangleScenario"
           }
+        }
+      }
+    },
+    {
+      "description": "integrated end legend (legendSide 'end'): scenario names right of the last column, each at its own mark (triangle tip, upper part of the reference column, middle of the AC/FC column), spread in screen pixels so they never overlap (gap ibcsFontSize + 2) and kept inside the base tier",
+      "transform": [
+        {
+          "filter": "showBase && legendSide == 'end' && datum._i == datum._n"
+        },
+        {
+          "calculate": "isValid(datum._v) ? datum._v * 0.5 : null",
+          "as": "_lgV"
+        },
+        {
+          "calculate": "isValid(datum._r) ? datum._r * 0.85 : null",
+          "as": "_lgR"
+        },
+        {
+          "calculate": "isValid(datum._t) ? datum._t : null",
+          "as": "_lgT"
+        },
+        {
+          "fold": [
+            "_lgT",
+            "_lgR",
+            "_lgV"
+          ],
+          "as": [
+            "_lgKey",
+            "_lgVal"
+          ]
+        },
+        {
+          "filter": "isValid(datum._lgVal)"
+        },
+        {
+          "calculate": "datum._lgKey == '_lgT' ? triangleScenario : (datum._lgKey == '_lgR' ? refScenario : (datum._isFC ? (datum._lastAC > 0 && fcLabel == 'FC' ? 'AC&FC' : fcLabel) : 'AC'))",
+          "as": "_lgName"
+        },
+        {
+          "calculate": "datum._lgKey == '_lgT' ? 0 : (datum._lgKey == '_lgR' ? 1 : 2)",
+          "as": "_lgRank"
+        },
+        {
+          "calculate": "scale('y', 0) - ibcsFontSize / 2",
+          "as": "_lgBottom"
+        },
+        {
+          "calculate": "min(scale('y', datum._M), datum._lgBottom)",
+          "as": "_lgTop"
+        },
+        {
+          "calculate": "clamp(scale('y', datum._lgVal), datum._lgTop, datum._lgBottom)",
+          "as": "_lgAnchorY"
+        },
+        {
+          "window": [
+            {
+              "op": "row_number",
+              "as": "_lgIndex"
+            }
+          ],
+          "sort": [
+            {
+              "field": "_lgAnchorY",
+              "order": "ascending"
+            },
+            {
+              "field": "_lgRank",
+              "order": "ascending"
+            }
+          ]
+        },
+        {
+          "calculate": "datum._lgAnchorY - (datum._lgIndex - 1) * max(ibcsFontSize + 2, 4)",
+          "as": "_lgBaseY"
+        },
+        {
+          "window": [
+            {
+              "op": "max",
+              "field": "_lgBaseY",
+              "as": "_lgRunY"
+            }
+          ],
+          "sort": [
+            {
+              "field": "_lgAnchorY",
+              "order": "ascending"
+            },
+            {
+              "field": "_lgRank",
+              "order": "ascending"
+            }
+          ],
+          "frame": [
+            null,
+            0
+          ]
+        },
+        {
+          "calculate": "datum._lgRunY + (datum._lgIndex - 1) * max(ibcsFontSize + 2, 4)",
+          "as": "_lgDownY"
+        },
+        {
+          "joinaggregate": [
+            {
+              "op": "max",
+              "field": "_lgDownY",
+              "as": "_lgMaxY"
+            }
+          ]
+        },
+        {
+          "calculate": "datum._lgDownY - max(0, datum._lgMaxY - datum._lgBottom)",
+          "as": "_lgY"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "baseline": "middle",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "xOffset": {
+          "expr": "bw / 2 + 4"
+        }
+      },
+      "encoding": {
+        "x": {
+          "field": "Period",
+          "type": "nominal"
+        },
+        "y": {
+          "value": {
+            "expr": "datum._lgY"
+          }
+        },
+        "text": {
+          "field": "_lgName"
         }
       }
     },

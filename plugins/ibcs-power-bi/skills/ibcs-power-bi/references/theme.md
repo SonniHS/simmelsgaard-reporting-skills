@@ -11,7 +11,8 @@ values by hand: regenerate after any token change, and run `--check` in CI.
   neutral or ambiguous impact. IBCS fixes the hues and their meaning, not the exact codes: pick
   codes once for the organisation (token overrides) and keep them.
 - One font family; no gridlines, no value axes, data labels on, legend off (label series
-  directly), no backgrounds, borders or shadows (SI 1.2).
+  directly), no backgrounds, borders or shadows (SI 1.2); with `--shell cards` white visual
+  backgrounds on a neutral canvas, still no borders or shadows.
 
 ## What the generated theme sets
 
@@ -31,6 +32,13 @@ values by hand: regenerate after any token change, and run `--check` in CI.
 Variants: `ibcs-pbi-theme.json` (standard), `-cvd.json` (colour-vision-deficiency adaptation),
 `-bw.json` on request (`--variants standard,cvd,bw`). IBCS describes these as adaptations for
 specific readers or for output without colour; whether to maintain all of them is your choice.
+
+## Page shell variant
+
+`--shell cards` (references/page-shell.md): page background and outspace a neutral light canvas
+(`--canvas`, default `#F3F3F3`), every visual and table background white with left/right padding
+`--card-padding` (12 px). Borders, shadows and radius stay off: the white visuals stacked edge to
+edge form the cards. A coloured canvas is not allowed (the linter fails it).
 
 ## What a theme cannot do
 

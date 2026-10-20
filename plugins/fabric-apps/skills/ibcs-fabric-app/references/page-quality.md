@@ -21,11 +21,11 @@ at phone and desktop width.
   charts in one row share a baseline.
 - No dead space: no half-empty cards, no chart squeezed into a strip inside a tall card. Content
   height decides card height, not the grid.
-- Capped category widths (the `ibcs-web-charts` behaviour contract caps column categories so
-  stacked tiers align) can leave a chart narrower than its card. That is not dead space to fill
-  by stretching columns past the cap: size the card to the chart, give the row a second visual,
-  or use the width for the extended Total column and the series labels. Never break the cap or
-  the shared scale to fill a card.
+- In a fixed cell the month categories fill the cell's width and columns take 2/3 of each
+  category (`ibcs-web-charts` behaviour contract §2); thin columns with wide gaps are a defect.
+  Only a chart that sizes itself caps its step; then size the card to the chart, give the row a
+  second visual, or use the width for the Total column and the series labels. Never break the
+  shared scale to fill a card.
 - The plot area dominates its card: titles, legends and notes take at most about a third.
 - Bars, columns and rows keep the token weights; same unit, same scale across the page; scale
   bands where scales must differ.
@@ -45,7 +45,31 @@ at phone and desktop width.
   shrunk), every number readable.
 - Consistent chrome across apps: top bar, filter bar, page frame, cards, footer.
 
-## 4. How to check
+## 4. Shell checks
+
+The frame of [report-shell.md](report-shell.md), at 390, ≈ 1050 and 1280 px:
+
+- [ ] Header row: logo, area name and tabs on one line at 1280 and ≈ 1050 px; the active tab does
+      not change the row width; tools never cut.
+- [ ] Filter bar: entity, period, compare with and Reset present; every control as wide as its
+      longest option; each active value appears in title line 1 or 3; Reset keeps the page.
+- [ ] Compare with switches the notation (reference tiers, Δ codes, title line 3, headline
+      clauses), not only the numbers.
+- [ ] Headline bold with impact-coloured variance numbers (text tokens) and the rule under it;
+      "in line with" below the materiality threshold; at most two findings, the mover ringed.
+- [ ] Chips end in footnote numbers that link to the footer; numbers match both ways.
+- [ ] KPI cards: one equal row, (i) opens the definition, a ring only on numbers the headline
+      cites; values tabular and never cut.
+- [ ] Chart cards: title inside; selected month band through all tiers; Total in its own cell
+      with its own scale and a scale band; series labels at the end of the series, once.
+- [ ] Footer full width: every footnote complete (no scroll box, no ellipsis), source, data as
+      of, last closed month.
+- [ ] Theme, card style and density survive a reload (viewer preference); a copied link
+      reproduces page, entity, period and comparison.
+- [ ] Phone: header in two rows, filters behind one toggle with a summary, KPI cards two per
+      row, no horizontal page scroll.
+
+## 5. How to check
 
 - Screenshot every page at 1280, ≈ 1050 (the portal's content width) and 390 px (default state
   plus one filter change); review against

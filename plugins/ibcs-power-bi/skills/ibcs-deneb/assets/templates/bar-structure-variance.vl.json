@@ -32,9 +32,9 @@
         "minuend",
         "polarity",
         "stepScale",
-        "ibcsLabelPad",
         "ibcsTierGap",
         "ibcsLabelPx",
+        "ibcsCharWidth",
         "ibcsTierGapPx",
         "decimals",
         "unitDivisor",
@@ -136,9 +136,21 @@
             "width": 635,
             "height": 280
           }
+        },
+        {
+          "suffix": "-narrow",
+          "params": {
+            "refScenario": "BU",
+            "triangleScenario": "PY",
+            "refMark": "bar"
+          },
+          "preview": {
+            "width": 250,
+            "height": 190
+          }
         }
       ],
-      "notes": "Same unit, same scale (CH 4.1) means the same px per unit: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field) and size each visual's width to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill). xMax, varMin, varMax only share a domain: use them for visuals of the same width that must show the same range. A Total row on another scale belongs in a separate visual with a scaling indicator or a footnote. Bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Category or no value in AC, FC, PY, PL, BU, or the selected scenario fields are dropped; constant scale/polarity measures do not keep unknown members alive. Rows with any scenario value, including PY-only rows, remain. The base range includes negative values and reserves label room below zero; value labels sit outside the bar pair in the direction of the AC/FC value, in dark text. When a reference bar and a third-scenario triangle are both named, their top labels occupy separate vertical levels. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off."
+      "notes": "Same unit, same scale (CH 4.1) means the same px per unit: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field) and size each visual's width to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill). xMax, varMin, varMax only share a domain: use them for visuals of the same width that must show the same range. A Total row on another scale belongs in a separate visual with a scaling indicator or a footnote. Bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Category or no value in AC, FC, PY, PL, BU, or the selected scenario fields are dropped; constant scale/polarity measures do not keep unknown members alive. Rows with any scenario value, including PY-only rows, remain. The base range includes negative values and reserves label room below zero; value labels sit outside the bar pair in the direction of the AC/FC value, in dark text. When a reference bar and a third-scenario triangle are both named, their top labels occupy separate vertical levels. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Label room is measured from the label text (character count × ibcsFontSize × ibcsCharWidth + 6 px) for the value labels and for the variance labels on each side that has them, so a narrow visual shrinks the bars, never cuts a label; with pxPerUnit the room is at least ibcsLabelPx."
     }
   },
   "data": {
@@ -226,7 +238,7 @@
     {
       "name": "ibcsLabelPad",
       "value": 0.16,
-      "description": "label room, as a share of the largest absolute base value (pxPerUnit = 0); reserved at the low end too when a tier has negative values"
+      "description": "not used for the label room any more (it is measured from the label text, see ibcsLabelPx); kept so older specs still parse"
     },
     {
       "name": "ibcsTierGap",
@@ -236,7 +248,12 @@
     {
       "name": "ibcsLabelPx",
       "value": 40,
-      "description": "label room in px beyond a bar end (pxPerUnit > 0 only; else ibcsLabelPad)"
+      "description": "label room in px beyond a bar end, both tiers (pxPerUnit > 0; scripts/scale_layout.py sizes the container with it); the room grows to the widest value / variance label (character count × ibcsFontSize × ibcsCharWidth + 6 px). With pxPerUnit = 0 the room is the measured label width alone, so labels are never cut at the visual edge at any width"
+    },
+    {
+      "name": "ibcsCharWidth",
+      "value": 0.6,
+      "description": "estimated width of one label character as a share of ibcsFontSize (Segoe UI digits ≈ 0.55–0.6); used to reserve label room"
     },
     {
       "name": "ibcsTierGapPx",
@@ -502,6 +519,36 @@
       ]
     },
     {
+      "calculate": "isValid(datum._v) ? format(abs(datum._v) * pow(10, decimals) < 0.5 ? 0 : datum._v, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : ''",
+      "as": "_vLabel"
+    },
+    {
+      "calculate": "isValid(datum._d) ? (abs(datum._d) * pow(10, decimals) < 0.5 ? format(0, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : format(datum._d, replace(ibcsFmtVar, /[.][0-9]+/, '.' + decimals))) : ''",
+      "as": "_dLabel"
+    },
+    {
+      "calculate": "length(datum._vLabel)",
+      "as": "_vLen"
+    },
+    {
+      "calculate": "length(datum._dLabel)",
+      "as": "_dLen"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_vLen",
+          "as": "_vLenMax"
+        },
+        {
+          "op": "max",
+          "field": "_dLen",
+          "as": "_dLenMax"
+        }
+      ]
+    },
+    {
       "calculate": "min(isValid(datum._minV) ? datum._minV : 0, isValid(datum._minR) ? datum._minR : 0, isValid(datum._minT) ? datum._minT : 0, 0)",
       "as": "_m"
     },
@@ -514,19 +561,55 @@
       "as": "_dLo"
     },
     {
-      "calculate": "datum._ppu > 0 ? ibcsLabelPx / datum._ppu : max(datum._M, -datum._m) * ibcsLabelPad",
+      "calculate": "(isValid(datum._vLenMax) ? datum._vLenMax : 0) * ibcsFontSize * ibcsCharWidth + 6",
+      "as": "_LV"
+    },
+    {
+      "calculate": "(isValid(datum._dLenMax) ? datum._dLenMax : 0) * ibcsFontSize * ibcsCharWidth + 6",
+      "as": "_LD"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? max(datum._LV, ibcsLabelPx) : datum._LV",
+      "as": "_RV"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? max(datum._LD, ibcsLabelPx) : datum._LD",
+      "as": "_RD"
+    },
+    {
+      "calculate": "max(isValid(datum._dMax) ? datum._dMax : 0, datum._kDHi, 0)",
+      "as": "_dHi"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? 0 : max(datum._M, -datum._m) * ibcsTierGap",
+      "as": "_tgU"
+    },
+    {
+      "calculate": "datum._RV + (datum._m < 0 ? datum._RV : 0) + datum._RD + (datum._dLo < 0 ? datum._RD : 0)",
+      "as": "_fixPx"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? datum._ppu : max(width - datum._fixPx, width * 0.25) / max(datum._M - datum._m + datum._dHi - datum._dLo + datum._tgU, 1e-9)",
+      "as": "_k"
+    },
+    {
+      "calculate": "datum._RV / datum._k",
       "as": "_lp"
     },
     {
-      "calculate": "datum._ppu > 0 ? ibcsTierGapPx / datum._ppu : max(datum._M, -datum._m) * ibcsTierGap",
+      "calculate": "datum._RD / datum._k",
+      "as": "_lpd"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? ibcsTierGapPx / datum._ppu : datum._tgU",
       "as": "_tg"
     },
     {
-      "calculate": "datum._M + datum._lp + datum._tg - datum._dLo + (datum._dLo < 0 ? datum._lp : 0)",
+      "calculate": "datum._M + datum._lp + datum._tg - datum._dLo + (datum._dLo < 0 ? datum._lpd : 0)",
       "as": "_B"
     },
     {
-      "calculate": "datum._B + max(isValid(datum._dMax) ? datum._dMax : 0, datum._kDHi, 0) + datum._lp",
+      "calculate": "datum._B + datum._dHi + datum._lpd",
       "as": "_right"
     },
     {
@@ -540,14 +623,6 @@
     {
       "calculate": "isValid(datum._d) ? datum._B + datum._d : null",
       "as": "_dEnd"
-    },
-    {
-      "calculate": "isValid(datum._v) ? format(abs(datum._v) * pow(10, decimals) < 0.5 ? 0 : datum._v, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : ''",
-      "as": "_vLabel"
-    },
-    {
-      "calculate": "isValid(datum._d) ? (abs(datum._d) * pow(10, decimals) < 0.5 ? format(0, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : format(datum._d, replace(ibcsFmtVar, /[.][0-9]+/, '.' + decimals))) : ''",
-      "as": "_dLabel"
     },
     {
       "calculate": "isValid(datum._t) ? triangleScenario + ' ' + format(abs(datum._t) * pow(10, decimals) < 0.5 ? 0 : datum._t, replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)) : ''",

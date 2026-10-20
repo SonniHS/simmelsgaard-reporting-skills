@@ -47,6 +47,19 @@ both ends, and not again above and below a bar chart (a bar chart names its scen
 bar only). Variance numbers that carry an impact colour use the text tokens
 (`color.variance.*Text`); bars, pins and markers use the graphic colours.
 
+Series-label placement (OURS): a column or line chart over time names its scenarios at the
+**end**, right of the last period (before a separated Total column), each label level with the
+mark it names at that period and in the same vertical order; when two would come closer than the
+label height + 2 px, push them apart symmetrically and draw a short leader to the mark. Use the
+first period only when the right side has no room (a phone chart that keeps its full width). A
+bar chart names its scenarios once above the top bar. Variance tiers keep their tier name
+(`ΔBU`, `ΔBU%`) at the left of the tier's axis.
+
+Label clearance at the chart edge: plot margins come from **measured** label boxes (value
+labels at the first and last category, variance labels of the outermost bars and pins, the end
+series labels), never from a fixed padding; no label box may extend outside the chart's own
+box. A label that does not fit is shortened (fewer decimals, then the unit factor), never cut.
+
 Missing data: `null` draws nothing (no zero column, no zero-length bar, a gap in lines). One rule
 for variances, the same as ibcs-notation §3 and the data contract (`visual-data-contract.md`
 §0.4):
@@ -278,7 +291,12 @@ relative, kind, polarity?, impact? }], series? }`.
   common slip); the graphic colours are for bars, pins and markers only. Render the number with
   `data-role="variance-label"` and `data-impact` so the ibcs-review `dom` lint can check it.
 - Cards in a responsive row (e.g. 4–5 per row on desktop, 2 on a phone); equal card widths; no
-  frames or shadows beyond a thin rule, no icons, no status lights.
+  frames or shadows beyond a thin rule, no status lights. An app shell may set each card on a
+  white card surface (UI chrome: small radius, 1 px elevation); the card's content keeps this
+  contract. An impact glyph next to a Δ number is optional and only redundant with its sign and
+  colour, never the only cue.
+- The Δ number the page's key message cites gets the highlight ellipse (UN 5.1), only when that
+  comparison is material.
 - A small chart of the **monthly** values (not running totals, which hide the variance), with
   the reference as a light line or outlined columns. Each card may have its own scale only if
   every card in the row shows a scale band at the same round value (UN 5.2) — or join the page

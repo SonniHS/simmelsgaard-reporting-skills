@@ -25,8 +25,8 @@
 
 | ID | Pass if … | Rule | Sev | Detect | Exceptions / notes |
 |---|---|---|---|---|---|
-| A1 | no logos, pictures, decorative shapes/bands | SI 1.1 | S | lint(image/shape), img | branding in the app shell is fine |
-| A2 | white page and visual backgrounds; no coloured headers, banded rows, cell fills | SI 1.2 | S | lint, img | light-gray fill on totals/result rows & columns is allowed (pp. 121–128); light assisting areas with meaning |
+| A1 | no logos, pictures, decorative shapes/bands | SI 1.1 | S | lint(image/shape), img | branding in the app shell is fine; one logo in the corner of a page shell's header card *(ours)* |
+| A2 | white page and visual backgrounds; no coloured headers, banded rows, cell fills | SI 1.2 | S | lint, img | light-gray fill on totals/result rows & columns is allowed (pp. 121–128); light assisting areas with meaning; a page shell *(ours)*: neutral light canvas between white cards, every visual white (lint fails a visual without a white background on the canvas) |
 | A3 | no meaningless animation, play axes, transitions | SI 1.3 | S | lint(Play), meta | animation that *is* the analysis |
 | A4 | no frames, shadows, rounded containers, gradients, pseudo-3D | SI 2.1 | S | lint, img | PL outlines are notation, not frames |
 | A5 | every colour has analytical meaning; no per-category palette | SI 2.2 | M | lint, img | one highlight colour for the element the message is about |
@@ -136,7 +136,7 @@
 | G5 | areas encode by area, never diameter/height | CH 3.1 | M | lint(treemap), meta | — |
 | G6 | volume (3-D) encodings avoided, prefer linear comparisons; if used, volume corresponds to the value | CH 3.2 | M | lint, img | 2-D/3-D components as a creative solution for values differing by orders of magnitude (CH 2.2, p. 70); decorative pseudo-3D is never allowed (SI 2.1) |
 | G7 | filled maps only for area-related measures | CH 3.3 | M | lint(check), human | densities |
-| G8 | same unit on a page ⇒ identical scale (small multiples, tiers, separate visuals) | CH 4.1 | M | meta (fixed/shared axes), img (px per unit) | extreme cases with scaling markers (p. 72) |
+| G8 | same unit on a page ⇒ identical scale (small multiples, tiers, separate visuals) | CH 4.1 | M | meta (fixed/shared axes), img (px per unit), lint (Deneb: shared domain on visuals of different size, missing or unequal pxPerUnit; with `--layout` the sizes from scale_layout.py) | extreme cases with scaling markers (p. 72) |
 | G9 | orders-of-magnitude differences handled by size-to-data, scale bands or magnifying glass | CH 4.2–4.5 | S | img | — |
 | G10 | inflation/currency effects shown where they distort long series | CH 5 | S | human | — |
 
