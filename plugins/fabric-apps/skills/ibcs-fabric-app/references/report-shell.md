@@ -131,10 +131,33 @@ drop the canvas tint (white page, cards as plain blocks).
 - At most two findings: the headline measure and the single largest material mover ("E2 has the
   largest gap to BU (−3.4 mEUR)"). The mover is ringed where it appears (§6, §7).
 - Title lines: line 1 muted (who, with every active filter), line 2 measure bold and unit, line 3
-  period and scenarios. Dates and spans never break inside.
+  period and scenarios. Dates and spans never break inside: put `white-space: nowrap` on the
+  date or span token (`<span class="nowrap">2026-01..2026-09</span>`), never on the whole line.
+  Title lines wrap between tokens; a nowrap line widens the phone page.
 - **Chips**: rounded, muted background, small text; each ends in a circled footnote number that
-  links to `#note-n` in the footer (the targeted note is emphasised). Numbers match both ways
-  ([page-quality.md](page-quality.md) §2).
+  leads to note n in the footer (the note is emphasised). Numbers match both ways
+  ([page-quality.md](page-quality.md) §2). **Never change the hash to reach a note:** with hash
+  routing the hash holds the route, so `href="#note-3"` navigates away from the page. The
+  reference scrolls instead:
+
+  ```tsx
+  export function FnRef({ n }: { n: number }) {
+    return (
+      <a className="fnref" href={`#note-${n}`} aria-label={`footnote ${n}`} onClick={(e) => {
+        e.preventDefault();                       // keep the hash (= the route)
+        const note = document.getElementById(`note-${n}`);
+        if (!note) return;
+        document.querySelectorAll(".note-target").forEach((el) => el.classList.remove("note-target"));
+        note.classList.add("note-target");        // emphasis instead of :target
+        note.scrollIntoView({ block: "nearest" });
+        note.focus({ preventScroll: true });      // the <li> has tabIndex={-1}
+      }}>{n}</a>
+    );
+  }
+  ```
+
+  The `href` stays for copy-link and no-JS, the click never lets it through. `:target` styles work
+  only with path routing.
 
 ## 6. KPI cards
 
@@ -154,6 +177,8 @@ behaviour contract §10). The shell adds:
   on its own scale with a scale band at one round value across the row (behaviour contract §10).
 - An impact glyph beside a Δ number is optional and only redundant with its sign and colour;
   strict IBCS pages leave it out.
+- **Missing comparison**: with "Budget only" a KPI that has no budget shows its ΔPY line instead
+  and a chip states it ("Budget for revenue only"); never an empty card or a zero Δ.
 
 ## 7. Chart cards
 
@@ -179,7 +204,8 @@ behaviour contract §10). The shell adds:
 ## 8. Footer
 
 - Full width under the grid: the numbered footnotes in chip order, then "Source: <model and
-  tables>. Data as of <date>; last closed month <month>." and the diagnostics link. Every footnote
+  tables>. Data as of <date>; last closed month <month>." and the diagnostics link. Each note is an
+  `<li id="note-n" tabIndex={-1}>` so the chip reference (§5) can scroll to and focus it. Every footnote
   shows its whole text: no scroll box, no ellipsis, no footnote column squeezed beside a chart.
 - Long or many notes go into the How-to-read popover or a details page, with a one-line pointer.
 
@@ -204,10 +230,24 @@ IBCS token CSS** (colours from the tokens via `color-mix`, never hex here). Valu
 | Title lines | 12 px, line height 1.45 | |
 | Chips | 11.5 px, padding 3 × 10 px, fully rounded | |
 | Grid | 12 columns `minmax(0, 1fr)`, gap 16 px, each card as tall as its content | |
-| Card | padding 18 × 20 × 20 px; title 13.5 px; subtitle 12 px muted | |
+| Card | padding 18 × 20 × 20 px; title 13.5 px; subtitle 12 px muted; `position: relative; overflow-x: auto; min-width: 0` | |
 | KPI card | padding 14 × 16 px; value 24 px weight 650; Δ lines 12.5 px; row gap 12 px | |
 | Footer | 11.5 px muted, 22 px above, a rule on top | |
 | Base text | 13 px, token font stack | |
+
+**Card geometry.** Every card is `position: relative` with `overflow-x: auto` and `min-width: 0`:
+a visually hidden data table is absolutely positioned and, without a positioned card around it,
+widens the page on a phone; a grid child without `min-width: 0` grows with its chart instead of
+the chart fitting the card. A chart gets the width of its card's content box, measured
+(`ResizeObserver`) or computed for n cards in one row:
+
+```
+cardInner = (pageInner + 2·cardPad − (n − 1)·gap) / n − 2·cardPad
+pageInner = min(viewport, maxWidth) − 2·pagePadX
+```
+
+(1280 px, 2 cards: pageInner = 1224, cardPad 20, gap 16 → (1224 + 40 − 16) / 2 − 40 = 584 px.) The
+layout function receives that width, never the viewport, and sizes its label rooms inside it.
 
 ## 10. Breakpoints
 
@@ -215,7 +255,7 @@ IBCS token CSS** (colours from the tokens via `color-mix`, never hex here). Valu
 |---|---|
 | ≥ 1280 px | Tabs and tools on one header line, all filters on one line, five KPI cards in one row, month chart and Total side by side |
 | ≈ 1050 px (Fabric portal content width) | Compact tools: icon buttons without text, selects ≈ 112–136 px, tab padding 5 px; the tab row stays one line. Filters may wrap to a second row (never cut a control). KPI cards may wrap 3 + 2. Charts redraw for their width (label thinning by measured width, `ibcs-web-charts`) |
-| ≤ 760 px (phone; test at 390) | Header in two rows: brand, then a page select with the tools (tools wrap, never cut). The filter bar collapses to one toggle with a summary of the active filters. Page padding 14 × 12 px, one grid column, 12 px gap, card padding 12 px, headline 15.5 px. KPI cards two per row, a lone last card spans the row. The Total moves under the months (same scale band); structure tiers stack under the bars (behaviour contract §4) |
+| ≤ 760 px (phone; test at 390) | Header in two rows: brand, then a page select with the tools (tools wrap, never cut). The filter bar collapses to one toggle with a summary of the active filters. Page padding 14 × 12 px, one grid column, 12 px gap, card padding 12 px, headline 15.5 px. KPI cards two per row, a lone last card spans the row. The Total moves under the months as a Total-only chart (same scale band; chart-layer.md, phone layouts); structure tiers stack under the bars (behaviour contract §4). Label density: shorten Δ% labels to 0 decimals before thinning any label; keep one decimal down to a category step of ≈ 40 px at 11 px type; below that thin by measured width; never scroll the month chart sideways |
 | Print | Header row, filter bar, tools and the canvas tint hidden; title lines show the state; cards do not break across pages |
 
 ## 11. Recipe: the Key figures page from scratch
@@ -237,7 +277,7 @@ src/shell/shell.css                 §9 tokens and §10 breakpoints
 src/queries/boot/reference.dax      data-as-of date and last closed month
 src/queries/boot/months.dax         months with data and their closed flag
 src/queries/boot/entities.dax       entities (code, name) the user may see
-src/queries/key-figures/kpis.dax              one row per KPI for the period: AC, PY, BU, Δ, Δ%
+src/queries/key-figures/kpis.dax              one row per KPI for the period: AC, PY, BU, Δ, Δ%; every value CONVERT ( …, DOUBLE ) (step 3)
 src/queries/key-figures/revenue-by-month.dax  months of the year: AC, FC, BU, PY, ΔBU, ΔBU%, closed
 src/queries/key-figures/revenue-total.dax     the year: AC&FC, BU, PY, ΔBU, ΔBU%
 src/queries/key-figures/revenue-by-entity.dax entities in the period: AC, BU, PY, ΔBU, ΔBU%
@@ -253,7 +293,11 @@ src/pages/key-figures/{adapters.ts,KeyFiguresView.tsx,KeyFiguresPage.tsx}
    (unknown values fall back, Reset keeps the route).
 3. Write and test each `.dax` from the terminal ([queries-and-data.md](queries-and-data.md));
    variances from the model or query-scoped measures, never in TypeScript. The compare-with option
-   decides which reference columns the queries return (or which the adapter picks).
+   decides which reference columns the queries return (or which the adapter picks). A query with
+   one row per KPI mixes amounts and ratios in one column: wrap every value in
+   `CONVERT ( [Measure], DOUBLE )` (blanks as `CONVERT ( BLANK (), DOUBLE )`), so the column has one
+   engine type. Otherwise the portal delivers it as a union column with currency as unscaled
+   integers ([queries-and-data.md](queries-and-data.md) §6).
 4. Adapters turn rows into the chart roles of `ibcs-web-charts` (scenario columns, variance tiers,
    structure rows, KPI rows); the headline facts (largest material mover, materiality) come from
    the same rows.

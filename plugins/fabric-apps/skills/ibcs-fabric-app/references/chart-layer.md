@@ -63,6 +63,47 @@ Rules:
   (`impactFill`, `impactText`) so the choice is made once.
 - **One label per series or scenario per chart.** Name AC, PY, BU, FC once, at the right end or on
   the first category; never above and below the same bars.
+- **Width from measured text.** Every layout function sizes its margins from its own text boxes
+  (end series labels, the value label of the last point, the widest variance label at either
+  end; boxes ≈ 0.6 em per digit × 1.2 em high, `ibcs-web-charts` label clearance) and returns the
+  width it needs; a line chart's end value label is inside the returned width, never past it. The
+  card hands in its content width ([report-shell.md](report-shell.md) §9); when the chart needs
+  more, it shortens labels first and reports a warning, it does not overflow.
+
+### Interaction: selectable categories
+
+The report shell selects a month or a company by click ([report-shell.md](report-shell.md) §7).
+Layout functions emit one transparent `rect` mark per category with role `"hit"` (the full
+category band through all tiers); the renderer turns them into controls when it gets a callback:
+
+```tsx
+<MarksSvg layout={layout} title="…" onSelect={(category) => setUrlState({ month: category })} />
+// in the renderer, for m.role === "hit" && onSelect:
+<rect role="button" tabIndex={0} aria-label={m.tooltip ?? m.category} fill="transparent"
+      onClick={() => onSelect(m.category)}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); onSelect(m.category); } }} />
+```
+
+Rules: the selection lives in the URL (Back undoes it) and comes back into the layout as
+`selected`, which draws the assisting band behind that category; hit zones are drawn last (on top),
+focusable in reading order, with a visible focus outline from the page CSS; no hover-only
+behaviour. Without `onSelect` the hit marks render nothing, so static charts stay unchanged.
+
+### Phone layouts (≤ 760 px)
+
+- **Month chart**: redraw for the card width, never scroll sideways. Order of reduction: Δ%
+  labels to 0 decimals; then absolute labels to the scale's decimals − 1 (never below 0); then
+  thin value labels by measured width (keep first, last, selected, extremes); the category step
+  never drops below ≈ 22 px (12 months in ≈ 300 px). One-decimal labels need a step of ≈ 40 px at
+  11 px type.
+- **Total**: a Total-only chart under the months: one category, its own scale with the same
+  scale band value, its tiers aligned to the months' tier order, tier names left of the column
+  inside the chart width (not at the far left of a wide box).
+- **Structure chart** (companies): stack the variance tiers under the bars (`ibcs-web-charts`
+  behaviour contract §4: bars, then ΔBU, then ΔBU%, each full width on the same category order and
+  scale), instead of a horizontally scrolling row.
+- Test each at 390 px in the layout check: no SVG wider than its card, every label box inside the
+  viewBox.
 
 ## Layout check before any deployment
 

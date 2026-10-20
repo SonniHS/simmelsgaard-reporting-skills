@@ -59,6 +59,10 @@ Label clearance at the chart edge: plot margins come from **measured** label box
 labels at the first and last category, variance labels of the outermost bars and pins, the end
 series labels), never from a fixed padding; no label box may extend outside the chart's own
 box. A label that does not fit is shortened (fewer decimals, then the unit factor), never cut.
+A label's box is its **line box, ≈ 1.2 × the font size high** (with `dominant-baseline: central`
+it extends 0.6 em above and below `y`), and ≈ 0.6 em per character wide for digits: reserve
+`1.2 × size` of label room, never the font size, or a label placed at `y = size / 2` loses its top
+pixel. Prefer the measured `getBBox()` where the layout can run in a browser.
 
 Missing data: `null` draws nothing (no zero column, no zero-length bar, a gap in lines). One rule
 for variances, the same as ibcs-notation §3 and the data contract (`visual-data-contract.md`

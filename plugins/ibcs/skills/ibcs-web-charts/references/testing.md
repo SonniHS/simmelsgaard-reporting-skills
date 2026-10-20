@@ -60,7 +60,9 @@ collided at 1050. Along with screenshots, assert:
 - **no text collides and no text is clipped** in any chart (below) — page scroll and console
   checks alone pass a page whose legend sits on its labels; include the chart's own box: every
   label's `getBBox()` lies inside the SVG's `viewBox` (a variance label cut at the right edge,
-  "+2." for "+2.9", passes every overlap check);
+  "+2." for "+2.9", passes every overlap check); compare with a 0.5 px tolerance, and expect
+  label boxes about 1.2 × the font size high (behaviour contract, label clearance), so a label
+  sized by its font size alone fails here by 1 px;
 - series labels of a chart over time sit right of its last period (behaviour contract §1),
   once;
 - the print media rendering (PDF) still contains hatching and the footnote.

@@ -275,6 +275,13 @@ data CLI prints. Measure columns arrived as a union type, and values differed by
 | Date | ISO string | epoch milliseconds |
 | Int64 (keys, counts, `SortOrder`) | not recorded in the 2026-10 observation *(verify with a portal sample)* | not recorded *(verify)*; never apply the 10^4 decimal rule to it |
 
+**Mixed columns.** A column that holds amounts in some rows and ratios in others (a "one row per
+KPI" query built with `UNION ( ROW ( … ), ROW ( … ) )`) has no single engine type and arrives as a
+union column, so its currency values come as unscaled strings and its ratios as doubles. Give such
+a column one type in the query: `CONVERT ( [Revenue], DOUBLE )`, `CONVERT ( [Gross Margin %], DOUBLE )`,
+`CONVERT ( BLANK (), DOUBLE )`; or return one column per kind. Declare it `ratio`-like (`double`)
+in the factory; the 10^4 rule then never applies to it.
+
 Normalise every row centrally by column data type (one tested `normalizeValue`, fed with real
 portal samples), never per page. Divide by 10^4 **only** string values of a union-typed or
 `"unknown"` column declared as `amount`; a `number` that arrives in a `Decimal` column is final, or
