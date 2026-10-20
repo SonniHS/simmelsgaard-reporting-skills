@@ -37,6 +37,7 @@
         "periodType",
         "periodLabel",
         "stepScale",
+        "barPx",
         "decimals",
         "unitDivisor",
         "yMax",
@@ -117,7 +118,7 @@
           }
         }
       ],
-      "notes": "Same unit, same scale (CH 4.1) means the same px per unit, not the same domain: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field from one DAX measure) and size each visual's height to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill computes it), so a chart with smaller values is shorter (CH 4.2). yMax, varMin, varMax only share a domain: use them for visuals of the same height that must show the same range, never to align a smaller chart with a larger one. A Total / extension column (e.g. the year next to its months) is a separate visual with periodType 'year'; when its values need another scale, mark it with a scaling indicator or a footnote. Values are drawn as delivered: bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Period or no value in AC, FC, PY, PL, BU, refScenario or triangleScenario are dropped, even if constant scale measures are present; reference-only periods remain. The integrated reference legend names the first period with a nonblank reference value, including zero. periodLabel: auto preserves category labels unchanged; month formats YYYY-MM as Jan..Dec with the year below the first visible month of each year and a thin separator at subsequent year boundaries; short formats YYYY-MM as mm. Other category formats are left unchanged. When showCategoryLabels is false, year labels and year separators are hidden too. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Comment markers (UN 2.4): bind Comment (e.g. a DAX SWITCH returning 1, 2 … for the periods the comments explain) and print the same numbers in circles in the comment text box; the marker sits above the value label, so keep ibcsTierGapPx large enough when a variance tier is stacked above.",
+      "notes": "Same unit, same scale (CH 4.1) means the same px per unit, not the same domain: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field from one DAX measure) and size each visual's height to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill computes it), so a chart with smaller values is shorter (CH 4.2). yMax, varMin, varMax only share a domain: use them for visuals of the same height that must show the same range, never to align a smaller chart with a larger one. A Total / extension column (e.g. the year next to its months) is a separate visual with periodType 'year'; when its values need another scale, mark it with a scaling indicator or a footnote. Same column width across visuals (e.g. the month chart and its total): set barPx. Values are drawn as delivered: bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Period or no value in AC, FC, PY, PL, BU, refScenario or triangleScenario are dropped, even if constant scale measures are present; reference-only periods remain. The integrated reference legend names the first period with a nonblank reference value, including zero. periodLabel: auto preserves category labels unchanged; month formats YYYY-MM as Jan..Dec with the year below the first visible month of each year and a thin separator at subsequent year boundaries; short formats YYYY-MM as mm. Other category formats are left unchanged. When showCategoryLabels is false, year labels and year separators are hidden too. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Comment markers (UN 2.4): bind Comment (e.g. a DAX SWITCH returning 1, 2 … for the periods the comments explain) and print the same numbers in circles in the comment text box; the marker sits above the value label, so keep ibcsTierGapPx large enough when a variance tier is stacked above.",
       "previewGroups": [
         {
           "suffix": "-scale-group",
@@ -188,6 +189,11 @@
       "name": "stepScale",
       "value": 1.5,
       "description": "screen scaling of the token category step; keep it identical on every page"
+    },
+    {
+      "name": "barPx",
+      "value": 0,
+      "description": "column width in px; 0 = 2/3 of the category slot. Set the same value in every visual of one period type on a page (e.g. 2/3 of the month slot) so their columns have the same width"
     },
     {
       "name": "unitDivisor",
@@ -407,13 +413,18 @@
       }
     },
     {
+      "name": "tokBw",
+      "expr": "ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio",
+      "description": "column width of the token layout; sizes the triangle so it stays clear of the neighbouring columns"
+    },
+    {
       "name": "bw",
-      "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)",
-      "description": "column width: 2/3 of the category, capped at the token step so every chart of this period type has the same width"
+      "expr": "barPx > 0 ? min(bandwidth('x'), barPx) : bandwidth('x')",
+      "description": "column width: 2/3 of the category slot, space 1/3; barPx gives every visual of one period type the same width"
     },
     {
       "name": "triPx",
-      "expr": "clamp(ibcsTriangleRatio * bw, ibcsTriMin, ibcsTriMax)",
+      "expr": "clamp(ibcsTriangleRatio * min(bw, tokBw), ibcsTriMin, ibcsTriMax)",
       "description": "triangle height: token ratio × column width / bar thickness, clamped in px (geometry.triangleSizePx)"
     }
   ],
