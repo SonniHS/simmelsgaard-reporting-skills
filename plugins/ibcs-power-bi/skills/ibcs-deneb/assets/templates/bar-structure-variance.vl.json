@@ -21,7 +21,8 @@
         "VarMin": "optional measure: lowest variance the tier must show (≤ 0); wins over varMin",
         "VarMax": "optional measure: highest variance the tier must show (≥ 0); wins over varMax",
         "PxPerUnit": "optional measure, same value on every row: px per display unit for the page's scale group; wins over pxPerUnit",
-        "ScaleBand": "optional measure, same value on every row: scale band value in data units (before unitDivisor); wins over scaleBand"
+        "ScaleBand": "optional measure, same value on every row: scale band value in data units (before unitDivisor); wins over scaleBand",
+        "TotalDelta": "optional measure, same value on every row: the total absolute variance of the visual's context (e.g. [Revenue] with ΔPY at the total); the rows' Δ must add up to it, else the chart prints a reconciliation warning"
       },
       "requiredFields": [
         "Category"
@@ -148,9 +149,17 @@
             "width": 250,
             "height": 190
           }
+        },
+        {
+          "suffix": "-discontinued",
+          "sampleData": "bar-structure-variance-discontinued.json",
+          "params": {
+            "refScenario": "PY"
+          },
+          "note": "Lyon is new (no PY: REF counts 0), Vienna discontinued (no AC: AC counts 0, label 0, Δ = −251); Σ Δ equals the bound TotalDelta, so no warning"
         }
       ],
-      "notes": "Same unit, same scale (CH 4.1) means the same px per unit: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field) and size each visual's width to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill). xMax, varMin, varMax only share a domain: use them for visuals of the same width that must show the same range. A Total row on another scale belongs in a separate visual with a scaling indicator or a footnote. Bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Category or no value in AC, FC, PY, PL, BU, or the selected scenario fields are dropped; constant scale/polarity measures do not keep unknown members alive. Rows with any scenario value, including PY-only rows, remain. The base range includes negative values and reserves label room below zero; value labels sit outside the bar pair in the direction of the AC/FC value, in dark text. When a reference bar and a third-scenario triangle are both named, their top labels occupy separate vertical levels. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Label room is measured from the label text (character count × ibcsFontSize × ibcsCharWidth + 6 px) for the value labels and for the variance labels on each side that has them, so a narrow visual shrinks the bars, never cuts a label; with pxPerUnit the room is at least ibcsLabelPx."
+      "notes": "Same unit, same scale (CH 4.1) means the same px per unit: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field) and size each visual's width to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill). xMax, varMin, varMax only share a domain: use them for visuals of the same width that must show the same range. A Total row on another scale belongs in a separate visual with a scaling indicator or a footnote. Bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Category or no value in AC, FC, PY, PL, BU, or the selected scenario fields are dropped; constant scale/polarity measures do not keep unknown members alive. Rows with any scenario value, including PY-only rows, remain. The base range includes negative values and reserves label room below zero; value labels sit outside the bar pair in the direction of the AC/FC value, in dark text. When a reference bar and a third-scenario triangle are both named, their top labels occupy separate vertical levels. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Label room is measured from the label text (character count × ibcsFontSize × ibcsCharWidth + 6 px) for the value labels and for the variance labels on each side that has them, so a narrow visual shrinks the bars, never cuts a label; with pxPerUnit the room is at least ibcsLabelPx. Members that explain a total reconcile (IBCS: a structure adds up): a row with a reference but no AC (a discontinued member) counts AC = 0 — its bar is empty with the label 0.0 and its Δ = 0 − REF; a row with AC but no reference (a new member) counts REF = 0 when other rows have one. Bind the model's member variance items (semantic-model-ibcs: ΔPY member / ΔBU member, Ibcs.DeltaMember) for the numbers the model reports, and TotalDelta to check that Σ Δ equals the total Δ."
     }
   },
   "data": {
@@ -439,6 +448,24 @@
       "as": "_r"
     },
     {
+      "joinaggregate": [
+        {
+          "op": "valid",
+          "field": "_r",
+          "as": "_nR"
+        },
+        {
+          "op": "valid",
+          "field": "_v",
+          "as": "_nV"
+        }
+      ]
+    },
+    {
+      "calculate": "!isValid(datum._v) && isValid(datum._r) && datum._nV > 0 ? 0 : datum._v",
+      "as": "_v"
+    },
+    {
       "calculate": "refMark == 'bar' && triangleScenario != '' && triangleScenario != refScenario && isValid(datum[triangleScenario]) ? datum[triangleScenario] / unitDivisor : null",
       "as": "_t"
     },
@@ -463,8 +490,25 @@
       "as": "_ppu"
     },
     {
-      "calculate": "isValid(datum._v) && isValid(datum._r) ? datum._v - datum._r : null",
+      "calculate": "isValid(datum._v) && (isValid(datum._r) || datum._nR > 0) ? datum._v - (isValid(datum._r) ? datum._r : 0) : null",
       "as": "_d"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "sum",
+          "field": "_d",
+          "as": "_dSum"
+        }
+      ]
+    },
+    {
+      "calculate": "isValid(datum['TotalDelta']) ? datum['TotalDelta'] / unitDivisor : null",
+      "as": "_dTot"
+    },
+    {
+      "calculate": "isValid(datum._dTot) && abs(datum._dSum - datum._dTot) > max(0.005 * abs(datum._dTot), 0.5 * pow(10, -decimals))",
+      "as": "_dMis"
     },
     {
       "calculate": "isValid(datum['Polarity']) ? datum['Polarity'] : polarity",
@@ -1323,7 +1367,7 @@
       }
     },
     {
-      "description": "integrated legend: AC / FC below the last bar (x from the last row that has AC/FC, drawn at the bottom row)",
+      "description": "integrated legend: AC / FC below the last bar (x from the last row that has AC/FC, drawn at the bottom row); moved right of the category axis and of the scale band line when its box would cross them, so the name never sits on a line",
       "transform": [
         {
           "joinaggregate": [
@@ -1371,6 +1415,9 @@
         },
         "yOffset": {
           "expr": "bw / 2 + 2"
+        },
+        "dx": {
+          "expr": "((((scale('x', datum._lx) - (length(minuend) * ibcsFontSize * 0.6) / 2 < 1 && scale('x', datum._lx) + (length(minuend) * ibcsFontSize * 0.6) / 2 > -1) ? 4 + (length(minuend) * ibcsFontSize * 0.6) / 2 : scale('x', datum._lx)) - (length(minuend) * ibcsFontSize * 0.6) / 2 < (datum._band > 0 ? scale('x', datum._band) : -1e9) + 1 && ((scale('x', datum._lx) - (length(minuend) * ibcsFontSize * 0.6) / 2 < 1 && scale('x', datum._lx) + (length(minuend) * ibcsFontSize * 0.6) / 2 > -1) ? 4 + (length(minuend) * ibcsFontSize * 0.6) / 2 : scale('x', datum._lx)) + (length(minuend) * ibcsFontSize * 0.6) / 2 > (datum._band > 0 ? scale('x', datum._band) : -1e9) - 1) ? (datum._band > 0 ? scale('x', datum._band) : -1e9) + 4 + (length(minuend) * ibcsFontSize * 0.6) / 2 : ((scale('x', datum._lx) - (length(minuend) * ibcsFontSize * 0.6) / 2 < 1 && scale('x', datum._lx) + (length(minuend) * ibcsFontSize * 0.6) / 2 > -1) ? 4 + (length(minuend) * ibcsFontSize * 0.6) / 2 : scale('x', datum._lx))) - scale('x', datum._lx)"
         }
       },
       "encoding": {
@@ -1523,6 +1570,39 @@
         },
         "text": {
           "field": "_bandText"
+        }
+      }
+    },
+    {
+      "description": "reconciliation check: with TotalDelta bound, the rows' Δ must add up to the total Δ (members without AC count AC = 0, members without a reference count REF = 0); a mismatch prints a warning above the chart instead of a silent gap",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._dMis"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "baseline": "bottom",
+        "dy": -4,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsBad"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": 0
+        },
+        "y": {
+          "value": 0
+        },
+        "text": {
+          "value": {
+            "expr": "'Σ Δ ' + format(datum._dSum, replace(ibcsFmtVar, /[.][0-9]+/, '.' + decimals)) + ' ≠ total Δ ' + format(datum._dTot, replace(ibcsFmtVar, /[.][0-9]+/, '.' + decimals)) + ': use the member variance (Ibcs.DeltaMember)'"
+          }
         }
       }
     }

@@ -144,7 +144,9 @@ class Rev4Defaults(unittest.TestCase):
     def test_column_template_cross_tool_knobs(self):
         t = json.loads(TEMPLATE.read_text())
         params = {p["name"]: p.get("value") for p in t["params"]}
-        self.assertEqual(params["pinPxPerUnit"], 1)          # one % scale: 1 px per percentage point
+        self.assertEqual(params["pinPxPerUnit"], 0)          # pins on their own scale, sized to the tier
+        self.assertEqual(params["pinTierPx"], 48)
+        self.assertEqual(params["pinDecimals"], 1)
         self.assertEqual(params["pinClip"], 1)               # outliers clip at ±100 %
         self.assertIs(params["markLastClosed"], True)        # band behind the last closed month
         self.assertNotIn("legendSide", params)               # one legend placement: at the end
@@ -192,3 +194,93 @@ class Waterfalls(unittest.TestCase):
         self.assertEqual(size(dict(bar, magnify=True)) - size(bar), 170 + 24)
         col = {"id": "t", "template": "waterfall-variance-time", "tiers": {"waterfall": [0, 52]}}
         self.assertEqual(size(dict(col, magnify=True)) - size(col), 150 + 24 + 42)
+
+
+class ProofRun1(unittest.TestCase):
+    """Proof run 1 blockers: pins carry magnitude, no label on a line, no ellipsis on periods, Σ Δ = total."""
+
+    TEMPLATES = SKILLS / "ibcs-deneb/assets/templates"
+    SCALE_LAYOUT = SKILLS / "ibcs-power-bi/scripts/scale_layout.py"
+
+    def spec(self, name):
+        return json.loads((self.TEMPLATES / f"{name}.vl.json").read_text(encoding="utf-8"))
+
+    def layout(self, group):
+        with tempfile.TemporaryDirectory() as tmp:
+            g = Path(tmp) / "g.json"
+            g.write_text(json.dumps(group))
+            p = subprocess.run([sys.executable, "-I", "-B", str(self.SCALE_LAYOUT), str(g), "--json"],
+                               capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        return json.loads(p.stdout), p.stderr
+
+    def test_each_pin_tier_gets_its_own_scale_and_aligned_charts_share_it(self):
+        out, err = self.layout({"pxPerUnit": 4, "alignTiers": [["m", "t"]], "members": [
+            {"id": "m", "template": "column-two-tier-variance", "params": {"pinTier": True},
+             "tiers": {"base": [0, 23], "variance": [-2, 3], "pins": [-7.7, 5.6]}},
+            {"id": "t", "template": "column-two-tier-variance", "own": True, "basePxPerUnit": 0.4,
+             "params": {"pinTier": True}, "tiers": {"base": [0, 216], "variance": [0, 2.5], "pins": [0, 1.3]}},
+            {"id": "c", "template": "pin-relative-variance", "pinTierPx": 90, "tiers": {"pins": [-55.6, 8.7]}}]})
+        pins = out["pinPxPerUnit"]
+        self.assertAlmostEqual(pins["m"], 0.9 * 48 / 13.3, places=1)   # the months fill their own tier
+        self.assertEqual(pins["m"], pins["t"])                          # months + Total share one pin scale
+        self.assertAlmostEqual(pins["c"], 0.9 * 90 / 64.3, places=1)   # the -55.6 % chart does not shrink the months
+        self.assertNotIn("warning", err)
+
+    def test_a_fixed_stub_pin_scale_warns(self):
+        _, err = self.layout({"pxPerUnit": 4, "members": [
+            {"id": "m", "template": "column-two-tier-variance", "params": {"pinTier": True, "pinPxPerUnit": 0.5},
+             "tiers": {"base": [0, 23], "variance": [-2, 3], "pins": [-7.7, 5.6]}}]})
+        self.assertIn("40%", err)
+
+    def test_pins_have_small_heads_and_a_zero_marker(self):
+        s = self.spec("column-two-tier-variance")
+        params = {p["name"]: p for p in s["params"]}
+        self.assertEqual(params["headPx"]["expr"], "ibcsPinHeadMin")
+        heads = [layer for layer in s["layer"] if "pin head" in layer.get("description", "")]
+        self.assertTrue(heads)
+        for layer in heads:   # the head is drawn for a rounded-zero Δ% too (on the axis, as the baseline marker)
+            self.assertNotIn("_pZero", json.dumps(layer["transform"]))
+
+    def test_separators_are_ticks_not_lines_through_the_tiers(self):
+        for name in ("column-two-tier-variance", "pin-relative-variance", "line-scenarios"):
+            sep = [layer for layer in self.spec(name)["layer"] if "AC -> FC separator" in layer.get("description", "")]
+            self.assertEqual(len(sep), 1, name)
+            self.assertIn("y2", sep[0]["encoding"], name)   # a tick with both ends, not a full-height rule
+
+    def test_one_magnifier_form(self):
+        s = self.spec("waterfall-variance")
+        t = {x.get("as"): x for x in s["transform"] if isinstance(x.get("as"), str)}
+        self.assertIn("+ 27", t["_PL"]["calculate"])   # the panel sits right after the overview (frame 3 px + 24 px gap)
+        conn = next(layer for layer in s["layer"] if "connectors" in layer.get("description", ""))
+        self.assertTrue(conn["mark"].get("strokeDash"))
+        caption = next(layer for layer in s["layer"] if "caption" in layer.get("description", ""))
+        self.assertEqual(caption["mark"]["align"], "left")              # next to the zigzag on the origin line
+        self.assertIn("_pRight", json.dumps(s["layer"]))                 # a drop's label never reaches the origin line
+
+    def test_period_labels_never_get_an_ellipsis(self):
+        for name in ("column-two-tier-variance", "pin-relative-variance", "stacked-columns", "line-scenarios"):
+            ax = self.spec(name)["encoding"]["x"]["axis"]
+            self.assertEqual(ax.get("labelLimit"), 0, name)
+            self.assertIn("substring(", ax["labelExpr"], name)          # Jan -> J
+            self.assertIn("Q[1-4]", ax["labelExpr"], name)              # quarters skip the letter step
+
+    def test_structure_rows_count_a_missing_ac_as_zero_and_check_the_total(self):
+        s = self.spec("bar-structure-variance")
+        t = json.dumps(s["transform"])
+        self.assertIn("!isValid(datum._v) && isValid(datum._r) && datum._nV > 0 ? 0 : datum._v", t)
+        self.assertIn("TotalDelta", s["usermeta"]["ibcs"]["fields"])
+        self.assertIn("_dMis", json.dumps(s["layer"]))
+
+    def test_to_pbir_writes_the_visual_padding(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = scaffold(Path(tmp))
+            r = add_deneb(d, "--padding", "12,16,16,8")
+            self.assertEqual(r.returncode, 0, r.stderr)
+            v = json.loads((d / "pages/pg/visuals/v1/visual.json").read_text())
+            props = v["visual"]["visualContainerObjects"]["padding"][0]["properties"]
+            self.assertEqual({k: props[k]["expr"]["Literal"]["Value"] for k in props},
+                             {"top": "12D", "bottom": "16D", "left": "16D", "right": "8D"})
+            bad = add_deneb(scaffold(Path(tmp) / "b"), "--padding", "12,16")
+            self.assertNotEqual(bad.returncode, 0)
+

@@ -423,7 +423,13 @@ SUMMARIZECOLUMNS (
 Align rows with the base bar chart (same categories, same order, same height); same scale.
 The **member** items (`Ibcs.DeltaMember`, [dax-patterns.md](dax-patterns.md) §10) keep a
 discontinued entity at 0 − BU (Δ% −100 %) and a new one at AC − 0 (Δ% N/A), so the rows add up to
-the total ΔBU; the plain `ΔBU` item would return BLANK for both.
+the total ΔBU; the plain `ΔBU` item would return BLANK for both. **Required** for every visual whose
+rows explain a total (structure bars, bridges, stacked rows): a Power BI proof run (2026-10) bound
+the plain item, the discontinued member's ΔPY was missing, and the product rows added up to +12.7
+against a total of +8.3. The AC of a discontinued member is shown as `0.0` (or "–"), never as an
+empty row: return `IF ( _refExists && NOT ISBLANK ( _ref ), COALESCE ( _ac, 0 ), _ac )` as its
+AC column. Pass the total Δ of the visual's context along (Deneb `bar-structure-variance` field
+`TotalDelta`) so the visual can check Σ Δ = total Δ.
 
 **Member-level variances without `Ibcs.DeltaMember`.** Many models have explicit Δ measures (or
 only `Ibcs.Delta` / `Ibcs.DeltaPct`) whose Δ is BLANK for a member without AC or without

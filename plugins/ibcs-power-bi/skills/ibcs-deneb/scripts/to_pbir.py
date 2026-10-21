@@ -201,9 +201,19 @@ def build_objects(spec: dict, config: dict, provider: str, tooltips: bool, selec
     }
 
 
+def padding_props(arg: str) -> dict:
+    """--padding t,b,l,r (px) as visualContainerObjects padding properties (the page-shell card insets)."""
+    parts = [p.strip() for p in arg.split(",")]
+    if len(parts) != 4 or not all(p.replace(".", "", 1).isdigit() for p in parts):
+        sys.exit(f"--padding: expected four numbers top,bottom,left,right (px), got {arg!r}")
+    return {k: {"expr": {"Literal": {"Value": f"{float(v):g}D"}}} for k, v in zip(("top", "bottom", "left", "right"), parts)}
+
+
 def apply_extras(visual: dict, a) -> None:
-    """--sort, --filter, --title on a new or existing visual container."""
+    """--sort, --filter, --title, --padding on a new or existing visual container."""
     v = visual["visual"]
+    if a.padding:
+        v.setdefault("visualContainerObjects", {})["padding"] = [{"properties": padding_props(a.padding)}]
     if a.sort:
         projections = v.get("query", {}).get("queryState", {}).get("dataset", {}).get("projections", [])
         v.setdefault("query", {})["sortDefinition"] = sort_definition(a.sort, projections)
@@ -237,6 +247,8 @@ def main() -> int:
     ap.add_argument("--filter", action="append", default=[],
                     help="col:Table[Column]=v1,v2: static basic filter on the visual (repeatable)")
     ap.add_argument("--title", help="visual title text; '' hides the title")
+    ap.add_argument("--padding", help="top,bottom,left,right in px: the visual's own padding (visualContainerObjects "
+                                      "padding), e.g. 12,16,16,16 for content inside a page-shell card")
     ap.add_argument("--extensions", help="reportExtensions.json (default: found from --visual)")
     ap.add_argument("--prepend-transform", help="JSON file: list of transforms put before the template's")
     a = ap.parse_args()

@@ -10,7 +10,7 @@ end-to-end test or are not documented and should be checked in Desktop once.
 1. Scaffold
 2. Files
 3. `definition.pbir`: the connection
-4. Theme registration
+4. Theme registration (and the logo image)
 5. Report measures (`reportExtensions.json`)
 6. Dynamic text
 7. Slicer defaults that move with the data
@@ -92,6 +92,45 @@ After renaming a theme file, change `name` too.
 Desktop usually also writes a `baseTheme` under `SharedResources`; the report renders without it
 (verify after the first save in Desktop, then keep what Desktop writes). Re-run the theme script
 and copy again after a token change; never edit the copy.
+
+### Logo image (header card)
+
+A logo is a registered resource plus an `image` visual that points at it. Verified against
+Microsoft's published PBIR schemas (2026-10): `report` 3.3.0 (`resourcePackages` →
+`ResourcePackage` {`name`, `type`, `items`}, item {`name`, `path`, `type`: `Image`}) and
+`semanticQuery` 1.4.0 (the expression `ResourcePackageItem` {`PackageName`, `PackageType`,
+`ItemName`}); Learn: every file in `StaticResources/RegisteredResources/` needs its entry in
+`report.json` ([report folder](https://learn.microsoft.com/power-bi/developer/projects/projects-report#report-files)).
+
+1. Copy the file (PNG or SVG, the logo at most 148 × 40 px) to
+   `StaticResources/RegisteredResources/logo.png`. Use a file name with letters, digits, `-` or `.`.
+2. Add it to the **same** `RegisteredResources` package as the theme in `definition/report.json`
+   (one package per type; a second package of that type is not what Desktop writes):
+
+```json
+"resourcePackages": [{"name": "RegisteredResources", "type": "RegisteredResources",
+  "items": [{"name": "ibcs-pbi-theme.json", "path": "ibcs-pbi-theme.json", "type": "CustomTheme"},
+            {"name": "logo.png", "path": "logo.png", "type": "Image"}]}]
+```
+
+3. The `image` visual (page-shell.md §3: 1092, 16, 172, 65, padding 16) references the item:
+
+```json
+{"name": "logo", "position": {"x": 1092, "y": 16, "z": 1000, "width": 172, "height": 65},
+ "visual": {"visualType": "image",
+  "objects": {"general": [{"properties": {"imageUrl": {"expr": {"ResourcePackageItem": {
+      "PackageName": "RegisteredResources", "PackageType": 1, "ItemName": "logo.png"}}}}}],
+   "imageScaling": [{"properties": {"imageScalingType": {"expr": {"Literal": {"Value": "'Fit'"}}}}}]},
+  "visualContainerObjects": {"padding": [{"properties": {"top": {"expr": {"Literal": {"Value": "16D"}}},
+      "bottom": {"expr": {"Literal": {"Value": "0D"}}}, "left": {"expr": {"Literal": {"Value": "16D"}}},
+      "right": {"expr": {"Literal": {"Value": "16D"}}}}}]}}}
+```
+
+**Unverified (as of 2026-10):** the schema leaves the visual's object and property names free
+(`general.imageUrl`, `imageScaling`) and does not state the number `PackageType` stands for
+(1 for `RegisteredResources` is what Desktop-saved reports use, not a schema fact), and this
+recipe has not been rendered in the service. Insert the image once in Desktop (Insert → Image),
+save, and copy the `objects` it writes if they differ; then check the PDF export (§10).
 
 ## 5. Report measures (`reportExtensions.json`)
 

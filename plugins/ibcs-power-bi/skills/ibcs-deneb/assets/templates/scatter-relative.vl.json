@@ -451,7 +451,21 @@
         },
         "translate": 0,
         "labelExpr": "abs(datum.value) * 100 * pow(10, decimals) < 0.5 ? format(0, replace(replace(ibcsFmtRelVar, '+', ''), /[.][0-9]+/, '.' + decimals)) : format(datum.value, replace(ibcsFmtRelVar, /[.][0-9]+/, '.' + decimals))",
-        "zindex": 1
+        "zindex": 1,
+        "labelAlign": {
+          "condition": {
+            "test": "datum.value == 0",
+            "value": "left"
+          },
+          "value": "center"
+        },
+        "labelOffset": {
+          "condition": {
+            "test": "datum.value == 0",
+            "value": 4
+          },
+          "value": 0
+        }
       }
     },
     "y": {

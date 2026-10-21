@@ -70,8 +70,8 @@ satisfied (it never publishes on its own).
 > Use the fabric-app-builder agent to build a Fabric App with the Key figures page from
 > `./specs/sample-sales/key-figures.visual-spec.yaml` on the semantic model `Sample Sales` in
 > workspace `<workspace>`, in `./app`. Start the chart layer from the ibcs-web-charts reference
-> components. Use the Vite-only dev server (`npm run dev:frontend`), never `npm run dev`, which is
-> `rayfin dev` in the dataapp template. Run the layout harness at 390, 1050 and 1280 px and the
+> components. Read the package.json scripts first and use only the plain Vite dev server: any
+> script or pre-hook that runs `rayfin dev` or `rayfin up` is a deployment. Run the layout harness at 390, 1050 and 1280 px and the
 > tests. Prepare the deployment, but do not run it.
 
 The agent tells you the deploy command when the page is ready, for example

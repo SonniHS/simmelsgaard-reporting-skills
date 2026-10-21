@@ -66,8 +66,18 @@ Optional per template member (the docs' extra paddings, so nothing is cut or squ
 
 Proportions (one rule for Power BI and web apps): size the base tier so its largest column is about
 1.5 × the category pitch high when the cell allows (pick maxExtentPx accordingly); absolute Δ tiers
-share the base px per unit; pins use 1 px per percentage point (pinPxPerUnit, default 1) unless the
-cell cannot hold the pin range.
+share the base px per unit.
+
+Pins (one rule for Power BI and web apps): every pin tier (column-two-tier-variance with pinTier,
+pin-relative-variance) has its OWN % scale sized to its tier, so pin length carries the relative
+variance: "pinTierPx" on the member (else the template knob pinTierPx; ours: 48 px for column tiers,
+90 px for horizontal pin columns), px per percentage point = 0.9 × pinTierPx ÷ the member's clipped
+pin range, so its largest |Δ%| fills about 90 % of the tier. A page-wide "%" group is NOT used: one
+large structure variance (−55 %) would shrink the month pins to a few px. Only charts read together
+share one pin scale: the members of an "alignTiers" group (months and their Total) get the smallest
+of their values. The script sets it per member (setParams pinPxPerUnit, or pxPerUnit of
+pin-relative-variance) and warns when a member's largest |Δ%| gets a stem shorter than 40 % of its
+tier (e.g. a fixed pinPxPerUnit that is too small).
 
 Data-bound tier ranges (fields YMax, VarMin/VarMax, PinMin/PinMax under a selection): give "tiers" the
 LARGEST range any single selection produces (e.g. the largest company's months, not the group's), so
@@ -103,7 +113,9 @@ header + axis) + gaps (usermeta.ibcs.layout.container of the template).
 
 A Total / extension visual with its own scale ("own": true, scale band in both visuals and a
 footnote) draws its base AND its Δ tier at `basePxPerUnit` (ibcs-composition: the Total's Δ tiers
-use the Total's scale, like its base). `tierPxPerUnit` can still map a tier to "group" (the group's
+use the Total's scale, like its base). Without `basePxPerUnit` the script derives it: from the
+member's own cell ("maxPx": its tiers fill that height) or, in an alignTiers group, from the
+container height of the months it is aligned with; it prints the value as setParams pxPerUnit. `tierPxPerUnit` can still map a tier to "group" (the group's
 px per unit) or a number, for a page that states that compromise in a footnote. Set the Deneb knob
 pxPerUnit = basePxPerUnit. Members with "own": true never set the group's px per unit.
 
@@ -295,6 +307,69 @@ def member_parts(m: dict, tdir: Path, group_ppu: float | None = None) -> dict:
     return out
 
 
+PIN_FILL = 0.9          # a chart's pin range fills 90 % of its tier (ours)
+PIN_TIER_PX = 48.0      # pin tier extent of a column template (ours; horizontal pin columns: 90)
+PIN_MIN_SHARE = 0.4     # check: a chart's (or aligned group's) largest |Δ%| has a stem of at least 40 % of its tier
+
+
+def pin_tier(m: dict, tdir: Path):
+    """The member's active pin tier (its own % scale) with its merged params, or None."""
+    if m.get("template", "svg") == "svg":
+        return None
+    t = load_template(m["template"], tdir)
+    params = {**t["params"], **m.get("params", {})}
+    for tier in t["layout"]["tiers"]:
+        if tier.get("onlyIf") and params.get(tier["onlyIf"]) is not True:
+            continue
+        if tier["id"] == "pins" and tier.get("pxPerUnitParam"):
+            return tier, params
+    return None
+
+
+def pin_group(g: dict, members: list[dict], tdir: Path, warnings: dict, set_params: dict) -> dict:
+    """Pin scale per member, sized to its own tier; members aligned with alignTiers share the smallest."""
+    entries = {}
+    for m in members:
+        hit = pin_tier(m, tdir)
+        if not hit or "pins" not in m.get("tiers", {}):
+            continue   # member_parts reports a missing pin tier
+        tier, params = hit
+        lo, hi = m["tiers"]["pins"]
+        lo, hi = min(lo, 0.0), max(hi, 0.0)
+        knob = tier["pxPerUnitParam"]
+        explicit = float(m.get("params", {}).get(knob) or 0)
+        tier_px = float(m.get("pinTierPx") or params.get("pinTierPx") or PIN_TIER_PX)
+        own = PIN_FILL * tier_px / (hi - lo) if hi - lo > 0 else None
+        entries[m["id"]] = {"m": m, "knob": knob, "explicit": explicit, "tierPx": tier_px, "lo": lo, "hi": hi, "own": own}
+    for ids in g.get("alignTiers") or []:   # charts read together share one pin scale
+        group = [entries[i] for i in ids if i in entries and entries[i]["own"]]
+        if len(group) > 1:
+            shared = min(e["own"] for e in group)
+            for e in group:
+                e["own"] = shared
+    group_of = {mid: [mid] for mid in entries}
+    for ids in g.get("alignTiers") or []:
+        ids = [i for i in ids if i in entries]
+        for i in ids:
+            group_of[i] = ids
+    out = {}
+    for mid, e in entries.items():
+        k = e["explicit"] or (floor_sig(e["own"]) if e["own"] else None)
+        if not k:
+            continue
+        if not e["explicit"]:
+            e["m"]["params"] = {**e["m"].get("params", {}), e["knob"]: k}
+            set_params.setdefault(mid, {})[e["knob"]] = k
+        out[mid] = k
+        # read together: the group's largest |Δ%| must fill the tier (a small Total Δ% next to the months is fine)
+        share = max(max(-entries[i]["lo"], entries[i]["hi"]) / entries[i]["tierPx"] for i in group_of[mid]) * k
+        if e["hi"] - e["lo"] > 0 and share < PIN_MIN_SHARE:
+            warnings[mid].append(f"member {mid}: its largest |Δ%| gets a stem of {share:.0%} of its pin tier "
+                                 f"(< {PIN_MIN_SHARE:.0%}): pins do not carry the relative variance; drop the fixed "
+                                 f"{e['knob']} or raise it")
+    return out
+
+
 def tier_ppu(m: dict, tier: dict, params: dict, group_ppu: float) -> float:
     """px per unit of one tier of a member (the same resolution as member_parts)."""
     tppu = m.get("tierPxPerUnit", {}).get(tier["id"])
@@ -348,6 +423,29 @@ def align_tiers(g: dict, members: list[dict], tdir: Path, ppu: float, set_params
                     sp[kn_hi] = round(hi * scale, 6)
 
 
+def derive_own_scale(g: dict, own: list[dict], members: list[dict], parts: dict, ppu: float, tdir: Path,
+                     set_params: dict) -> None:
+    """basePxPerUnit of an "own" member (the Total) that does not give one: from its own cell (maxPx),
+    else from the members it is aligned with (alignTiers: the same container height as theirs)."""
+    by_id = {m["id"]: m for m in members}
+    for m in own:
+        p = member_parts(m, tdir, ppu)                     # sized at 1 px per unit (the placeholder)
+        rng, fixed = p.get("ownRange") or 0.0, p["fixed"] - (p.get("ownPx") or 0.0)
+        target = m.get("maxPx")
+        if not target:
+            for ids in g.get("alignTiers") or []:
+                if m["id"] in ids:
+                    peers = [by_id[i] for i in ids if i in by_id and not by_id[i].get("own")]
+                    if peers:
+                        target = max(parts[q["id"]]["range"] * ppu + parts[q["id"]]["fixed"] for q in peers)
+        if not target or rng <= 0 or target <= fixed:
+            sys.exit(f"member {m['id']}: own scale needs basePxPerUnit, a maxPx (its cell) or an alignTiers partner")
+        k = floor_sig((target - fixed) / rng)
+        m["basePxPerUnit"] = k
+        set_params.setdefault(m["id"], {})["pxPerUnit"] = k
+        parts[m["id"]] = member_parts(m, tdir, ppu)
+
+
 def floor_sig(x: float, sig: int = 3) -> float:
     if x <= 0:
         return x
@@ -375,11 +473,17 @@ def main() -> int:
             set_params[m["id"]] = knobs
             m["params"] = {**m.get("params", {}), **knobs}   # size with the label room it needs
         warnings[m["id"]] += warns
+    pin_ppu = pin_group(g, members, tdir, warnings, set_params)      # pin scale per chart (aligned charts share)
+    derive = [m for m in members if m.get("own") and not m.get("basePxPerUnit")]
+    for m in derive:
+        m["basePxPerUnit"] = 1.0   # placeholder: derived below, once the group's px per unit is known
     parts = {m["id"]: member_parts(m, tdir) for m in members}
     shared = [m for m in members if not parts[m["id"]].get("pending") and parts[m["id"]]["range"]]
 
     ppu = a.px_per_unit or g.get("pxPerUnit")
-    if not ppu:
+    if not ppu and not shared:
+        ppu = 0.0   # only pin charts: they are sized by the pin group alone
+    elif not ppu:
         caps = []
         max_extent = a.max_extent or g.get("maxExtentPx")
         if max_extent:
@@ -392,6 +496,8 @@ def main() -> int:
         if ppu <= 0:
             sys.exit("the available extent does not even hold the fixed px of the largest member")
 
+    if derive:
+        derive_own_scale(g, derive, members, parts, ppu, tdir, set_params)
     align_tiers(g, members, tdir, ppu, set_params)                   # months + Total: same tier px
     parts = {m["id"]: member_parts(m, tdir, ppu) for m in members}  # resolve "group" tiers
     rows = []
@@ -432,10 +538,15 @@ def main() -> int:
         for w in r.get("warnings", []):
             print(f"warning: {w}", file=sys.stderr)
     if a.json:
-        print(json.dumps({"pxPerUnit": ppu, "members": rows}, indent=2))
+        out = {"pxPerUnit": ppu, "members": rows}
+        if pin_ppu:
+            out["pinPxPerUnit"] = pin_ppu   # per member id: px per percentage point of its pin tier
+        print(json.dumps(out, indent=2))
         return 0
     print(f"pxPerUnit = {ppu:g}   (Deneb: knob pxPerUnit or field PxPerUnit on every member; "
           f"SVG measures: the same px per unit)")
+    for mid, k in (pin_ppu or {}).items():
+        print(f"pinPxPerUnit {mid} = {k:g}   (px per percentage point of its pin tier)")
     print(f"{'member':<18}{'template':<28}{'size':<13}{'range':>9}{'data px':>9}{'container px':>14}")
     for r in rows:
         warn = "  > maxPx!" if r["fitsMaxPx"] is False else ""

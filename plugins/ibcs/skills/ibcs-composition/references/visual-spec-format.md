@@ -89,6 +89,29 @@ openQuestions: [ … ]   # things the designer could not decide
 | `layout.header` | `messagePosition: above-title \| right-of-title` | ✓ | identical on every page of the report |
 | `layout.responsive` | notes for phone/tablet | – | e.g. one-line title, panel reflow |
 
+**Compare-with selector in title line 3.** A selector that switches the comparison (BU ↔ PY) is a
+slicer with `titleLine: 3`, e.g. `{id: compare, field: "'Compare'[Scenario]", default: BU, multi:
+false, titleLine: 3, options: [BU, PY]}`, so lint V3 requires its placeholder in `title.when`.
+`{compare}` expands to the scenario list of the selection, `{compare.delta}` to its variance codes:
+
+| Selection | `{compare}` | `{compare.delta}` |
+|---|---|---|
+| BU (default) | `AC and BU` (`AC&FC and BU` on an AC&FC chart) | `ΔBU and ΔBU%` |
+| PY | `AC and PY` | `ΔPY and ΔPY%` |
+| BU and PY | `AC and BU and PY` | `ΔBU and ΔPY` (plus the % codes of the shown tiers) |
+
+Example: `when: "_{month} {compare}, {compare.delta}"` → "_Sep 2026 AC and BU, ΔBU and ΔBU%". The
+selector switches the notation, not only the numbers: the variance tiers, their axes (reference
+notation), the Δ codes on KPI cards and the headline clauses follow it (report-shell §5). A
+variance id stays bound to its meaning (§6): use one id per selection (`dbu`, `dpy`) and let the
+selector pick which one a tier shows.
+
+**Variance to BU and PY on one month chart.** Default: one comparison per chart (the selector's
+default, BU on a budget page), with the other one a selector away. When the spec asks for both at
+once, stack two absolute tiers above the base (`ΔBU` then `ΔPY`, both on the base px per unit, each
+with its own reference axis) and leave out the Δ% tiers, or keep Δ% only for the default
+comparison; never draw both pins and both bars in one cell.
+
 **Tall and scrolling pages.** One screen (1280 × 720) is the default and the IBCS ideal (CO 5:
 everything needed on one page). A taller canvas (e.g. `{width: 1280, height: 1120, scroll:
 vertical}`) is allowed only for media that scroll — web and Fabric apps, a Power BI page with a
@@ -263,7 +286,9 @@ Remainder bars (A-30) are expressed with `data.category.topN.remainder`; multi-t
 `data.rows` are measure rows (one card each, in row order), `data.columns` holds the AC scenario
 item, and each row's `variances` lists what its card shows. A card = label (measure name), unit
 line ("in mEUR", "in %", "ratio"), the AC value in the key-message size or larger, then one line
-per comparison with the scenario code — relative before absolute (`ΔPY% +5.8%  ΔPY +8.3`).
+per comparison with the scenario code — by default the absolute Δ first, then Δ% (`+8.3  +5.8%  ΔPY`;
+`cards.deltaOrder: absolute-first`); `relative-first` when the page's reference design shows it, one
+order per page (report-shell §6, behaviour contract §10).
 Impact colour by polarity on the variance numbers only, with the contrast-safe text tokens
 (`color.variance.*Text`, ibcs-notation §3); a Δ that rounds to zero at the displayed decimals
 is unsigned and uncoloured; N/A uncoloured. Optional `cards: {perRow, phonePerRow, sparkline:

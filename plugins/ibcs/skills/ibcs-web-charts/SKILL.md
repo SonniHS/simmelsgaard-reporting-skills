@@ -139,8 +139,9 @@ The most common IBCS breach in web apps is each chart auto-scaling on its own (I
   deliberate own scale needs a visible **scale band** (UN 5.2) at a round value drawn on every
   chart of that unit, and a footnote.
 - Default sizes (one rule for web and Power BI): the largest base column is about **1.5 × the
-  category pitch** high when the cell allows it; absolute Δ tiers use the base px per unit; pins use
-  **1 px per percentage point** (smaller only when the cell cannot fit them).
+  category pitch** high when the cell allows it; absolute Δ tiers use the base px per unit; the
+  pin tier has its own scale sized to the tier (48 px in column charts, 90 px in bar charts, the
+  largest |Δ%| fills about 90 %, shared by charts read together); pin labels one decimal.
 - A scale band sits at the **left edge** of the plot, filled and outlined with
   `color.marker.scaleBandFill` / `scaleBandLine`, its value printed above it in
   `color.text.secondary` at label size — never next to the end legend.

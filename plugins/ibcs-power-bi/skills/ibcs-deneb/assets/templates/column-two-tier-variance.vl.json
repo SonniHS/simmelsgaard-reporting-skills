@@ -103,7 +103,7 @@
             ]
           }
         ],
-        "rule": "container height = fixedPx + Σ over tiers of ((hi − lo) × pxPerUnit + padHigh + padLow); measured with Vega-Lite 6.4.3 at ibcsFontSize 12; with varPxPerUnit the variance tier contributes (hi − lo) × varPxPerUnit instead (scale_layout.py: member tierPxPerUnit); with Comment markers add ibcsFontSize + 18 px to the base tier's padHigh; periodLabel 'month' with visible category labels uses fixedPxMonthLabels instead of fixedPx for the second label line (at ibcsFontSize 12); tiers with onlyIf count only when that knob is true (showBase false drops the base tier and its padHigh; pinTier true adds the pin tier at pinPxPerUnit px per percentage point); with pxPerUnit the space the data does not need stays ABOVE the top tier, so the tiers never drift apart when a filter shrinks the data; categoryLabelPx > 0 fixes the category-label band: the fixed height is then fixedPxNoCategoryLabels + categoryLabelPx (months and Total with the same categoryLabelPx share their baseline)",
+        "rule": "container height = fixedPx + Σ over tiers of ((hi − lo) × pxPerUnit + padHigh + padLow); measured with Vega-Lite 6.4.3 at ibcsFontSize 12; with varPxPerUnit the variance tier contributes (hi − lo) × varPxPerUnit instead (scale_layout.py: member tierPxPerUnit); with Comment markers add ibcsFontSize + 18 px to the base tier's padHigh; periodLabel 'month' with visible category labels uses fixedPxMonthLabels instead of fixedPx for the second label line (at ibcsFontSize 12); tiers with onlyIf count only when that knob is true (showBase false drops the base tier and its padHigh; pinTier true adds the pin tier at pinPxPerUnit px per percentage point; scale_layout.py fills in the tier's own value from pinTierPx); with pxPerUnit the space the data does not need stays ABOVE the top tier, so the tiers never drift apart when a filter shrinks the data; categoryLabelPx > 0 fixes the category-label band: the fixed height is then fixedPxNoCategoryLabels + categoryLabelPx (months and Total with the same categoryLabelPx share their baseline)",
         "fixedPxMonthLabels": 38,
         "fixedPxCategoryBandBase": 10
       },
@@ -240,7 +240,7 @@
           "note": "Tiny values under a fixed pxPerUnit: the base tier is a few px high, the end legend still keeps the names ibcsFontSize + 2 px apart."
         }
       ],
-      "notes": "Same unit, same scale (CH 4.1) means the same px per unit, not the same domain: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field from one DAX measure) and size each visual's height to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill computes it), so a chart with smaller values is shorter (CH 4.2). yMax, varMin, varMax only share a domain: use them for visuals of the same height that must show the same range, never to align a smaller chart with a larger one. A Total / extension column (e.g. the year next to its months) is a separate visual with periodType 'year'; when its values need another scale, mark it with a scaling indicator or a footnote. Same column width across visuals (e.g. the month chart and its total): set barPx. Values are drawn as delivered: bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Period or no value in AC, FC, PY, PL, BU, refScenario or triangleScenario are dropped, even if constant scale measures are present; reference-only periods remain. The integrated reference legend names the first period with a nonblank reference value, including zero. periodLabel: auto preserves category labels unchanged; month formats YYYY-MM as Jan..Dec with the year below the first month of each later year (below the first month only when the months span two years) and a thin separator at subsequent year boundaries; short formats YYYY-MM as mm. Other category formats are left unchanged. When showCategoryLabels is false, year labels and year separators are hidden too. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Comment markers (UN 2.4): bind Comment (e.g. a DAX SWITCH returning 1, 2 … for the periods the comments explain) and print the same numbers in circles in the comment text box; the marker sits above the value label, so keep ibcsTierGapPx large enough when a variance tier is stacked above. Variance-only tier (showBase false): only the variance axis, variance columns and labels and the tier label are drawn; stack it above a chart that shows the base, with showCategoryLabels false when the visual below shows them. Pin tier (pinTier true): ΔX% = (AC&FC − REF) / REF with the signed reference, N/A when REF is blank or 0, or negative while naOnNegativeRef is true; drawn as pins above the absolute variance tier in the same view, so base, ΔX and ΔX% always share the category axis and stay together when a filter changes the data (separate stacked visuals each anchor their own plot and drift apart). The pins have their own % scale: pinPxPerUnit px per percentage point (the same on every pin tier and pin chart of the page), else pinShare of the base tier. Pins beyond ±pinClip (default ±100 %) are clipped at the clip point with an outlier triangle in the growth direction; the label keeps the full value; a Δ% that rounds to zero draws no pin; a non-zero pin is at least head/2 + 2 px long. Integrated legend (one rule for Power BI and web apps): the scenario names sit right of the last column at their own marks (triangle tip, upper part of the reference column, middle of the AC/FC column), spread at least ibcsFontSize + 2 px apart and kept inside the base tier; a series of AC months followed by FC months is named AC&FC; the right padding (46 px) holds 'AC&FC'. Names are taken from the last row: a scenario without a value in the last period is not named. The scale band is a narrow band at the left edge of the plot with its value label above it, so it never meets the legend names. Pin tiers of visuals side by side (months and Total) align only with the same pin range (like the Δ tier range) and the same pinPxPerUnit. Under filters fixed knobs are not enough (the months' tiers grow with the data): bind VarMin/VarMax/PinMin/PinMax on both visuals to union measures; the fields win over the knobs, like PxPerUnit. The Total's Δ tiers use the Total's own px per unit (its own scale, like its base; scale band and footnote), so the Δ union is taken in px: Var Max Months = VAR m = MAXX(ALLSELECTED('Date'[Month]), [Δ BU]) RETURN MAX(MAX(m, [Δ BU Year] * [PxPerUnit Total] / [PxPerUnit Months]), 0) and Var Max Total = [Var Max Months] * [PxPerUnit Months] / [PxPerUnit Total] (VarMin likewise with MINX/MIN): both tiers get the same height. The pins share one % scale (pinPxPerUnit) on both, so Pin Max = MAX(MAXX(ALLSELECTED('Date'[Month]), [Δ BU %]), [Δ BU % Year], 0) for both. Give months and Total the same visual top, height and categoryLabelPx, so their baselines and tiers sit at the same y.",
+      "notes": "Same unit, same scale (CH 4.1) means the same px per unit, not the same domain: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field from one DAX measure) and size each visual's height to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill computes it), so a chart with smaller values is shorter (CH 4.2). yMax, varMin, varMax only share a domain: use them for visuals of the same height that must show the same range, never to align a smaller chart with a larger one. A Total / extension column (e.g. the year next to its months) is a separate visual with periodType 'year'; when its values need another scale, mark it with a scaling indicator or a footnote. Same column width across visuals (e.g. the month chart and its total): set barPx. Values are drawn as delivered: bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Period or no value in AC, FC, PY, PL, BU, refScenario or triangleScenario are dropped, even if constant scale measures are present; reference-only periods remain. The integrated reference legend names the first period with a nonblank reference value, including zero. periodLabel: auto preserves category labels unchanged; month formats YYYY-MM as Jan..Dec with the year below the first month of each later year (below the first month only when the months span two years) and a thin separator at subsequent year boundaries; short formats YYYY-MM as mm. Other category formats are left unchanged. When showCategoryLabels is false, year labels and year separators are hidden too. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Comment markers (UN 2.4): bind Comment (e.g. a DAX SWITCH returning 1, 2 … for the periods the comments explain) and print the same numbers in circles in the comment text box; the marker sits above the value label, so keep ibcsTierGapPx large enough when a variance tier is stacked above. Variance-only tier (showBase false): only the variance axis, variance columns and labels and the tier label are drawn; stack it above a chart that shows the base, with showCategoryLabels false when the visual below shows them. Pin tier (pinTier true): ΔX% = (AC&FC − REF) / REF with the signed reference, N/A when REF is blank or 0, or negative while naOnNegativeRef is true; drawn as pins above the absolute variance tier in the same view, so base, ΔX and ΔX% always share the category axis and stay together when a filter changes the data (separate stacked visuals each anchor their own plot and drift apart). The pins have their own % scale sized to the tier: the pin range fills 90 % of pinTierPx (48 px), or, for charts read together (months and their Total), the pinPxPerUnit they share (scale_layout.py: the smaller of their own values); no page-wide % scale, so each chart's largest |Δ%| fills most of its tier and pin length carries the value; without pxPerUnit, pinShare of the base tier. Pins beyond ±pinClip (default ±100 %) are clipped at the clip point with an outlier triangle in the growth direction; the label keeps the full value; a Δ% that rounds to zero keeps its head on the axis as a baseline marker (no stem, no colour); a non-zero pin is at least head + 2 px long; the head is 6 px (token minimum), at the stem end; labels one decimal (pinDecimals 1). Period labels never get an ellipsis: wider than their step they become their first letter (Jan → J, the year stays in the title). Integrated legend (one rule for Power BI and web apps): the scenario names sit right of the last column at their own marks (triangle tip, upper part of the reference column, middle of the AC/FC column), spread at least ibcsFontSize + 2 px apart and kept inside the base tier; a series of AC months followed by FC months is named AC&FC; the right padding (46 px) holds 'AC&FC'. Names are taken from the last row: a scenario without a value in the last period is not named. The scale band is a narrow band at the left edge of the plot with its value label above it, so it never meets the legend names. Pin tiers of visuals side by side (months and Total) align only with the same pin range (like the Δ tier range) and the same pinPxPerUnit. Under filters fixed knobs are not enough (the months' tiers grow with the data): bind VarMin/VarMax/PinMin/PinMax on both visuals to union measures; the fields win over the knobs, like PxPerUnit. The Total's Δ tiers use the Total's own px per unit (its own scale, like its base; scale band and footnote), so the Δ union is taken in px: Var Max Months = VAR m = MAXX(ALLSELECTED('Date'[Month]), [Δ BU]) RETURN MAX(MAX(m, [Δ BU Year] * [PxPerUnit Total] / [PxPerUnit Months]), 0) and Var Max Total = [Var Max Months] * [PxPerUnit Months] / [PxPerUnit Total] (VarMin likewise with MINX/MIN): both tiers get the same height. The pins share one % scale (pinPxPerUnit) on both, so Pin Max = MAX(MAXX(ALLSELECTED('Date'[Month]), [Δ BU %]), [Δ BU % Year], 0) for both. Give months and Total the same visual top, height and categoryLabelPx, so their baselines and tiers sit at the same y.",
       "previewGroups": [
         {
           "suffix": "-scale-group",
@@ -384,8 +384,13 @@
     },
     {
       "name": "pinPxPerUnit",
-      "value": 1,
-      "description": "px per percentage point of the pin tier (default 1: one % scale group for Power BI and web apps, the same value on every pin tier and pin-relative-variance chart of the page); lower it only when the cell cannot hold the pin range. Needs pxPerUnit > 0; 0 (or pxPerUnit 0) = the pin tier gets pinShare of the base tier's extent"
+      "value": 0,
+      "description": "px per percentage point of the pin tier. 0 (default) = the tier's own % scale: the pin range fills 90 % of pinTierPx. Set it only to give charts read together (the months and their Total) one pin scale: scripts/scale_layout.py prints it for an alignTiers group (the smaller of their own values). Never one page-wide value: a large structure variance would shrink the month pins. Needs pxPerUnit > 0; without pxPerUnit the pin tier gets pinShare of the base tier's extent"
+    },
+    {
+      "name": "pinTierPx",
+      "value": 48,
+      "description": "extent of the pin tier in px (ours: 48 for column tiers). The pins are sized to it, so the largest |Δ%| fills about 90 % of the tier and the pin length carries the relative variance; check: the largest |Δ%| on the page has a stem of at least 40 % of its tier"
     },
     {
       "name": "pinShare",
@@ -394,8 +399,8 @@
     },
     {
       "name": "pinDecimals",
-      "value": 0,
-      "description": "decimals of the pin labels (percent)"
+      "value": 1,
+      "description": "decimals of the pin labels (percent); default 1, the same in Power BI and web apps (number.format.relativeVariance1)"
     },
     {
       "name": "pinMin",
@@ -651,7 +656,8 @@
     },
     {
       "name": "headPx",
-      "expr": "clamp(ibcsPinHeadRatio * pinBw * ibcsPinRatio * 2.2, ibcsPinHeadMin, ibcsPinHeadMax)"
+      "expr": "ibcsPinHeadMin",
+      "description": "pin head edge: the token minimum (geometry.pin.headPx.min, 6 px), small against the stem so the stem length carries the value; drawn at the stem end"
     }
   ],
   "transform": [
@@ -866,7 +872,7 @@
       "as": "_pLo"
     },
     {
-      "calculate": "datum._ppu > 0 && pinPxPerUnit > 0 ? pinPxPerUnit / datum._ppu : pinShare * datum._span / max(datum._pHi - datum._pLo, 1)",
+      "calculate": "datum._ppu > 0 ? (pinPxPerUnit > 0 ? pinPxPerUnit : 0.9 * pinTierPx / max(datum._pHi - datum._pLo, 0.1)) / datum._ppu : pinShare * datum._span / max(datum._pHi - datum._pLo, 1)",
       "as": "_pk"
     },
     {
@@ -911,7 +917,7 @@
       ]
     },
     {
-      "calculate": "datum._pOk && !datum._pZero && height > 0 && abs(datum._pEnd - datum._P0) * height / datum._yDom < ibcsPinHeadMax / 2 + 2 ? datum._P0 + (datum._p > 0 ? 1 : -1) * (ibcsPinHeadMax / 2 + 2) * datum._yDom / height : datum._pEnd",
+      "calculate": "datum._pOk && !datum._pZero && height > 0 && abs(datum._pEnd - datum._P0) * height / datum._yDom < headPx + 2 ? datum._P0 + (datum._p > 0 ? 1 : -1) * (headPx + 2) * datum._yDom / height : datum._pEnd",
       "as": "_pEndD"
     },
     {
@@ -956,6 +962,46 @@
           "order": "ascending"
         }
       ]
+    },
+    {
+      "calculate": "length(datum._vLabel) * ibcsFontSize * 0.6",
+      "as": "_vW"
+    },
+    {
+      "calculate": "!datum._isFC && isValid(datum._v) ? datum._i : 0",
+      "as": "_acIdx"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_vW",
+          "as": "_vWMax"
+        },
+        {
+          "op": "argmax",
+          "field": "_v",
+          "as": "_vHiRow"
+        },
+        {
+          "op": "argmin",
+          "field": "_v",
+          "as": "_vLoRow"
+        },
+        {
+          "op": "max",
+          "field": "_acIdx",
+          "as": "_lastAC"
+        }
+      ]
+    },
+    {
+      "calculate": "max(1, ceil((datum._vWMax + 2) / max(1, width / max(1, datum._n))))",
+      "as": "_every"
+    },
+    {
+      "calculate": "datum._every <= 1 || datum._i == 1 || datum._i == datum._n || datum._i == datum._vHiRow._i || datum._i == datum._vLoRow._i || datum._i == datum._lastAC || datum.__selected__ == 'on' || (datum._i - 1) % datum._every == 0",
+      "as": "_vShow"
     }
   ],
   "encoding": {
@@ -985,7 +1031,7 @@
         "labelFontSize": {
           "expr": "showCategoryLabels ? ibcsFontSize : 0"
         },
-        "labelExpr": "periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label",
+        "labelExpr": "isArray((periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)) ? [((length((periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[0]) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[0] : isValid(((test(/^[A-Za-z]/, (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[0]) && !test(/^Q[1-4]/, (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[0])) && (length(substring((periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[0], 0, 1)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? substring((periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[0], 0, 1) : null)) ? ((test(/^[A-Za-z]/, (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[0]) && !test(/^Q[1-4]/, (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[0])) && (length(substring((periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[0], 0, 1)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? substring((periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[0], 0, 1) : null) : (round(datum.index * (length(domain('x')) - 1)) % 2 == 1 ? ['', (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[0]] : (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[0])), (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)[1]] : ((length((periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label) : isValid(((test(/^[A-Za-z]/, (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)) && !test(/^Q[1-4]/, (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label))) && (length(substring((periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label), 0, 1)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? substring((periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label), 0, 1) : null)) ? ((test(/^[A-Za-z]/, (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)) && !test(/^Q[1-4]/, (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label))) && (length(substring((periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label), 0, 1)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? substring((periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label), 0, 1) : null) : (round(datum.index * (length(domain('x')) - 1)) % 2 == 1 ? ['', (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)] : (periodLabel == 'auto' || !test(/^[0-9]{4}-(0[1-9]|1[0-2])$/, toString(datum.value)) ? datum.label : periodLabel == 'short' ? substring(datum.value, 5, 7) : periodLabel == 'month' ? [split('Jan Feb Mar Apr May Jun Jul Aug Sep Oct Nov Dec', ' ')[toNumber(substring(datum.value, 5, 7)) - 1], (indexof(domain('x'), datum.value) == 0 && substring(domain('x')[0], 0, 4) != substring(peek(domain('x')), 0, 4)) || substring(domain('x')[indexof(domain('x'), datum.value) - 1], 0, 4) != substring(datum.value, 0, 4) ? substring(datum.value, 0, 4) : ''] : datum.label)))",
         "labelLineHeight": {
           "expr": "ibcsFontSize + 2"
         },
@@ -994,7 +1040,8 @@
         },
         "maxExtent": {
           "expr": "categoryLabelPx > 0 ? categoryLabelPx : 200"
-        }
+        },
+        "labelLimit": 0
       }
     }
   },
@@ -1275,7 +1322,7 @@
       }
     },
     {
-      "description": "AC -> FC separator (vertical assisting line at the first FC period)",
+      "description": "AC -> FC separator: a short tick on the category axis between the last AC and the first FC period (the same as the web components), never a line through the tiers, so no label crosses it",
       "transform": [
         {
           "filter": "datum._isFC && datum._i == datum._firstFC && datum._firstFC > 1"
@@ -1284,13 +1331,25 @@
       "mark": {
         "type": "rule",
         "stroke": {
-          "expr": "ibcsAssist"
+          "expr": "ibcsAxis"
         },
         "strokeWidth": {
           "expr": "ibcsAssistWidth"
         },
         "xOffset": {
           "expr": "-bandwidth('x') / ibcsBarRatio / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "showBase ? scale('y', 0) : scale('y', datum._B)"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "(showBase ? scale('y', 0) : scale('y', datum._B)) + 5"
+          }
         }
       }
     },
@@ -1456,7 +1515,7 @@
       }
     },
     {
-      "description": "value labels of the primary scenario only (UN 2.3), above the taller of the overlapped pair",
+      "description": "value labels of the primary scenario only (UN 2.3), above the taller of the overlapped pair; when the labels are wider than their slot (a phone-width visual) they thin: first, last, highest, lowest, the last AC and the selected period always keep their label, the others every n-th in a regular rhythm",
       "mark": {
         "type": "text",
         "baseline": "bottom",
@@ -1480,6 +1539,9 @@
       "transform": [
         {
           "filter": "showBase"
+        },
+        {
+          "filter": "datum._vShow"
         },
         {
           "calculate": "max(datum._v, isValid(datum._r) ? datum._r : 0)",
@@ -1946,7 +2008,7 @@
       }
     },
     {
-      "description": "pin tier: pin body, thin, impact colour; geometry follows the arithmetic sign; own % scale; a rounded-zero Δ% draws no pin; a non-zero pin is at least head/2 + 2 px long so its colour shows; clipped at ±pinClip with an outlier triangle",
+      "description": "pin tier: pin body, thin, impact colour; geometry follows the arithmetic sign; own % scale sized to the tier (pinTierPx, or the page's pinPxPerUnit); a rounded-zero Δ% draws no stem but keeps its head on the axis as a baseline marker; a non-zero pin is at least head + 2 px long, so the head never covers the stem; clipped at ±pinClip with an outlier triangle",
       "transform": [
         {
           "filter": "pinTier && datum._pOk && !datum._pZero"
@@ -1988,7 +2050,7 @@
       "description": "pin tier: white ground under hatched FC heads",
       "transform": [
         {
-          "filter": "pinTier && datum._pOk && !datum._pZero && !datum._pClip"
+          "filter": "pinTier && datum._pOk && !datum._pClip"
         }
       ],
       "mark": {
@@ -2010,10 +2072,10 @@
       }
     },
     {
-      "description": "pin tier: pin head in the minuend's notation (AC solid dark, FC hatched)",
+      "description": "pin tier: pin head in the minuend's notation (AC solid dark, FC hatched), at the stem end; for a Δ% that rounds to zero it sits on the axis, uncoloured, as the baseline marker",
       "transform": [
         {
-          "filter": "pinTier && datum._pOk && !datum._pZero && !datum._pClip"
+          "filter": "pinTier && datum._pOk && !datum._pClip"
         }
       ],
       "mark": {

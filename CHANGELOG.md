@@ -61,6 +61,20 @@ All notable changes to this marketplace and its plugins. The format follows
   when the largest step is under 5 % of the base (our default, knob `magnifyBelow`); base and total
   stay on the page scale.
 
+### Fixed (proof run 1)
+- Pins carry magnitude: each relative-variance tier has its own scale sized to the tier (48 px column,
+  90 px bar tiers), the largest |Δ%| fills about 90 %; 6 px heads at the stem end; a rounded zero keeps a
+  baseline marker; one decimal in both tools; a check that the largest stem is at least 40 % of its tier.
+- Labels never cross axis, baseline or rule lines (render-time check in the Deneb previews, tests on the
+  web); one magnifier form (frame, dashed connectors, panel) with the break glyph on the panel baseline.
+- Period names never get an ellipsis (Jan → J → two rows); dimension names use the free space, then wrap.
+- Rows that explain a total use the member variance items: blank AC with a reference counts as 0, the
+  zero AC is labelled, and charts warn when the rows do not add up to the total.
+- Builders' gaps: stable scale registry with several charts, tests that run in an app's jsdom setup,
+  phone stacking of structure tiers, KPI card alignment, absolute-first Δ order, a second absolute
+  tier, compare-with in title line 3, Power BI padding option, title-line heights, logo and mobile
+  layout recipes, own-scale members in the linter and scale_layout, reference-date footers.
+
 ### Fixed (found by deploying the sample model)
 - `semantic-model-ibcs`: inside a Δ item with its own format string expression,
   `SELECTEDMEASUREFORMATSTRING ()` returns the item's pp format, so `Ibcs.IsRatioFormat` now also

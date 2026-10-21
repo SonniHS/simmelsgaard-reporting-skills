@@ -137,10 +137,15 @@ Fields, knobs and notes per template are in each file's `usermeta.ibcs` and in
   bigger scale, state that scale). Both variance waterfalls: knob `magnifyBelow` (OURS, default
   0.05): when the largest step is below 5 % of the base, the steps are drawn again at ×k, k the
   smallest of 1, 2, 5, 10, 20, 50 … that makes the largest step ≥ `magnifyMinPx` (40) px (OURS).
-  The panel starts at the lowest running total with a zigzag axis break and the caption
-  "Steps ×k" (secondary text colour); a marker (the steps' range ± 3 px, highlight colour, 1 px,
-  no fill) and 0.75 px connectors along its edges link it to the overview. Card 29: the panel
-  beside the overview, rows at the same y; card 11: a tier below, columns at the periods' x.
+  One form in every renderer (OURS, from the proof run): **source frame → connectors → panel**,
+  no empty box between them. The source frame marks the steps' range ± 3 px (highlight colour,
+  1 px, no fill); dashed 0.75 px connectors run from its corners to the panel frame, which starts
+  24 px after the overview and is half a row taller, so they converge instead of boxing in empty
+  space. The panel starts at the lowest running total; its own origin line carries the zigzag
+  break, with the caption "Steps ×k" (secondary text colour) right next to it. A drop's label
+  that would reach the origin line goes to the far side of its bar start, so no label touches a
+  line. Card 29: the panel beside the overview, rows at the same y; card 11: a tier below,
+  columns at the periods' x.
   Base, total and the overview steps keep the page px per unit (the 1–9 px hairline steps of a
   shared scale become this case); step labels move into the panel. Size the container with
   `scale_layout.py` member option `"magnify": true`. In a narrow container put the panel in a
@@ -174,17 +179,19 @@ Fields, knobs and notes per template are in each file's `usermeta.ibcs` and in
   `REMOVEFILTERS ( 'Customer' )` inside. **Check highlights in the published report**, with and
   without a slicer selection, not only in the preview: exactly one circled label.
 - **All tiers of a time chart in ONE visual** (CO 4.2): `column-two-tier-variance` knob `pinTier`
-  adds ΔX% pins as a third tier above the absolute variance tier, on their own % scale
-  (`pinPxPerUnit` px per percentage point, the same on every pin tier and `pin-relative-variance`
-  chart of the page; without it the pins take `pinShare` of the base tier). Prefer it to stacking a
+  adds ΔX% pins as a third tier above the absolute variance tier, on their own % scale sized to
+  the tier (`pinTierPx`, 48 px: the clipped pin range fills 90 % of it; `pinPxPerUnit` only to
+  share one pin scale between charts read together, months and their Total; without `pxPerUnit`
+  the pins take `pinShare` of the base tier). Prefer it to stacking a
   pin visual on a column visual: separate visuals each anchor their own plot, so when a filter
   shrinks the data under a fixed `pxPerUnit` the base visual's plot drops to its bottom while the
   pin visual stays at its top, and a gap opens between the tiers. In one view the space the data
   does not need stays above the top tier and the tiers never drift apart. `scale_layout.py` sizes
-  it with tier `pins` (member params `pinTier`, `pinPxPerUnit`). Pins default to **1 px per
-  percentage point** (`pinPxPerUnit` 1, the cross-tool rule in ibcs-power-bi page-shell.md §5),
-  clip at ±100 % (`pinClip`), draw nothing for a Δ% that rounds to zero and are at least head/2 + 2
-  px long otherwise. The last closed month gets the assisting band through all tiers
+  it with tier `pins` (member params `pinTier`, optional `pinTierPx`; it prints each member's
+  `pinPxPerUnit`). Pins carry the relative variance by their length (the cross-tool rule in
+  ibcs-power-bi page-shell.md §5): own scale per chart, 6 px heads at the stem end, at least
+  head + 2 px long, a baseline marker (head on the axis, no colour) for a Δ% that rounds to zero,
+  labels with one decimal (`pinDecimals` 1), clipped at ±100 % (`pinClip`). The last closed month gets the assisting band through all tiers
   (`markLastClosed`, default on; a selection wins).
 - **Variance-only tier:** `column-two-tier-variance` knob `showBase: false` draws only the
   variance tier (axis, columns, labels, tier name; with `pinTier` a ΔX + ΔX% pair), e.g. a ΔPY tier
@@ -304,7 +311,9 @@ groups, stacked tiers). Rows such as a blank category show up here exactly as in
 The renderer emulates Deneb's `dataset`, config, `pbiPatternSVG` and container size, renders SVG
 with the Vega version Deneb 2.0 bundles, and screenshots a PNG with headless Chrome (`--chrome
 PATH` or `CHROME=…` off macOS). Compare the PNG with the IBCS figure named in the template's
-`cards` before committing.
+`cards` before committing. It also fails (WARN, exit 1) on any value or name label whose box
+crosses a solid rule (axis, baseline, assisting line, scale-band line, magnifier frame or
+connector); dashed assisting references (the scatter's x = y diagonal) are exempt.
 
 ## Not verified / TODO
 

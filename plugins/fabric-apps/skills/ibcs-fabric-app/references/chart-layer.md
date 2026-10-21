@@ -64,8 +64,16 @@ Rules:
   in the months' order and proportions.
 - **Default sizes** (one rule for web and Power BI, `ibcs-web-charts` SKILL §5): the largest base
   column about 1.5 × the month pitch when the cell allows it; Δ tiers on the base px per unit;
-  pins at 1 px per percentage point (smaller only when the cell cannot fit them), clipped at
-  ±100 % with an outlier triangle, at least head/2 + 2 px long when they do not round to zero.
+  pins on their own scale sized to the pin tier (48 px in the month chart, 90 px in bar charts;
+  the largest |Δ%| fills about 90 %; the months and their Total share one scale via `pinScale`),
+  6 px heads at the stem end, clipped at ±100 % with an outlier triangle, a baseline marker for a
+  Δ% that rounds to zero, labels with one decimal. Check: the largest stem is ≥ 40 % of its tier.
+- **Labels and names** (proof run 1): month names fall back Jan → J → two rows, never an
+  ellipsis; structure and bridge names take the free width before they wrap or are cut; no label
+  touches an axis, baseline, frame, connector or assisting line (the reference waterfalls move it
+  to the far side of its bar or inside it, and test it at 390 px).
+- **Magnifier**: one form, source frame → dashed connectors → framed panel, the break glyph on
+  the panel's origin line next to "Steps ×k".
 - **Selection band**: the assisting area behind the selected month runs through all tiers; with
   no selection the page selects the last closed month.
 - Layout functions never compute variances or impact; they draw what the query returned
@@ -160,7 +168,8 @@ behaviour. Without `onSelect` the hit marks render nothing, so static charts sta
   the mark on its own side, otherwise it is left out (the value stays in the hidden table and the
   tooltip); never drawn over a bar. Category names thin to every n-th in a regular rhythm, then
   cut from the end. Long structure names wrap to two lines (`<tspan>`s) when the row step is at
-  least 2.2 × the font size, else they are cut **from the end**; never a middle ellipsis.
+  least 2.2 × the font size, else they are cut **from the end**; never a middle ellipsis. Month
+  names are never cut: Jan → J → two rows.
 - **Structure chart** (companies): stack the variance tiers under the bars (`ibcs-web-charts`
   behaviour contract §4: bars, then ΔBU, then ΔBU%, each full width on the same category order and
   scale), instead of a horizontally scrolling row.

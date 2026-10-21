@@ -108,7 +108,7 @@
 | E9 | variance axis shows subtrahend (PY solid light, PL/BU double line) | UN 4.1 | M | img | — |
 | E10 | variance labels outside, in direction of change | UN 4.1 | S | img | — |
 | E11 | absolute variance of percentages in pp | UN 4.1 | M | text | — |
-| E12 | relative variances named ΔPY%/ΔPL%, shown as pins, computed with the **signed** reference | UN 4.1 | M | img, model | head shape: square is the default, not a mandate |
+| E12 | relative variances named ΔPY%/ΔPL%, shown as pins, computed with the **signed** reference; the pin length carries the value: the pin tier has its own scale sized to the tier, so a chart's largest \|Δ%\| fills most of it (stem ≥ 40 % of the tier, OURS), heads small (6 px) at the stem end, a Δ% that rounds to zero keeps a baseline marker | UN 4.1 | M | img, model | head shape: square is the default, not a mandate; LINT: a fixed pin scale of ≤ 1 px per point |
 | E13 | pin heads show the minuend | UN 4.1 | S | img | — |
 | E14 | uninterpretable relative variance shown as N/A (never via ABS); our rule: reference ≤ 0 or blank → N/A | UN 4.1 (rule OURS) | M | model | PL 100 / AC −20 → −120 % is valid |
 | E15–E18 | YTD/YTG/moving/Ø notation; index arrowheads; ranking arrows; adjusted values AC* footnoted | UN 4.2–4.4 | S | text, img | — |

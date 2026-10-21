@@ -18,7 +18,7 @@
         "BU": "measure, budget (refScenario 'BU'); plan notation like PL",
         "YMin": "optional measure (fraction, ≤ 0), same on every row: lowest Δ% the axis must show; wins over yMin",
         "YMax": "optional measure (fraction, ≥ 0): highest Δ% the axis must show; wins over yMax",
-        "PxPerUnit": "optional measure, same value on every row: px per percentage point for the page's Δ% scale group; wins over pxPerUnit",
+        "PxPerUnit": "optional measure, same value on every row: px per percentage point of this chart's pin scale (sized to its plot: 0.9 × plot height ÷ clipped range, or the value shared with charts read together); wins over pxPerUnit",
         "ClipPct": "optional measure (fraction > 0), same on every row: |Δ%| beyond which a pin is an outlier; wins over clipPct"
       },
       "requiredFields": [
@@ -54,10 +54,11 @@
             ],
             "padLow": [
               "ibcsLabelPx"
-            ]
+            ],
+            "pxPerUnitParam": "pxPerUnit"
           }
         ],
-        "rule": "container height = fixedPx + (hi − lo) × pxPerUnit + padHigh + padLow; measured with Vega-Lite 6.4.3 at ibcsFontSize 12 ; with an outlier (clipPct) add ibcsFontSize + ibcsPinHeadMax + 6 px to padHigh and padLow (the triangle beyond the label)"
+        "rule": "container height = fixedPx + (hi − lo) × pxPerUnit + padHigh + padLow; measured with Vega-Lite 6.4.3 at ibcsFontSize 12 ; with an outlier (clipPct) add ibcsFontSize + ibcsPinHeadMax + 6 px to padHigh and padLow (the triangle beyond the label); the pin tier has its own % scale: scale_layout.py sets pxPerUnit (px per percentage point) to 0.9 × pinTierPx ÷ the pin range (member pinTierPx = this chart's plot height, default 48), shared only with charts aligned through alignTiers"
       },
       "sampleData": "time-series-ac-fc-py-pl.json",
       "preview": {
@@ -112,8 +113,8 @@
     },
     {
       "name": "decimals",
-      "value": 0,
-      "description": "decimals for the relative-variance labels (the token format with this precision); IBCS: at most 3 digits in charts"
+      "value": 1,
+      "description": "decimals for the relative-variance labels (the token format with this precision); default 1, the same in Power BI and web apps (number.format.relativeVariance1)"
     },
     {
       "name": "polarity",
@@ -138,7 +139,7 @@
     {
       "name": "yMax",
       "value": 0,
-      "description": "highest relative variance as a fraction (0.3 = +30%); 0 = from the data. A shared DOMAIN: same yMin/yMax gives the same % scale only on pin charts of the same height. For the page's Δ% scale group use pxPerUnit instead"
+      "description": "highest relative variance as a fraction (0.3 = +30%); 0 = from the data. A shared DOMAIN: same yMin/yMax gives the same % scale only on pin charts of the same height. To share one pin scale with charts read together use pxPerUnit instead"
     },
     {
       "name": "pxPerUnit",
@@ -309,8 +310,8 @@
     },
     {
       "name": "headPx",
-      "expr": "clamp(ibcsPinHeadRatio * bw * ibcsPinRatio * 2.2, ibcsPinHeadMin, ibcsPinHeadMax)",
-      "description": "pin head edge, clamped in px (geometry.pin.headPx): wide columns never blow the pins up"
+      "expr": "ibcsPinHeadMin",
+      "description": "pin head edge: the token minimum (geometry.pin.headPx.min, 6 px), small against the stem so the stem length carries the value"
     }
   ],
   "transform": [
@@ -430,7 +431,11 @@
       "as": "_lbl"
     },
     {
-      "calculate": "datum._ok ? datum._pd : 0",
+      "calculate": "datum._ok && !datum._out && abs(datum._p) * 100 * pow(10, decimals) >= 0.5 && height > 0 && abs(datum._pd) * height / (datum._yTop - datum._yLo) < headPx + 2 ? (datum._pd > 0 ? 1 : -1) * (headPx + 2) * (datum._yTop - datum._yLo) / height : datum._pd",
+      "as": "_pdD"
+    },
+    {
+      "calculate": "datum._ok ? datum._pdD : 0",
       "as": "_ly"
     }
   ],
@@ -461,7 +466,9 @@
         },
         "labelFontSize": {
           "expr": "showCategoryLabels ? ibcsFontSize : 0"
-        }
+        },
+        "labelExpr": "isArray((datum.label)) ? [((length((datum.label)[0]) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? (datum.label)[0] : isValid(((test(/^[A-Za-z]/, (datum.label)[0]) && !test(/^Q[1-4]/, (datum.label)[0])) && (length(substring((datum.label)[0], 0, 1)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? substring((datum.label)[0], 0, 1) : null)) ? ((test(/^[A-Za-z]/, (datum.label)[0]) && !test(/^Q[1-4]/, (datum.label)[0])) && (length(substring((datum.label)[0], 0, 1)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? substring((datum.label)[0], 0, 1) : null) : (round(datum.index * (length(domain('x')) - 1)) % 2 == 1 ? ['', (datum.label)[0]] : (datum.label)[0])), (datum.label)[1]] : ((length((datum.label)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? (datum.label) : isValid(((test(/^[A-Za-z]/, (datum.label)) && !test(/^Q[1-4]/, (datum.label))) && (length(substring((datum.label), 0, 1)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? substring((datum.label), 0, 1) : null)) ? ((test(/^[A-Za-z]/, (datum.label)) && !test(/^Q[1-4]/, (datum.label))) && (length(substring((datum.label), 0, 1)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? substring((datum.label), 0, 1) : null) : (round(datum.index * (length(domain('x')) - 1)) % 2 == 1 ? ['', (datum.label)] : (datum.label)))",
+        "labelLimit": 0
       }
     }
   },
@@ -520,7 +527,7 @@
       }
     },
     {
-      "description": "AC -> FC separator",
+      "description": "AC -> FC separator: a short tick on the category axis between the last AC and the first FC period (the same as the web components), never a line through the tiers, so no label crosses it",
       "transform": [
         {
           "filter": "datum._isFC && datum._i == datum._firstFC && datum._firstFC > 1"
@@ -536,6 +543,18 @@
         },
         "xOffset": {
           "expr": "-bandwidth('x') / ibcsBarRatio / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "value": {
+            "expr": "scale('y', 0)"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "scale('y', 0) + 5"
+          }
         }
       }
     },
@@ -635,7 +654,7 @@
       }
     },
     {
-      "description": "pin body: thin, impact colour, in front of the axis; geometry follows the arithmetic sign; an outlier is cut at the clip value (UN 5.3)",
+      "description": "pin body: thin, impact colour, in front of the axis; geometry follows the arithmetic sign; an outlier is cut at the clip value (UN 5.3); a non-zero pin is at least head + 2 px long (the head never covers the stem); a Δ% that rounds to zero keeps its head on the axis as a baseline marker",
       "transform": [
         {
           "filter": "datum._ok"
@@ -655,7 +674,7 @@
       },
       "encoding": {
         "y": {
-          "field": "_pd",
+          "field": "_pdD",
           "type": "quantitative"
         },
         "y2": {
@@ -693,7 +712,7 @@
       },
       "encoding": {
         "y": {
-          "field": "_pd",
+          "field": "_pdD",
           "type": "quantitative"
         }
       }
@@ -724,7 +743,7 @@
       },
       "encoding": {
         "y": {
-          "field": "_pd",
+          "field": "_pdD",
           "type": "quantitative"
         }
       }

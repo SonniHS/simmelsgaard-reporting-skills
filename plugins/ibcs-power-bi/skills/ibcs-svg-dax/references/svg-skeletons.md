@@ -551,27 +551,39 @@ Power BI route:
   `<desc>` holding AC).
 - `grid.imageWidth` = `_W`, `imageHeight` = `_H` (rows) / 30 (header); image column width = `_W` + 20;
   no rules (page-shell.md §3); the rows table's height = 17 (its empty header strip) + rows × (`_H` + 2) + 24.
+- Stacking: the header table is 17 (its empty header strip) + 30 + 2 = **49 px** high; the rows table
+  starts **32 px** below the header table's top (header y + 49 − 17) at a z **below** the header
+  table, so its own empty 17 px header strip lies behind the header table's bottom and the first
+  row starts right under the header SVG, with no gap and no doubled strip. Both tables have no
+  background of their own on a card shape (page-shell.md §1).
 - `_S` = the page scale group's px per unit (`scale_layout.py`, the same value as the Deneb month
   chart's `pxPerUnit`), so a company bar of 10 mEUR is as long as a month column of 10 mEUR is high.
 
 ```dax
 -- GEOM (identical in SVG Row and SVG Rows Header)
-VAR _S = 9  VAR _SP = 3  VAR _W = 1000  VAR _H = 28      -- px per unit, px per pp, SVG size
+VAR _S = 9  VAR _SP = 3  VAR _W = 1000  VAR _H = 28      -- px per unit, px per pp (the pin tier's own scale: 0.9 × tier width ÷ clipped Δ% range, see GEOM), SVG size
 VAR _T = _H * 0.5  VAR _Off = _T * 0.25                   -- bar thickness, BU outline offset
 VAR _Tri = MIN ( MAX ( 0.33 * _T, 6 ), 12 )  VAR _Top = _Tri + 1  VAR _Yc = _Top + _Off + _T / 2
+-- candidates: the selected companies read once as a list, each evaluated with an explicit filter that
+-- replaces the row's company filter (never measures by context transition over ALLSELECTED rows: under a
+-- slicer on the axis column that returns the wrong rows; ibcs-deneb SKILL, highlight from the data)
+VAR _Cand = CALCULATETABLE ( VALUES ( 'Company'[Company] ), ALLSELECTED ( 'Company' ) )
 VAR _All = FILTER (
-    ADDCOLUMNS ( ALLSELECTED ( 'Company'[Company] ),
-        "@ac", [Revenue] / 1E6, "@bu", [Revenue BU] / 1E6, "@py", [Revenue PY] / 1E6,
-        "@d", IF ( NOT ISBLANK ( [Revenue] ) && NOT ISBLANK ( [Revenue BU] ), ( [Revenue] - [Revenue BU] ) / 1E6 ),
-        "@p", IF ( NOT ISBLANK ( [Revenue] ) && [Revenue BU] > 0, DIVIDE ( [Revenue] - [Revenue BU], [Revenue BU] ) * 100 ) ),
+    ADDCOLUMNS ( _Cand,
+        "@ac", VAR _c = 'Company'[Company] RETURN CALCULATE ( [Revenue], REMOVEFILTERS ( 'Company' ), 'Company'[Company] = _c ) / 1E6,
+        "@bu", VAR _c = 'Company'[Company] RETURN CALCULATE ( [Revenue BU], REMOVEFILTERS ( 'Company' ), 'Company'[Company] = _c ) / 1E6,
+        "@py", VAR _c = 'Company'[Company] RETURN CALCULATE ( [Revenue PY], REMOVEFILTERS ( 'Company' ), 'Company'[Company] = _c ) / 1E6 ),
     NOT ISBLANK ( [@ac] ) || NOT ISBLANK ( [@bu] ) )
+VAR _AllD = ADDCOLUMNS ( _All,                                   -- member rule: AC or BU missing counts 0 (rows add up to the total)
+    "@d", ROUND ( COALESCE ( [@ac], 0 ) - COALESCE ( [@bu], 0 ), 1 ),
+    "@p", IF ( [@bu] > 0, DIVIDE ( COALESCE ( [@ac], 0 ) - [@bu], [@bu] ) * 100 ) )
 VAR _BMax = MAXX ( _All, MAX ( MAX ( COALESCE ( [@ac], 0 ), COALESCE ( [@bu], 0 ) ), COALESCE ( [@py], 0 ) ) )
-VAR _DNeg = MAXX ( _All, MAX ( 0, - [@d] ) )  VAR _DPos = MAXX ( _All, MAX ( 0, [@d] ) )
-VAR _PNeg = MAXX ( _All, MAX ( 0, - [@p] ) )
+VAR _DNeg = MAXX ( _AllD, MAX ( 0, - [@d] ) )  VAR _DPos = MAXX ( _AllD, MAX ( 0, [@d] ) )
+VAR _PNeg = MAXX ( _AllD, MAX ( 0, - MIN ( [@p], 100 ) ) )
 VAR _LabV = 46  VAR _LabD = 44  VAR _LabP = 56  VAR _Gap = 20     -- label room per tier (7 px/char + 6), gap between tiers
 VAR _X2 = 1 + _BMax * _S + _LabV + _Gap + _DNeg * _S + _LabD     -- ΔBU axis
 VAR _X3 = _X2 + _DPos * _S + _LabD + _Gap + _PNeg * _SP + _LabP  -- ΔBU% axis
-VAR _GapRow = MAXX ( TOPN ( 1, FILTER ( _All, NOT ISBLANK ( [@d] ) ), ABS ( [@d] ), DESC, 'Company'[Company], ASC ), 'Company'[Company] )
+VAR _GapRow = MAXX ( TOPN ( 1, FILTER ( _AllD, [@d] <> 0 ), ABS ( [@d] ), DESC, 'Company'[Company], ASC ), 'Company'[Company] )   -- rounded as labelled; tie-break by name
 ```
 
 `SVG Row` (one row; tokens as in skeletons 1, 2, 5):
@@ -584,8 +596,8 @@ VAR _Good = "#8CB400"  VAR _Bad = "#FF0000"  VAR _Neutral = "#0064FF"  VAR _HL =
 VAR _Text = "#000000"  VAR _Font = "Segoe UI"
 -- GEOM (block above)
 VAR _AC = [Revenue] / 1E6  VAR _BU = [Revenue BU] / 1E6  VAR _PY = [Revenue PY] / 1E6  VAR _Pol = 1
-VAR _D = IF ( NOT ISBLANK ( _AC ) && NOT ISBLANK ( _BU ), _AC - _BU )  VAR _R = ROUND ( _D, 1 )
-VAR _P = IF ( NOT ISBLANK ( _AC ) && _BU > 0, DIVIDE ( _AC - _BU, _BU ) * 100 )  VAR _RP = ROUND ( _P, 1 )
+VAR _D = IF ( NOT ( ISBLANK ( _AC ) && ISBLANK ( _BU ) ), COALESCE ( _AC, 0 ) - COALESCE ( _BU, 0 ) )  VAR _R = ROUND ( _D, 1 )   -- member rule: a discontinued company keeps 0 − BU
+VAR _P = IF ( _BU > 0, DIVIDE ( COALESCE ( _AC, 0 ) - _BU, _BU ) * 100 )  VAR _RP = ROUND ( _P, 1 )
 VAR _KD = SWITCH ( TRUE (), _R = 0, _Text, _Pol = 0, _Neutral, _D * _Pol > 0, _Good, _Bad )
 VAR _KP = SWITCH ( TRUE (), _RP = 0, _Text, _Pol = 0, _Neutral, _P * _Pol > 0, _Good, _Bad )
 VAR _DLen = ABS ( _D ) * _S  VAR _DX = IF ( _D >= 0, _X2, _X2 - _DLen )
@@ -647,7 +659,8 @@ Rules:
   `_X3 + _PPos × _SP + _LabP ≤ _W` once with the largest positive Δ% (add `_PPos` like `_PNeg`), and
   widen `_W` (and `imageWidth`) rather than shrinking `_S`.
 - `_S` is the page's px per unit, never a per-measure `MAXX` fit: the block must read on the same
-  scale as the month chart (UN 4.1). Δ% pins have their own scale `_SP` (one per page).
+  scale as the month chart (UN 4.1). Δ% pins have their own scale `_SP`, sized to the pin tier
+  (0.9 × the tier's width ÷ the clipped Δ% range, page-shell.md §5), not one page-wide value.
 - Rows sort by AC descending via the `<desc>` sort key (`sort_measure` in the table recipe).
 
 ## 9. Variance waterfall with a magnifying glass (two visuals)
@@ -664,11 +677,15 @@ a second chart at a bigger scale and state that scale. In SVG-in-DAX that second
 - Visual 2, the magnifier: a second image column (or a second `tableEx` placed edge to edge on the
   right, same row height) whose SVG draws only the steps at `_S × _K`, from the lowest running total
   `_Lo`, with the signed label; base and total rows stay empty. A header row above it states the
-  scale: "Steps ×k" in `color.text.secondary`, and draws the zigzag axis break at the origin.
+  scale: "Steps ×k" in `color.text.secondary` right next to the zigzag axis break on the panel's
+  own origin line. A drop's label that would reach the origin line goes right of the bar's
+  start, so no label touches a line.
 - The marker: every step row draws its part of a 1 px box in the highlight colour around the steps'
   range ± 3 px in the overview (left and right edges in every step row, the top edge in the first
-  step row, the bottom edge in the last); connectors (0.75 px) run from the box's top and bottom
-  edges to the magnifier's frame in the first and last step rows. Set the table's row padding and
+  step row, the bottom edge in the last); dashed connectors (0.75 px) run from the box's top and
+  bottom corners to the magnifier's frame in the first and last step rows, and the magnifier
+  column sits right after the overview column, so frame, connectors and panel read as one shape
+  with no empty box between them. Set the table's row padding and
   grid to 0 (page-shell.md §3) so the row SVGs touch and the box reads as one shape.
 - `_K`: the smallest of 1, 2, 5, 10, 20, 50 … with `_MaxStep × _S × _K ≥ 40` px (OURS), lowered to the
   next such value when the steps' span would not fit the magnifier's width.
@@ -712,8 +729,8 @@ RETURN
             & IF ( _V >= 0, "start", "end" ) & "' font-size='12' font-family='Segoe UI'>" & _Lbl & "</text></svg>" )
 ```
 
-The header measure draws the caption `"Steps ×" & FORMAT ( _K, "#,0" )` right-aligned and a zigzag
-(`<polyline points='…'>`) on the origin line. Not verified in the Power BI service (as of 2026-10):
+The header measure draws a zigzag (`<polyline points='…'>`) on the origin line and the caption
+`"Steps ×" & FORMAT ( _K, "#,0" )` left-aligned right next to it. Not verified in the Power BI service (as of 2026-10):
 whether stacked `tableEx` rows render without a gap at every zoom level; prefer the Deneb templates
 (`waterfall-variance`, `waterfall-variance-time`), which draw overview and magnifier in one visual.
 
@@ -726,7 +743,7 @@ the same px per unit. Paste it into each measure in place of its own sizes and s
 ```dax
 -- GEOM (identical in every SVG column of the table; values from the page scale group)
 VAR _S    = 3.1                     -- px per display unit (after _Div): the page scale group's pxPerUnit
-VAR _SP   = 1.2                     -- px per percentage point for pin columns (their own scale group)
+VAR _SP   = 1.2                     -- px per percentage point of the pin column: its OWN scale, 0.9 × pin column width (ours 90 px) ÷ the clipped pin range in points
 VAR _H    = 28                      -- row height = grid.imageHeight
 VAR _T    = _H * 0.5                -- bar thickness (2/3 rule: bar band ≈ 0.75 of the row)
 VAR _Mid  = _H * 0.625              -- vertical centre of the AC bar / pin
@@ -744,7 +761,7 @@ VAR _Room = 46                      -- label room beyond the longest bar
 - The table's image column must be at least ~20 px wider than `imageWidth`: narrower, the cell
   clips the image and the service shows a stray truncation mark (".") at the right end of each
   row (end-to-end test, as of 2026-10).
-- Bar length = value ÷ `_Div` × `_S`; pin length = Δ% × 100 × `_SP`. The `MAXX` scaling in
+- Bar length = value ÷ `_Div` × `_S`; pin length = Δ% × 100 × `_SP`. Pins (one rule with Deneb and web apps, page-shell.md §5): `_SP` is sized to the pin column so the largest clipped |Δ%| fills about 90 % of it (compute it in DAX: `DIVIDE ( 0.9 * 90, MAXX ( rows, ABS ( MIN ( MAX ( [Δ%], -1 ), 1 ) ) ) * 100 )`, never one page-wide value); a 6 px head at the stem end; at least head + 2 px long; a Δ% that rounds to zero draws its head on the axis as a baseline marker, uncoloured; labels with one decimal (`+5.8%`); a label never crosses the axis or a rule (a drop's label left of the axis goes right of the head when the column is too short). The `MAXX` scaling in
   skeletons 1, 2 and 5 fits a column that stands alone; in a table with several bar columns, or
   next to Deneb members of a scale group, use GEOM instead (a per-column `MAXX` gives every
   column its own px per unit).

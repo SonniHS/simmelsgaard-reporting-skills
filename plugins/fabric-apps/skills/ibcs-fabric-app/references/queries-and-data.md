@@ -41,11 +41,15 @@ the model, so the page shows no data there.
    only with the user's explicit approval in this task ([deploy-and-operate.md](deploy-and-operate.md) §1).
 2. Start the **Vite-only** dev server, then open the app item in the Fabric portal and append
    `&devUri=http://localhost:<port>` to its URL. The portal hosts your local build and proxies the
-   queries as you. Read the `scripts` in `package.json` first: in the `dataapp` template
-   (`create-rayfin` 1.36.2, Microsoft's `samples/data-app/package.json`) `npm run dev` **is**
-   `rayfin dev` and `dev:frontend` is plain `vite`. Run `npm run dev:frontend` or
-   `npx vite --port <port> --strictPort`. `rayfin dev`, and any script that calls it or
-   `rayfin up`, provisions resources in the tenant and needs the same approval as a deploy.
+   queries as you. Read the `scripts` in `package.json` first; templates differ by version:
+   Microsoft's `samples/data-app` (rayfin plugin 0.4.2) has `"dev": "rayfin dev"`, while the
+   `create-rayfin` 1.36.2 `dataapp` scaffold has `"dev": "vite"` with `"predev": "rayfin env"`. Any
+   script or pre-hook (`predev`, `prebuild`, …) that runs `rayfin dev` or `rayfin up` is a deployment:
+   it provisions or changes resources in the tenant. `rayfin env --framework vite` is local: it only
+   writes `.env.local` from `rayfin/.env` (the `RAYFIN_PUBLIC_*` values the last `rayfin up` recorded),
+   so before the first deployment it has nothing to copy. Run the plain Vite server
+   (`npx vite --port <port> --strictPort`, or `npm run dev` when it is `vite`).
+   A deployment needs the same approval as any deploy (`deploy-and-operate.md` §1).
 3. Without an app item (no tenant deployment yet), test queries only: `npx fabric-app-data query
    <alias> --file src/queries/<page>/<viz>.dax` (or `--query '<DAX>'`, `--limit 50`) runs the same
    SDK pipeline from the terminal as the developer.
@@ -61,7 +65,7 @@ exact item URL with `&devUri=…` to open.
 fail in the portal (see the factory-output test in §2). The deployed app runs in nested
 cross-origin frames, and its console was not readable from the portal tab with a browser tool, so:
 
-1. Run the Vite-only dev server (`npm run dev:frontend`, never a script that runs `rayfin dev`)
+1. Run the Vite-only dev server (plain `vite`, never a script or pre-hook that runs `rayfin dev` or `rayfin up`)
    on the pinned port and open the app item with
    `&devUri=http://localhost:<port>`: the portal now frames your local build.
 2. Chrome's Local Network Access check blocks a public site from framing `http://localhost`. A
@@ -235,6 +239,15 @@ knows the displayed decimals, so it applies the **rounded-zero rule** itself: a 
 zero at the visual's factor and decimals gets no mark, no colour and an unsigned label (`0.0`),
 whatever the impact column says. Check zero first, then impact, then polarity (the reference
 components' `impactKey ( Δ, { impact, polarity, isZero } )` does it in that order).
+
+**Rows that explain a total** (companies, products, regions, bridge steps): query the model's
+**member items** (`ΔBU member`, `ΔPY member`, … built on `Ibcs.DeltaMember`, `semantic-model-ibcs`),
+not the plain Δ items. A member with no AC but a reference (discontinued, REF > 0) then returns
+Δ = 0 − REF instead of BLANK, and the rows add up to the total's Δ; with the plain item that row
+is empty and Σ rows ≠ total (seen in a proof run: +12.7 against a total of +8.3). In the query,
+AC for such a row is `COALESCE ( AC, 0 )` when the reference exists, so the bar is labelled `0.0`;
+Δ% stays N/A only when REF ≤ 0 or blank. The reference `layoutStructureBars` warns when a member
+with a reference has no Δ and when Σ rows ≠ the total row.
 
 ## 3a. When the model must not change: query-scoped measures
 

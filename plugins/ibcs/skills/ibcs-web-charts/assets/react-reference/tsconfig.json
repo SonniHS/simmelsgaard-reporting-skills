@@ -8,7 +8,7 @@
     "noUncheckedIndexedAccess": true,
     "skipLibCheck": true,
     "noEmit": true,
-    "types": ["vitest/globals", "node"]
+    "types": ["node"]
   },
   "include": ["src", "scripts", "vitest.config.ts"]
 }

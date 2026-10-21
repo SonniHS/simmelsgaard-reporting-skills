@@ -61,7 +61,7 @@ export function MarksSvg({ layout, title, desc, onSelect, standalone }: MarksSvg
             }
             return <rect key={i} {...data(m)} x={m.x} y={m.y} width={Math.max(0, m.w)} height={Math.max(0, m.h)} fill={paint(m.fill)} stroke={m.stroke} strokeWidth={m.strokeWidth} shapeRendering="crispEdges" />;
           case "line":
-            return <line key={i} {...data(m)} x1={m.x1} y1={m.y1} x2={m.x2} y2={m.y2} stroke={m.stroke} strokeWidth={m.strokeWidth} />;
+            return <line key={i} {...data(m)} x1={m.x1} y1={m.y1} x2={m.x2} y2={m.y2} stroke={m.stroke} strokeWidth={m.strokeWidth} strokeDasharray={m.dash} />;
           case "path":
             return <path key={i} {...data(m)} d={m.d} fill={paint(m.fill)} stroke={m.stroke} strokeWidth={m.strokeWidth} />;
           case "ellipse":

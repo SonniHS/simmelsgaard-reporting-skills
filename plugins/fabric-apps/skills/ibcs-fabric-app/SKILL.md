@@ -78,7 +78,7 @@ flow, spacing tokens for non-data UI.
 | Tenant settings | As of 2026-10: **Fabric Apps (preview)**; **Semantic Model Execute Queries REST API**; for CI, service principals may use Fabric APIs | Fabric admin |
 | Permissions | Author: Edit on the workspace, **Build + Read** on the model. Consumers: access to the app + **Read** on the model: since the end of August 2026 Fabric App consumers need only Read, not Build ([What's new in Power BI, August 2026](https://learn.microsoft.com/power-bi/fundamentals/whats-new)). Check with one test account that has only Read; add Build for consumers only if that test fails, and record it as a deviation (Build also lets them query the whole model, e.g. from Excel). Not granted by the org app (§7) | Grant via Entra groups |
 | Model | IBCS-ready: scenario/variance calculation group or explicit measures, impact (polarity), report lines, closed-period flag (`semantic-model-ibcs`) | Fix the model first; if it must not change, use query-scoped `DEFINE MEASURE` on the model's own measures and functions, flagged in the footnote ([queries-and-data.md](references/queries-and-data.md) §3a). The app never computes variances in TypeScript |
-| Tooling | Node.js **22 or 24 LTS**. The `create-rayfin` 1.36.2 engines range (2026-10) still includes 20, and Learn says "Node.js 20 or later", but Node.js 20 reached end of life on 2026-04-30 | Install Node.js 22 or 24 |
+| Tooling | Node.js **22 or 24 LTS**. The `create-rayfin` 1.36.2 engines range (2026-10) still includes 20, and Learn says "Node.js 20 or later", but Node.js 20 reached end of life on 2026-04-30. With only an unsupported or non-LTS Node installed (e.g. 26): proceed when npm installs `create-rayfin` (an `EBADENGINE` warning outside its `engines` range is only a warning unless `engine-strict` is set), record the version in the build notes, and recommend 22 or 24 LTS through a version manager (nvm, fnm, Volta); stop only when npm refuses the install | Install Node.js 22 or 24 |
 
 ## 2. Workflow
 
@@ -112,10 +112,14 @@ flow, spacing tokens for non-data UI.
    deployed app item (`npx rayfin up --workspace … --item-name …` once to a dev workspace, only
    with the user's explicit approval), then open the item in the portal with
    `&devUri=http://localhost:<port>` while the **Vite-only** dev server runs (one pinned port, also
-   in `allowedRedirectUris`). Read the `scripts` in `package.json` first: in the `dataapp` template
-   (`create-rayfin` 1.36.2) `npm run dev` **is** `rayfin dev`, which provisions a backend in the
-   tenant; run `npm run dev:frontend` (plain `vite`) or `npx vite --port <port> --strictPort`
-   instead, and treat any script that calls `rayfin dev` or `rayfin up` as a deployment. Bare
+   in `allowedRedirectUris`). Read the `scripts` in `package.json` first; templates differ by version:
+   Microsoft's `samples/data-app` (rayfin plugin 0.4.2) has `"dev": "rayfin dev"`, while the
+   `create-rayfin` 1.36.2 `dataapp` scaffold has `"dev": "vite"` with `"predev": "rayfin env"`. Any
+   script or pre-hook (`predev`, `prebuild`, …) that runs `rayfin dev` or `rayfin up` is a deployment:
+   it provisions or changes resources in the tenant. `rayfin env --framework vite` is local: it only
+   writes `.env.local` from `rayfin/.env` (the `RAYFIN_PUBLIC_*` values the last `rayfin up` recorded),
+   so before the first deployment it has nothing to copy. Run the plain Vite server
+   (`npx vite --port <port> --strictPort`, or `npm run dev` when it is `vite`). Bare
    localhost cannot authenticate. Before any deployment, check layout with a test-only harness on captured fixtures
    ([references/chart-layer.md](references/chart-layer.md)). Screenshots at 390 px, ≈ 1050 px (portal content width) and 1280 px with device-width emulation (recipe in
    the `ibcs-web-charts` testing reference); `ibcs-review` on each page; the page quality rubric

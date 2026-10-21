@@ -1,5 +1,5 @@
 /// IBCS scenarios and variances for any measure. Ordinal = IBCS order (PY, BU, FC, AC, then variances).
-/// The minuend of ΔPY and ΔBU is AC+FC: AC for every closed month, FC after it. It is a constant on purpose: reading the Time Calc selection inside these items exhausted query memory in the Fabric engine (tested 2026-10). ΔFC keeps AC. The member items (ΔBU member, ΔBU% member) are for rows that explain a total, such as regions: a member with budget but no actual keeps 0 - BU. Δ% is BLANK (N/A) when the reference is <= 0; Δ of a ratio is in pp. Several items selected without an axis return BLANK.
+/// The minuend of ΔPY and ΔBU is AC+FC: AC for every closed month, FC after it. It is a constant on purpose: reading the Time Calc selection inside these items exhausted query memory in the Fabric engine (tested 2026-10). ΔFC keeps AC. The member items (ΔBU member, ΔBU% member, ΔPY member, ΔPY% member) are for rows that explain a total, such as regions: a member with budget but no actual keeps 0 - BU. Δ% is BLANK (N/A) when the reference is <= 0; Δ of a ratio is in pp. Several items selected without an axis return BLANK.
 table 'Scenario Analysis'
 
 	calculationGroup
@@ -195,6 +195,33 @@ table 'Scenario Analysis'
 						IF ( NOT ( ISBLANK ( ac ) && ISBLANK ( ref ) ), Ibcs.DeltaPct ( COALESCE ( ac, 0 ), ref ) )
 				)
 			ordinal: 16
+
+			formatStringDefinition = Ibcs.DeltaPctFormat ( SELECTEDMEASURE (), SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING () )
+
+		calculationItem 'ΔPY member' =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					VAR ac = CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC+FC" )
+					VAR ref = CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "PY" )
+					VAR refExists = NOT ISBLANK ( CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "PY", REMOVEFILTERS ( Region ) ) )
+					RETURN
+						Ibcs.PointsIfRatio ( Ibcs.DeltaMember ( ac, ref, refExists ), SELECTEDMEASUREFORMATSTRING () )
+				)
+			ordinal: 17
+
+			formatStringDefinition = Ibcs.DeltaFormat ( SELECTEDMEASURE (), SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING (), SELECTEDVALUE ( Scale[Scale], "k" ) )
+
+		calculationItem 'ΔPY% member' =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					VAR ac = CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC+FC" )
+					VAR ref = CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "PY" )
+					RETURN
+						IF ( NOT ( ISBLANK ( ac ) && ISBLANK ( ref ) ), Ibcs.DeltaPct ( COALESCE ( ac, 0 ), ref ) )
+				)
+			ordinal: 18
 
 			formatStringDefinition = Ibcs.DeltaPctFormat ( SELECTEDMEASURE (), SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING () )
 

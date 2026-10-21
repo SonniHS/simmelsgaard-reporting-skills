@@ -69,8 +69,14 @@ The frame of [report-shell.md](report-shell.md), at 390, ≈ 1050 and 1280 px:
 - [ ] Card shape: rounded cards by default (radius 8, 1 px ring, soft shadow on a 5 % canvas) or
       square by option; cards in one row equally tall, content top-aligned; no card taller than
       its content + padding; no frame, shadow or radius on charts, tables or text inside a card.
-- [ ] Total next to the months: its base and Δ tiers on its own scale (scale band in both,
-      footnote), baselines and tier axes at the months' y; tiny Δ drawn (≥ 1 px) with its label.
+- [ ] Pins carry magnitude: the largest |Δ%| has a stem of at least 40 % of its tier, heads are
+      6 px at the stem end, a rounded-zero Δ% keeps a baseline marker, labels one decimal.
+- [ ] No ellipsis on month names (Jan → J → two rows); long names use the free width first; no
+      label touches an axis, baseline, frame, connector or assisting line (waterfalls included).
+- [ ] Rows that explain a total add up to it: a member without AC but with a reference shows
+      `0.0` and its Δ (member items); Σ row Δ = the total's Δ.
+- [ ] Total next to the months: its base and Δ tiers on its own scale (a scale band in the base
+      and in the Δ tier of both charts, footnote), baselines and tier axes at the months' y; tiny Δ drawn (≥ 1 px) with its label.
 - [ ] End legends right of the last month and right of the Total only, top to bottom, BU at the
       upper part of its column; no label over a bar or a triangle (collision rule, chart-layer.md).
 - [ ] End legends at their marks' y with ≥ font + 2 px between names; a zero Δ printed unsigned.

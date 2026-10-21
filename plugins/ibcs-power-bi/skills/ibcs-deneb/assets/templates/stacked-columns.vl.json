@@ -488,7 +488,9 @@
         },
         "labelColor": {
           "expr": "ibcsText"
-        }
+        },
+        "labelExpr": "isArray((datum.label)) ? [((length((datum.label)[0]) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? (datum.label)[0] : isValid(((test(/^[A-Za-z]/, (datum.label)[0]) && !test(/^Q[1-4]/, (datum.label)[0])) && (length(substring((datum.label)[0], 0, 1)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? substring((datum.label)[0], 0, 1) : null)) ? ((test(/^[A-Za-z]/, (datum.label)[0]) && !test(/^Q[1-4]/, (datum.label)[0])) && (length(substring((datum.label)[0], 0, 1)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? substring((datum.label)[0], 0, 1) : null) : (round(datum.index * (length(domain('x')) - 1)) % 2 == 1 ? ['', (datum.label)[0]] : (datum.label)[0])), (datum.label)[1]] : ((length((datum.label)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? (datum.label) : isValid(((test(/^[A-Za-z]/, (datum.label)) && !test(/^Q[1-4]/, (datum.label))) && (length(substring((datum.label), 0, 1)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? substring((datum.label), 0, 1) : null)) ? ((test(/^[A-Za-z]/, (datum.label)) && !test(/^Q[1-4]/, (datum.label))) && (length(substring((datum.label), 0, 1)) * ibcsFontSize * 0.6 <= (width / max(1, length(domain('x')))) - 2) ? substring((datum.label), 0, 1) : null) : (round(datum.index * (length(domain('x')) - 1)) % 2 == 1 ? ['', (datum.label)] : (datum.label)))",
+        "labelLimit": 0
       }
     }
   },

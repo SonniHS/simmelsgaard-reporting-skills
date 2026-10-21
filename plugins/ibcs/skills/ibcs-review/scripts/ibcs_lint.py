@@ -885,6 +885,22 @@ def lint_deneb_scale(spec: dict, loc: str, dataset: list):
         add("G8", "CH 4.1", "S", "check", f"{loc}:params", "pxPerUnit and yMax/xMax both set",
             "A scale group is px per unit (each chart sized to its own data); yMax/xMax only for equally sized "
             "visuals, or as the reserve that scale_layout.py alignTiers prints (then set with its tier knobs).")
+    # Pins carry the relative variance by their length (ibcs-power-bi page-shell.md §5): a fixed scale of
+    # 1 px per point (or less) turns a 3 % variance into a 3 px stub on the axis; labels use one decimal.
+    template = str(((spec.get("usermeta") or {}).get("ibcs") or {}).get("template", ""))
+    pin_ppu = params.get("pinPxPerUnit") if params.get("pinTier") is True else (
+        params.get("pxPerUnit") if template == "pin-relative-variance" else None)
+    if is_number(pin_ppu) and 0 < pin_ppu <= 1:
+        add("E12", "UN 4.1", "S", "check", f"{loc}:params", f"pins at a fixed {pin_ppu:g} px per percentage point",
+            "Give the pin tier its own scale sized to the tier (pinPxPerUnit 0 with pinTierPx, or the value "
+            "scale_layout.py prints per member), so the largest |Δ%| fills most of the tier; share one pin scale "
+            "only between charts read together (months and their Total).")
+    dec = params.get("pinDecimals") if params.get("pinTier") is True else (
+        params.get("decimals") if template == "pin-relative-variance" else None)
+    if dec == 0:
+        add("B5", "UN 4.1", "I", "check", f"{loc}:params", "pin labels with 0 decimals",
+            "Relative variances use one decimal in Power BI and web apps (number.format.relativeVariance1); "
+            "0 decimals only to shorten crowded phone labels.")
     if any(SCALE_FIELD.search(f or "") for f in dataset):
         first = (spec.get("transform") or [{}])[0]
         if not (isinstance(first, dict) and "isValid(" in str(first.get("filter", ""))):
@@ -996,6 +1012,11 @@ def lint_scale_groups(infos: dict, ploc: str, layout_rows: dict):
         if lppu and not row.get("own") and i["ppu"] and abs(float(i["ppu"]) - float(lppu)) > 1e-6:
             add("G8", "CH 4.1", "M", "fail", f"{ploc} / {n}", f"pxPerUnit {i['ppu']:g}, the group's is {lppu:g}",
                 "Set the group's px per unit on every member.")
+        # an own-scale member (the Total, "own": true) is checked against its OWN px per unit
+        oppu = row.get("ownPxPerUnit")
+        if row.get("own") and is_number(oppu) and i["ppu"] and abs(float(i["ppu"]) - float(oppu)) > 1e-6:
+            add("G8", "CH 4.1", "M", "fail", f"{ploc} / {n}", f"pxPerUnit {i['ppu']:g}, its own scale is {oppu:g}",
+                "Set the own-scale member's pxPerUnit to the ownPxPerUnit scale_layout.py printed.")
         for k, v in (row.get("setParams") or {}).items():
             if is_number(i["params"].get(k)) and float(i["params"][k]) < float(v):
                 add("LINT", "-", "S", "fail", f"{ploc} / {n}", f"knob {k} = {i['params'][k]:g}, labels need {v}",
@@ -1083,15 +1104,23 @@ def lint_page_geometry(boxes: list[dict]):
                 f"slicer labels {gap:g} px below the title text box above ({t['loc'].split(' / ')[-1]})",
                 f"Header rhythm: message, 12 px, three title lines, at least {RHYTHM_GAP_PX} px, slicer labels "
                 "(page-shell.md §3): give the slicer padding top 12 or move it down.")
+    # content depth of each card (its last visual's bottom, from the card top); cards of one row (same
+    # top and height) must be equally tall, so a shorter card is measured against the row's deepest card
+    depth = {}
     for bg in shapes:
         inside = [c for c in ok if c is not bg and c["type"] not in BACKGROUND_TYPES and within(c, bg)]
-        if len(inside) < 2:
+        if len(inside) >= 2:
+            depth[id(bg)] = max(c["y"] + c["height"] for c in inside) - bg["y"]
+    for bg in shapes:
+        if id(bg) not in depth:
             continue
-        empty = bg["y"] + bg["height"] - max(c["y"] + c["height"] for c in inside)
+        row = [o for o in shapes if id(o) in depth and abs(o["y"] - bg["y"]) <= 2 and abs(o["height"] - bg["height"]) <= 2]
+        empty = bg["height"] - max(depth[id(o)] for o in row)
         if empty > EMPTY_BOTTOM_PX:
             add("LINT", "SI 1.2", "S", "fail", bg["loc"],
-                f"card background ends {empty:g} px below its last visual",
-                "Card height = content + its bottom padding (page-shell.md §5): shorten the card background, "
+                f"card background ends {empty:g} px below its last visual" + (" (and below the deepest card of its row)" if len(row) > 1 else ""),
+                "Card height = content + its bottom padding (page-shell.md §5; cards of one row are as tall as the "
+                "deepest one): shorten the card background, "
                 f"or the visuals' own bottom padding takes the space (more than {EMPTY_BOTTOM_PX} px is a hole).")
 
 
@@ -1129,7 +1158,7 @@ def lint_pbir(path: Path, tokens=None, layouts=None):
         for r in doc.get("members", []):
             if r.get("visual"):
                 layout_rows[r["visual"]] = dict(r, _pxPerUnit=doc.get("pxPerUnit"),
-                                                own=r.get("own") or r.get("dataRange") == 0)
+                                                own=r.get("own") or r.get("ownScale") or r.get("dataRange") == 0)
 
     for page_json in sorted((d / "pages").glob("*/page.json")):
         page = load_json(page_json)

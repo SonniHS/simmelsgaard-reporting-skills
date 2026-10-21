@@ -74,10 +74,14 @@ plugin `ibcs`) instead of improvising a page.
    a dev workspace, only if the user explicitly approved it in this task; otherwise report the
    command and that the page was not run with data), then open the item in the portal with
    `&devUri=http://localhost:<port>` while the **Vite-only** dev server runs (one port, pinned with
-   `strictPort` and listed in `allowedRedirectUris`). Read the `scripts` in `package.json` first:
-   in the `dataapp` template `npm run dev` is `rayfin dev`, which provisions a backend in the
-   tenant; use `npm run dev:frontend` (plain `vite`) or `npx vite --port <port> --strictPort`, and
-   treat any script that calls `rayfin dev` or `rayfin up` as a deployment. Bare localhost cannot
+   `strictPort` and listed in `allowedRedirectUris`). Read the `scripts` in `package.json` first; templates differ by version:
+   Microsoft's `samples/data-app` (rayfin plugin 0.4.2) has `"dev": "rayfin dev"`, while the
+   `create-rayfin` 1.36.2 `dataapp` scaffold has `"dev": "vite"` with `"predev": "rayfin env"`. Any
+   script or pre-hook (`predev`, `prebuild`, …) that runs `rayfin dev` or `rayfin up` is a deployment:
+   it provisions or changes resources in the tenant. `rayfin env --framework vite` is local: it only
+   writes `.env.local` from `rayfin/.env` (the `RAYFIN_PUBLIC_*` values the last `rayfin up` recorded),
+   so before the first deployment it has nothing to copy. Run the plain Vite server
+   (`npx vite --port <port> --strictPort`, or `npm run dev` when it is `vite`). Bare localhost cannot
    sign in to the model. Screenshots at 390 px, ≈ 1050 px (portal content width) and 1280 px with device-width emulation
    (the `ibcs-web-charts` testing reference), no horizontal page overflow and no console errors;
    the page quality rubric including its shell checks; self-review with the `ibcs-review` checklist (plugin `ibcs`). Fix and

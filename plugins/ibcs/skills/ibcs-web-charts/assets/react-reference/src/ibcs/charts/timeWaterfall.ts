@@ -8,8 +8,8 @@
 import { tokens } from "../tokens.generated";
 import { formatDelta, formatValue, roundsToZero } from "../format";
 import { impactFill, impactKey, impactText } from "../impact";
-import { lineBox, textWidth, truncateEnd, type Fill, type Layout, type Mark } from "./marks";
-import { magnifierFactor, type Bridge, type WaterfallOptions } from "./varianceWaterfall";
+import { lineBox, markBox, overlaps, periodLabels, textWidth, type Fill, type Layout, type Mark } from "./marks";
+import { lineBoxes, magnifierFactor, type Bridge, type WaterfallOptions } from "./varianceWaterfall";
 
 const T = tokens;
 const C = T.color;
@@ -55,10 +55,18 @@ export function layoutTimeWaterfall(b: Bridge, o: Omit<WaterfallOptions, "rowSte
   const y0 = room + hi * o.ppu;
   const Y = (v: number) => y0 - v * o.ppu;
   const catY = y0 + Math.max(0, -lo) * o.ppu + room + box / 2;
-  let height = catY + box / 2 + 4;
+  // period names never get an ellipsis: Jan → J (year in the title) → two staggered rows
+  const cats = periodLabels(b.steps.map((s) => s.label), size, step);
+  let height = catY + box * (cats.rows - 0.5) + 4;
 
+  // a label centred on a narrow column never leaves the chart box ("151.8" cut to "51.8" at 390 px)
+  const inBox = (x: number, text: string) => {
+    const half = textWidth(text, size) / 2;
+    return Math.min(Math.max(x, half), o.width - half);
+  };
   const back: Mark[] = [];
   const marks: Mark[] = [];
+  const stepLabels: { j: number; Yf: (v: number) => number; group?: "zoom" }[] = [];
   const hatch = (stripe: string): Fill => ({ hatch: stripe });
 
   // Broken category axis: one segment per group.
@@ -82,17 +90,21 @@ export function layoutTimeWaterfall(b: Bridge, o: Omit<WaterfallOptions, "rowSte
       const fill = impactFill(key, mode)!;
       col("variance", i, from, to, s.fc ? hatch(fill) : fill, s.fc ? fill : undefined, key);
     }
-    const up = s.delta >= 0 || zero;
-    if (!magnify) marks.push({ kind: "text", role: "variance-label", impact: key, category: labels[i], x: cx(i), y: up ? Y(Math.max(from, to)) - box / 2 - 1 : Y(Math.min(from, to)) + box / 2 + 1, text: valueLabels[i]!, anchor: "middle", size, fill: impactText(key, mode) });
+    if (!magnify) stepLabels.push({ j, Yf: Y });
   });
   back.push({ kind: "line", role: "assisting-line", x1: cx(n - 2) + B / 2, x2: cx(n - 1) - B / 2, y1: Y(run), y2: Y(run), stroke: C.marker.assistingLine, strokeWidth: T.stroke.assistingLinePx });
   const totalFill = b.total.scenario === "AC" ? { fill: C.scenario.ac as Fill } : { fill: hatch(C.scenario.fc.stripe), stroke: C.scenario.fc.stroke };
   col(`col-${b.total.scenario}`, n - 1, 0, b.total.value, totalFill.fill, "stroke" in totalFill ? totalFill.stroke : undefined);
   for (const i of [0, n - 1]) {
     const v = i === 0 ? b.base.value : b.total.value;
-    marks.push({ kind: "text", role: "label", category: labels[i], x: cx(i), y: Y(Math.max(v, 0)) - box / 2 - 1, text: valueLabels[i]!, anchor: "middle", size, fill: C.text.primary, weight: i === n - 1 ? T.typography.weight.emphasis : undefined });
+    marks.push({ kind: "text", role: "label", category: labels[i], x: inBox(cx(i), valueLabels[i]!), y: Y(Math.max(v, 0)) - box / 2 - 1, text: valueLabels[i]!, anchor: "middle", size, fill: C.text.primary, weight: i === n - 1 ? T.typography.weight.emphasis : undefined });
   }
-  labels.forEach((l, i) => marks.push({ kind: "text", role: "category", category: l, x: cx(i), y: catY, text: truncateEnd(l, size, step - 2), anchor: "middle", size, fill: C.text.primary }));
+  labels.forEach((l, i) => {
+    const inner = i > 0 && i < n - 1;
+    const text = inner ? cats.texts[i - 1]! : l;
+    const y = catY + (inner && cats.rows === 2 && (i - 1) % 2 ? box : 0);
+    marks.push({ kind: "text", role: "category", category: l, x: inBox(cx(i), text), y, text, anchor: "middle", size, fill: C.text.primary });
+  });
 
   // Total variance: a vertical arrow right of the AC column, from the reference level to the AC level.
   const vKey = impactKey(b.variance.value, { impact: b.variance.impact, polarity: o.polarity, isZero: roundsToZero(b.variance.value, o.scale) });
@@ -117,8 +129,16 @@ export function layoutTimeWaterfall(b: Bridge, o: Omit<WaterfallOptions, "rowSte
     const pTop = height + 4;
     const pBase = pTop + box + 4 + room + (zHi - zLo) * o.ppu * k; // the panel's value origin (zLo)
     const Yp = (v: number) => pBase - (v - zLo) * o.ppu * k;
-    marks.push({ kind: "text", role: "magnifier-caption", group: "zoom", x: zx1, y: pTop + box / 2, text: `Steps ×${k}`, anchor: "start", size, fill: C.text.secondary });
-    back.push({ kind: "path", role: "axis-break", group: "zoom", d: `M${zx1 - 6} ${pBase - 6} L${zx1 - 2} ${pBase - 2} L${zx1 - 6} ${pBase + 2} L${zx1 - 2} ${pBase + 6}`, stroke: C.axis.category, strokeWidth: 1 });
+    const fBottom = pBase + room;
+    // The framed panel, padded so step labels wider than a column stay inside it; its own baseline
+    // carries the axis-break glyph in the left margin, with the "Steps ×k" caption under it.
+    const overflow = Math.max(0, Math.max(...valueLabels.slice(1, -1).map((l) => textWidth(l, size))) / 2 - step / 2) + 2;
+    const fx1 = Math.max(0, zx1 - overflow - 14);
+    const fx2 = zx2 + overflow;
+    back.push({ kind: "rect", role: "magnifier-panel", group: "zoom", x: fx1, y: pTop, w: fx2 - fx1, h: fBottom - pTop, stroke: C.marker.highlight, strokeWidth: 1 });
+    back.push({ kind: "line", role: "axis", group: "zoom", x1: fx1, x2: fx2, y1: pBase, y2: pBase, stroke: C.axis.category, strokeWidth: T.stroke.categoryAxisPx });
+    back.push({ kind: "path", role: "axis-break", group: "zoom", d: `M${fx1 + 2} ${pBase - 4} L${fx1 + 5} ${pBase + 4} L${fx1 + 8} ${pBase - 4} L${fx1 + 11} ${pBase + 4}`, stroke: C.axis.category, strokeWidth: 1 });
+    marks.push({ kind: "text", role: "magnifier-caption", group: "zoom", x: fx1, y: fBottom + box / 2 + 2, text: `Steps ×${k}`, anchor: "start", size, fill: C.text.secondary });
     b.steps.forEach((s, j) => {
       const i = j + 1;
       const { from, to } = spans[j]!;
@@ -129,12 +149,32 @@ export function layoutTimeWaterfall(b: Bridge, o: Omit<WaterfallOptions, "rowSte
         const fill = impactFill(key, mode)!;
         marks.push({ kind: "rect", role: "variance", impact: key, group: "zoom", category: labels[i], x: cx(i) - B / 2, y: Math.min(Yp(from), Yp(to)), w: B, h: Math.max(1, Math.abs(Yp(from) - Yp(to))), fill: s.fc ? hatch(fill) : fill, stroke: s.fc ? fill : undefined, strokeWidth: s.fc ? 0.75 : undefined });
       }
-      const up = s.delta >= 0 || zero;
-      marks.push({ kind: "text", role: "variance-label", impact: key, group: "zoom", category: labels[i], x: cx(i), y: up ? Yp(Math.max(from, to)) - box / 2 - 1 : Yp(Math.min(from, to)) + box / 2 + 1, text: valueLabels[i]!, anchor: "middle", size, fill: impactText(key, mode) });
+      stepLabels.push({ j, Yf: Yp, group: "zoom" });
     });
-    // Connectors down the zoom box's edges to the panel (category names are cut to fit their step, so they stay clear).
-    for (const x of [zx1, zx2]) back.push({ kind: "line", role: "magnifier-connector", group: "zoom", x1: x, y1: Y(zLo) + 3, x2: x, y2: pTop + box + 2, stroke: C.marker.highlight, strokeWidth: 0.75 });
-    height = pBase + room + 4;
+    // Connectors down the source frame's edges to the panel frame (one form: frame → connectors → panel).
+    for (const x of [zx1, zx2]) back.push({ kind: "line", role: "magnifier-connector", group: "zoom", x1: x, y1: Y(zLo) + 3, x2: x, y2: pTop, stroke: C.marker.highlight, strokeWidth: 0.75, dash: "3 2" });
+    height = fBottom + box + 6;
+  }
+
+  // Step labels last: above a rise / below a drop, else the other side, else inside the column; never on a line.
+  const lineList = lineBoxes([...back, ...marks]);
+  const clear = (m: Extract<Mark, { kind: "text" }>) => !lineList.some((l) => overlaps(markBox(m), l));
+  for (const sl of stepLabels) {
+    const s = b.steps[sl.j]!;
+    const i = sl.j + 1;
+    const { from, to } = spans[sl.j]!;
+    const zero = roundsToZero(s.delta, o.scale);
+    const key = impactKey(s.delta, { impact: s.impact, polarity: o.polarity, isZero: zero });
+    const yTop = sl.Yf(Math.max(from, to));
+    const yBot = sl.Yf(Math.min(from, to));
+    const base = { kind: "text" as const, role: "variance-label", impact: key, group: sl.group, category: labels[i], x: inBox(cx(i), valueLabels[i]!), text: valueLabels[i]!, anchor: "middle" as const, size, fill: impactText(key, mode) };
+    const above = { ...base, y: yTop - box / 2 - 1 };
+    const below = { ...base, y: yBot + box / 2 + 1 };
+    const inside = { ...base, y: (yTop + yBot) / 2, fill: C.text.onAc };
+    const order = s.delta >= 0 || zero ? [above, below] : [below, above];
+    const pick = [...order, ...(yBot - yTop >= box + 2 && textWidth(base.text, size) + 2 <= B ? [inside] : [])].find(clear);
+    if (!pick) warnings.push(`${labels[i]}: step label touches a line in every position`);
+    marks.push(pick ?? order[0]!);
   }
 
   const table = [["Period", "Value"], ...labels.map((l, i) => [l, valueLabels[i]!]), [b.variance.code, formatDelta(b.variance.value, o.scale)]];

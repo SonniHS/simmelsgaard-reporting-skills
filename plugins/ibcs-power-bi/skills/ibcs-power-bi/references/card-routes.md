@@ -51,6 +51,14 @@ Card numbers ("card 5") are the chart cards of the IBCS chart overview, EX 1.1.
 | `kpi-cards` (B-T-KPI) | ~ (new card, no polarity colouring per measure) | — | KPI card (skeleton 4) | yes (cards) | SVG cards in one `tableEx` (JSON: [pbir-skeleton.md](pbir-skeleton.md) §9) |
 | statement with write-back, or certification required | — | — | — | Inforiver / Zebra BI / Fabric Planning | certified |
 
+**Rows that explain a total** (structure bars with Δ tiers, bridges, stacked rows), every route:
+bind the model's **member** variance items (`ΔPY member` / `ΔBU member`, `Ibcs.DeltaMember` in the
+`semantic-model-ibcs` skill of plugin `reporting-data`), never the plain Δ item. A member with a
+reference but no AC (discontinued) then counts AC = 0, shows `0.0` and Δ = 0 − REF; a new member
+counts REF = 0. Without them the rows do not add up to the total Δ (proof run 2026-10: +12.7
+against a total of +8.3). Deneb `bar-structure-variance` applies the same rule to its own data and
+checks Σ Δ against the bound `TotalDelta`; check a native or SVG table with the same sum.
+
 ## 2. What core visuals can and cannot do (as of 2026-10)
 
 | IBCS element | Native? | How / workaround |

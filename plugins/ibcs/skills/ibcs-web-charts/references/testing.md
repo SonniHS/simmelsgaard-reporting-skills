@@ -16,13 +16,15 @@ Write at least one test per rule; each is a few lines with any test runner (Vite
 | Relative variance | `(AC − REF) / REF` with the signed reference; REF ≤ 0 → `null` → label `N/A`, no pin. |
 | Δ = 0 | No mark, no colour, unsigned `0` label — also for a Δ that rounds to zero at the visual's decimals (`0.0005` at 2 decimals → `0.00`). |
 | Tinted numbers | Variance numbers use `color.variance.*Text` (or black), never the graphic `good`/`bad`; the text colour has ≥ 4.5:1 against the background. |
-| Pins and triangles | Stem, head and triangle sizes stay inside the px clamps (`geometry.pin.stemPx`, `.headPx`, `geometry.triangleSizePx`) for a very wide and a very narrow column. |
+| Pins and triangles | Stem, head and triangle sizes stay inside the px clamps (`geometry.pin.stemPx`, `.headPx`, `geometry.triangleSizePx`) for a very wide and a very narrow column; the largest \|Δ%\| has a stem of at least 40 % of its tier; a Δ% that rounds to zero keeps a baseline marker. |
+| Labels and names | No ellipsis on month names (Jan → J → two rows) at 390 px; long names use the free width before they wrap or are cut; neighbouring labels keep a 2 px gap. |
+| Sums | A member with a reference but no AC is drawn as 0.0 with its Δ; the layout warns when Σ row Δ ≠ the total row's Δ. |
 | Polarity | Cost increase: geometry up/right, colour bad. Polarity 0: neutral. Model impact overrides polarity. |
 | Non-finite | NaN / ±∞ → no mark and a warning; lines break. |
 | Shared scale | Two charts of one unit with different extents get the same px per unit; the smaller chart is shorter. Absolute variance tier uses the base unit; pins use `"%"`. |
 | Fixed scale | A fixed px per unit is used exactly; the chart grows and warns. |
 | Outliers | A flagged relative value (pin) does not set the extent, is truncated with a marker, keeps its full label. An `outlier` flag on an absolute bar or total is ignored with a warning. |
-| Waterfalls | Running totals; subtotal mismatch and bridge mismatch raise warnings; the form follows the decomposition (structure rows A-29, time columns A-11) and the total variance is an arrow, not a bar; below the magnifier threshold the steps appear again in a panel at ×k (the smallest of 1, 2, 5, 10 … giving ≥ 40 px) while base and total keep the page scale; no label box meets the zoom box outline or a connector. |
+| Waterfalls | Running totals; subtotal mismatch and bridge mismatch raise warnings; the form follows the decomposition (structure rows A-29, time columns A-11) and the total variance is an arrow, not a bar; below the magnifier threshold the steps appear again in a panel at ×k (the smallest of 1, 2, 5, 10 … giving ≥ 40 px) while base and total keep the page scale; one magnifier form (source frame, dashed connectors, framed panel; the break glyph on the panel's origin line next to "Steps ×k"); no label box meets any line (axes, baselines, frames, connectors, assisting lines) at 390 px and desktop widths. |
 | Formatting | One factor and decimals per scale group; an explicit spec `display` wins over the automatic rule; signed variances; `pp`; separators from the tokens or the chosen locale. |
 | Labels | Thinning keeps first, last, highest, lowest. |
 

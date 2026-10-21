@@ -3,11 +3,13 @@
 // impact (FC steps hatched), the AC (or FC) total bar at the bottom, connectors, and the total
 // variance as a horizontal arrow below the total bar, from the model's Δ (never computed here).
 // When the contributions are too small for the page scale, a magnifier (CH 4.5) draws them again in
-// a steps-only panel at factor k; base and total stay on the page scale.
+// a steps-only panel at factor k: source frame → connectors → framed panel, the axis-break glyph on
+// the panel's own origin line next to "Steps ×k"; base and total stay on the page scale. No label
+// ever touches a line: a label that would is moved to the far side of its bar, or inside it.
 import { tokens } from "../tokens.generated";
 import { formatDelta, formatValue, roundsToZero, type NumberScale } from "../format";
 import { impactFill, impactKey, impactText, type ColorMode, type Impact } from "../impact";
-import { lineBox, textWidth, fitLines, type Fill, type Layout, type Mark } from "./marks";
+import { lineBox, markBox, overlaps, textWidth, fitLines, type Fill, type Layout, type Mark } from "./marks";
 import type { Scenario } from "./columnTiers";
 
 export type Bridge = {
@@ -39,6 +41,21 @@ export function magnifierFactor(px: number, minPx = 40): number {
   if (!(px > 0)) return 1;
   for (let e = 0; e < 12; e++) for (const m of [1, 2, 5]) if (px * m * 10 ** e >= minPx) return m * 10 ** e;
   return 1e12;
+}
+
+/** Roles of the lines no label may touch (axes, connectors, assisting lines, frames, the break glyph). */
+export const LINE_ROLES = /^(axis|assisting-line|magnifier-connector|axis-break|zoom-box|magnifier-panel|variance-arrow)$/;
+
+/** Boxes of every line a label must stay clear of; frames count by their four edges. */
+export function lineBoxes(marks: Mark[]): { x: number; y: number; w: number; h: number }[] {
+  const out: { x: number; y: number; w: number; h: number }[] = [];
+  for (const m of marks) {
+    if (!LINE_ROLES.test(m.role)) continue;
+    if (m.kind === "rect") {
+      out.push({ x: m.x, y: m.y, w: m.w, h: 0 }, { x: m.x, y: m.y + m.h, w: m.w, h: 0 }, { x: m.x, y: m.y, w: 0, h: m.h }, { x: m.x + m.w, y: m.y, w: 0, h: m.h });
+    } else if (m.kind === "line" || m.kind === "path") out.push(markBox(m));
+  }
+  return out;
 }
 
 const T = tokens;
@@ -76,23 +93,33 @@ export function layoutVarianceWaterfall(b: Bridge, o: WaterfallOptions): Layout 
   if (!magnify && b.steps.length && largestAbs * o.ppu < 8) warnings.push("largest step below 8 px on the page scale: add a magnifying glass (CH 4.5)");
 
   const labels = [b.base.label, ...b.steps.map((s) => s.label), b.total.label];
-  const labelCol = Math.min(Math.max(...labels.map((l) => textWidth(l, size))) + 8, o.width * 0.35);
   const valueLabels = [formatValue(b.base.value, o.scale), ...b.steps.map((s) => formatDelta(s.delta, o.scale)), formatValue(b.total.value, o.scale)];
   const room = Math.max(...valueLabels.map((l) => textWidth(l, size))) + 6;
-  const x0 = labelCol + room - lo * o.ppu;
-  const overviewRight = x0 + hi * o.ppu + room;
-  const X = (v: number) => x0 + v * o.ppu;
 
   // Panel geometry: steps only, from the lowest to the highest running total, at k × the page scale.
   const runs = spans.flatMap((s) => [s.from, s.to]);
   const zLo = magnify ? Math.min(...runs) : 0;
   const zHi = magnify ? Math.max(...runs) : 0;
   const panelW = room + (zHi - zLo) * o.ppu * k + room;
-  const beside = magnify && o.magnifier !== "below" && overviewRight + PANEL_GAP + panelW <= o.width;
-  const need = magnify && beside ? overviewRight + PANEL_GAP + panelW : Math.max(overviewRight, magnify ? labelCol + panelW : 0);
+  const geom = (labelCol: number) => {
+    const x0 = labelCol + room - lo * o.ppu;
+    const overviewRight = x0 + hi * o.ppu + room;
+    const beside = magnify && o.magnifier !== "below" && overviewRight + PANEL_GAP + panelW <= o.width;
+    const need = magnify && beside ? overviewRight + PANEL_GAP + panelW : Math.max(overviewRight, magnify ? labelCol + panelW : 0);
+    return { labelCol, x0, overviewRight, beside, need };
+  };
+  // Names use the free width first, then wrap to two lines, and are cut only as a last resort.
+  const nameW = Math.max(...labels.map((l) => textWidth(l, size))) + 8;
+  let g = geom(Math.min(nameW, o.width * 0.35));
+  if (g.labelCol < nameW && g.need < o.width) {
+    const g2 = geom(g.labelCol + Math.min(o.width - g.need, nameW - g.labelCol));
+    if (g2.beside === g.beside) g = g2;
+  }
+  const { labelCol, x0, overviewRight, beside, need } = g;
   if (need > o.width) warnings.push(`waterfall needs ${Math.ceil(need)} px but has ${o.width} px`);
+  const X = (v: number) => x0 + v * o.ppu;
 
-  const header = magnify ? box + 6 : 2; // room for the "Steps ×k" caption
+  const header = magnify && !beside ? box + 6 : 2;
   const rowY = (i: number) => header + step * (i + 0.5);
   const back: Mark[] = [];
   const marks: Mark[] = [];
@@ -131,20 +158,15 @@ export function layoutVarianceWaterfall(b: Bridge, o: WaterfallOptions): Layout 
     const lines = fitLines(labels[i]!, size, labelCol - 8, step);
     marks.push({ kind: "text", role: "category", group, category: labels[i], x, y, text: lines.length > 1 ? labels[i]! : lines[0]!, lines: lines.length > 1 ? lines : undefined, anchor: "end", size, fill: C.text.primary, weight: i === n - 1 ? T.typography.weight.emphasis : undefined });
   };
-  // Labels: right of the bar's far end for growth, left for a drop; step labels sit in the panel only when magnified.
-  const stepLabel = (j: number, Xf: (v: number) => number, y: number, group?: "zoom") => {
-    const s = b.steps[j]!;
-    const { key } = stepKey(s);
-    const { from, to } = spans[j]!;
-    const right = s.delta >= 0;
-    marks.push({ kind: "text", role: "variance-label", impact: key, group, category: labels[j + 1], x: right ? Xf(Math.max(from, to)) + 3 : Xf(Math.min(from, to)) - 3, y, text: valueLabels[j + 1]!, anchor: right ? "start" : "end", size, fill: impactText(key, mode) });
-  };
+  // Step labels: right of the bar's far end for growth, left for a drop; placed last, clear of every line.
+  type StepLabel = { j: number; Xf: (v: number) => number; y: number; group?: "zoom" };
+  const stepLabels: StepLabel[] = [];
   for (let i = 0; i < n; i++) {
     category(i, labelCol - 8, rowY(i));
     if (i === 0 || i === n - 1) {
       const v = i === 0 ? b.base.value : b.total.value;
       marks.push({ kind: "text", role: "label", category: labels[i], x: X(Math.max(v, 0)) + 3, y: rowY(i), text: valueLabels[i]!, anchor: "start", size, fill: C.text.primary, weight: i === n - 1 ? T.typography.weight.emphasis : undefined });
-    } else if (!magnify) stepLabel(i - 1, X, rowY(i));
+    } else if (!magnify) stepLabels.push({ j: i - 1, Xf: X, y: rowY(i) });
   }
 
   // Total variance: a horizontal arrow below the total bar, from the base value to the total value.
@@ -161,7 +183,7 @@ export function layoutVarianceWaterfall(b: Bridge, o: WaterfallOptions): Layout 
 
   let height = overviewBottom + 2;
   if (magnify) {
-    // Zoom box around the steps' range in the overview (the zoomed part is marked, CH 4.5).
+    // Source frame around the steps' range in the overview (the zoomed part is marked, CH 4.5).
     const zx1 = X(zLo) - 3;
     const zx2 = X(zHi) + 3;
     const zy1 = rowY(1) - B / 2 - 2;
@@ -174,11 +196,17 @@ export function layoutVarianceWaterfall(b: Bridge, o: WaterfallOptions): Layout 
     const pRowY = (j: number) => (beside ? rowY(j + 1) : pTop + header + step * (j + 0.5));
     const pX0 = pLeft + room;
     const Xp = (v: number) => pX0 + (v - zLo) * o.ppu * k;
+    const fTop = pRowY(0) - B / 2 - 2;
+    const fBottom = pRowY(b.steps.length - 1) + B / 2 + 2;
+    const rowsTop = fTop;
     const pRight = Xp(zHi) + room;
 
-    marks.push({ kind: "text", role: "magnifier-caption", group: "zoom", x: pLeft, y: pTop + box / 2 + 1, text: `Steps ×${k}`, anchor: "start", size, fill: C.text.secondary });
-    // cut value axis: a short zigzag at the panel's origin, the panel does not start at zero
-    back.push({ kind: "path", role: "axis-break", group: "zoom", d: `M${pX0 - 4} ${pTop + header - 2} L${pX0} ${pTop + header + 2} L${pX0 - 4} ${pTop + header + 6} L${pX0} ${pTop + header + 10}`, stroke: C.axis.category, strokeWidth: 1 });
+    // The framed panel; its origin line carries the axis-break glyph at the top, next to the caption.
+    back.push({ kind: "rect", role: "magnifier-panel", group: "zoom", x: pLeft, y: fTop, w: pRight - pLeft, h: fBottom - fTop, stroke: C.marker.highlight, strokeWidth: 1 });
+    back.push({ kind: "line", role: "axis", group: "zoom", x1: pX0, x2: pX0, y1: rowsTop, y2: fBottom, stroke: C.axis.category, strokeWidth: T.stroke.categoryAxisPx });
+    const gy = rowsTop - 1;
+    back.push({ kind: "path", role: "axis-break", group: "zoom", d: `M${pX0 - 3} ${gy - 8} L${pX0 + 3} ${gy - 6} L${pX0 - 3} ${gy - 3} L${pX0 + 3} ${gy - 1}`, stroke: C.axis.category, strokeWidth: 1 });
+    marks.push({ kind: "text", role: "magnifier-caption", group: "zoom", x: pX0 + 7, y: rowsTop - box / 2 - 1, text: `Steps ×${k}`, anchor: "start", size, fill: C.text.secondary });
     b.steps.forEach((s, j) => {
       const { from, to } = spans[j]!;
       const { zero, key } = stepKey(s);
@@ -188,22 +216,43 @@ export function layoutVarianceWaterfall(b: Bridge, o: WaterfallOptions): Layout 
         const fill = impactFill(key, mode)!;
         bar("variance", j + 1, Xp(from), Xp(to), y, s.fc ? hatch(fill) : fill, s.fc ? fill : undefined, key, "zoom");
       }
-      stepLabel(j, Xp, y, "zoom");
+      stepLabels.push({ j, Xf: Xp, y, group: "zoom" });
       if (!beside) category(j + 1, labelCol - 8, y, "zoom");
     });
-    // Connectors from the zoom box to the panel, routed clear of every label: beside, from the box's
-    // right corners to the panel's top and bottom; below, down the box's left edge (labels of the
-    // total row and the variance arrow sit to the right) and across above the panel caption.
+    // Connectors join the two frames: beside, the source frame's right corners to the panel's left
+    // corners (rows are aligned); below, the source frame's left edge down to the panel frame.
+    // dashed, so the two links never read as a third, empty box between the frames
     const conn = (x1: number, y1: number, x2: number, y2: number) =>
-      back.push({ kind: "line", role: "magnifier-connector", group: "zoom", x1, y1, x2, y2, stroke: C.marker.highlight, strokeWidth: 0.75 });
+      back.push({ kind: "line", role: "magnifier-connector", group: "zoom", x1, y1, x2, y2, stroke: C.marker.highlight, strokeWidth: 0.75, dash: "3 2" });
     if (beside) {
-      conn(zx2, zy1, pLeft, zy1);
-      conn(zx2, zy2, pLeft, zy2);
+      conn(zx2, zy1, pLeft, fTop);
+      conn(zx2, zy2, pLeft, fBottom);
     } else {
-      conn(zx1, zy2, zx1, pTop - 2);
-      conn(Math.min(zx1, pLeft), pTop - 2, Math.max(zx1, pLeft), pTop - 2);
+      conn(zx1, zy2, zx1, fTop);
+      if (zx1 < pLeft || zx1 > pRight) conn(Math.min(zx1, pLeft), fTop, Math.max(zx1, pRight), fTop);
     }
-    if (!beside) height = pTop + header + step * b.steps.length + 6;
+    if (!beside) height = fBottom + 6;
+  }
+
+  // Step labels last: the natural side, else the far side of the bar, else inside the bar; a label
+  // never touches an axis, connector, frame or assisting line.
+  const lines = lineBoxes([...back, ...marks]);
+  const clear = (m: Extract<Mark, { kind: "text" }>) => !lines.some((l) => overlaps(markBox(m), l, 0));
+  for (const sl of stepLabels) {
+    const s = b.steps[sl.j]!;
+    const { key } = stepKey(s);
+    const { from, to } = spans[sl.j]!;
+    const xMin = sl.Xf(Math.min(from, to));
+    const xMax = sl.Xf(Math.max(from, to));
+    const text = valueLabels[sl.j + 1]!;
+    const base = { kind: "text" as const, role: "variance-label", impact: key, group: sl.group, category: labels[sl.j + 1], y: sl.y, text, size, fill: impactText(key, mode) };
+    const natural = s.delta >= 0 ? { ...base, x: xMax + 3, anchor: "start" as const } : { ...base, x: xMin - 3, anchor: "end" as const };
+    const far = s.delta >= 0 ? { ...base, x: xMin - 3, anchor: "end" as const } : { ...base, x: xMax + 3, anchor: "start" as const };
+    const inside = { ...base, x: (xMin + xMax) / 2, anchor: "middle" as const, fill: C.text.onAc };
+    const fitsInside = textWidth(text, size) + 4 <= xMax - xMin;
+    const pick = [natural, far, ...(fitsInside ? [inside] : [])].find(clear);
+    if (!pick) warnings.push(`${labels[sl.j + 1]}: step label touches a line in every position`);
+    marks.push(pick ?? natural);
   }
 
   const table = [["Row", "Value"], ...labels.map((l, i) => [l, valueLabels[i]!]), [b.variance.code, formatDelta(b.variance.value, o.scale)]];

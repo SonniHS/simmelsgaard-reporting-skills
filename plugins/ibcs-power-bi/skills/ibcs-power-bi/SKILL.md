@@ -113,6 +113,10 @@ footnote card sized to its text. Without the shell the page is white and the ban
   width (or one Deneb visual).
 - Footer: footnotes (definitions, `*` notes, compromises such as "FC not hatched"), **source**,
   and **data as of** (a measure on the model's refresh/as-of table, ISO 8601 `YYYY-MM-DD hh:mm`).
+  When the model has only a reference date (no refresh timestamp, no closed-period flag), show
+  that date labelled **"reference date"** (`Reference date 2026-09-30`), and make no claim about a
+  last closed month: no "AC to the last closed month" in titles or footnotes, no AC → FC switch
+  from it. Ask for a closed-period flag in the model when the page needs one.
   Mandatory when the page is exported or printed. Full width under the charts, the text box sized
   to its text (never a scroll box); notes short, long definitions on a details page or in a
   tooltip (page-shell.md §6).
@@ -144,7 +148,8 @@ footnote card sized to its text. Without the shell the page is white and the ban
   Native charts cannot size their plot to the data: fx-bound axis `start`/`end` with the same span
   at the same plot height (card-routes.md) is their fallback; for members of very different range
   prefer Deneb/SVG or size the native visual's height by the span. Relative variances (%) have
-  their own scale group (pins: px per percentage point). Where identical scales are not sensible
+  their own scale per chart, sized to the pin tier so the largest |Δ%| fills most of it (pins:
+  page-shell.md §5); only charts read together (months and their Total) share it. Where identical scales are not sensible
   (extreme differences, a Total column next to its months), use scale bands (Deneb knob
   `scaleBand`, the same round value in each chart), clear scaling indicators or a footnote instead.
 - Number formats from the tokens; at most 3 significant digits in charts, 4 in tables; units in
@@ -156,6 +161,22 @@ footnote card sized to its text. Without the shell the page is white and the ban
 - Scenario names in visuals follow the notation: the combined actual-plus-forecast series is
   **AC&FC** (a calculation item may be called "AC+FC" in the model; it is the same thing).
 - Visual headers off in reading view only if users do not need focus mode or export; tooltips on.
+
+## 3a. Phone (390 px)
+
+A Power BI page gets a phone view only through its **mobile layout**, shown by the Power BI mobile
+apps in portrait; a browser always shows the desktop page, shrunk to about 30 % on a phone
+(proof run 2026-10). Details and the checklist: [page-shell.md](references/page-shell.md) §7.
+
+- Build it in the **mobile layout view** (Desktop: View → Mobile layout; the service: Edit → Mobile
+  layout) from the page's own visuals; PBIR keeps it per visual in `mobile.json`.
+- Place, top to bottom: header (message, title lines), KPI cards two per row, the month chart at
+  phone width (Deneb redraws for its container: Jan → J labels, thinned value labels that keep
+  first, last, extremes and the last AC), the Total under it, the structure chart (tiers stacked
+  or a phone variant), the footnote card; fonts never below 9 pt.
+- **Capture a real 390 px view**: the Power BI mobile app on a phone or simulator, or the report
+  embedded with `layoutType: MobilePortrait` in a browser emulating a 390 × 844 device. Never a
+  resampled PDF: the export renders the desktop layout only.
 
 ## 4. Interactions
 

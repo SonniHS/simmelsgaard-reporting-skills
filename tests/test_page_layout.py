@@ -142,6 +142,26 @@ class ScaleGroups(unittest.TestCase):
             # the Total keeps its own scale but must be marked
             self.assertEqual([x["status"] for x in rows(f, "F6", "total")], ["check"])
 
+    def test_own_scale_member_is_checked_against_its_own_px_per_unit(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            tmp = Path(tmp)
+            r = report(tmp, {"p1": [
+                deneb("months", "column-two-tier-variance", (16, 300, 1000, 200), {"pxPerUnit": 8, "scaleBand": 5}),
+                deneb("total", "column-two-tier-variance", (1030, 300, 200, 200),
+                      {"pxPerUnit": 0.4, "periodType": "year", "scaleBand": 5})]})
+            layout = tmp / "layout.json"
+            def write(own_ppu):
+                layout.write_text(json.dumps({"pxPerUnit": 8, "members": [
+                    {"id": "m", "visual": "months", "dimension": "height", "containerPx": 200},
+                    {"id": "t", "visual": "total", "dimension": "height", "containerPx": 200, "dataRange": 218.5,
+                     "ownScale": True, "ownPxPerUnit": own_ppu}]}))
+            write(0.4)
+            _, f, _ = lint(r, "--layout", layout)
+            self.assertEqual([x for x in rows(f, "G8", "total") if x["sev"] == "M"], [])
+            write(0.5)
+            _, f, _ = lint(r, "--layout", layout)
+            self.assertTrue(any("its own scale is 0.5" in x["evidence"] for x in rows(f, "G8", "total")))
+
     def test_layout_size_excludes_the_visual_padding(self):
         """page-shell.md §1: position = computed size + padding; the check compares the inner size."""
         with tempfile.TemporaryDirectory() as tmp:
@@ -172,6 +192,19 @@ class ScaleGroups(unittest.TestCase):
             layout.write_text(json.dumps({"pxPerUnit": 8, "members": [{"id": "x", "visual": "nope", "containerPx": 1}]}))
             _, f, _ = lint(r, "--layout", layout)
             self.assertTrue(any("'nope' not found" in x["evidence"] for x in rows(f, "LINT")))
+
+
+class PinScale(unittest.TestCase):
+    def test_a_fixed_stub_pin_scale_and_whole_percent_labels_are_flagged(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            stub = deneb("stub", "column-two-tier-variance", (16, 400, 600, 300),
+                         {"pinTier": True, "pinPxPerUnit": 1, "pinDecimals": 0})
+            own = deneb("own", "column-two-tier-variance", (640, 400, 600, 300),
+                        {"pinTier": True, "pinPxPerUnit": 0, "pinDecimals": 1})
+            _, f, _ = lint(report(Path(tmp), {"p": [stub, own]}))
+        self.assertEqual(len(rows(f, "E12", "stub")), 1)
+        self.assertEqual(len(rows(f, "B5", "stub")), 1)
+        self.assertEqual(rows(f, "E12", "own") + rows(f, "B5", "own"), [])
 
 
 class Truncation(unittest.TestCase):
@@ -224,6 +257,15 @@ class CardBottom(unittest.TestCase):
             self.assertEqual(len([x for x in rows(f, "LINT", "bgLoose (") if "below its last visual" in x["evidence"]]), 1)
             _, f, _ = lint(report(Path(tmp) / "t2", {"p1": [shape("bgTight", 16, 396, 1248, 76), a, b]}))
             self.assertEqual([x for x in rows(f, "LINT", "bgTight (") if "below its last visual" in x["evidence"]], [])
+
+    def test_equal_height_row_is_measured_against_its_deepest_card(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            # two cards of one row, 200 px tall: the left one's content is 180 px deep, the right one's 60 px
+            left = [placed(textbox("l1", "Revenue"), 20, 400, 600, 36), placed(textbox("l2", "AC"), 20, 436, 600, 144)]
+            right = [placed(textbox("r1", "Orders"), 660, 400, 600, 36), placed(textbox("r2", "AC"), 660, 436, 600, 24)]
+            page = [shape("bgL", 16, 396, 620, 200), shape("bgR", 656, 396, 620, 200), *left, *right]
+            _, f, _ = lint(report(Path(tmp), {"p1": page}))
+            self.assertEqual([x for x in rows(f, "LINT", "bgR (") if "below its last visual" in x["evidence"]], [])
 
 
 class PageShell(unittest.TestCase):
@@ -407,6 +449,25 @@ class LabelRoom(unittest.TestCase):
         group["members"][0]["reservePx"] = {"variance": 10}
         more, _ = self.layout(group)
         self.assertEqual(more["members"][0]["containerPx"], out["members"][0]["containerPx"] + 10)
+
+    def test_own_member_scale_is_derived_from_its_cell_or_its_alignment(self):
+        cell, _ = self.layout({"pxPerUnit": 9, "members": [
+            {"id": "m", "template": "column-two-tier-variance", "tiers": {"base": [0, 23.3], "variance": [-1.4, 1.8]}},
+            {"id": "t", "template": "column-two-tier-variance", "own": True, "maxPx": 300,
+             "tiers": {"base": [0, 216], "variance": [0, 2.5]}}]})
+        t = cell["members"][1]
+        self.assertTrue(t["ownScale"])
+        self.assertLessEqual(t["containerPx"], 300)
+        self.assertGreater(t["containerPx"], 280)               # it fills its cell
+        self.assertEqual(t["setParams"]["pxPerUnit"], t["ownPxPerUnit"])
+        aligned, _ = self.layout({"pxPerUnit": 9, "alignTiers": [["m", "t"]], "members": [
+            {"id": "m", "template": "column-two-tier-variance", "params": {"categoryLabelPx": 28},
+             "tiers": {"base": [0, 23.3], "variance": [-1.4, 1.8]}},
+            {"id": "t", "template": "column-two-tier-variance", "own": True, "params": {"categoryLabelPx": 28},
+             "tiers": {"base": [0, 216], "variance": [0, 2.5]}}]})
+        m, t = aligned["members"]
+        self.assertEqual(m["containerPx"], t["containerPx"])     # same height as the months
+        self.assertLess(t["ownPxPerUnit"], 9)
 
     def test_waterfall_height_includes_its_fixed_bands(self):
         out, _ = self.layout({"pxPerUnit": 5, "members": [

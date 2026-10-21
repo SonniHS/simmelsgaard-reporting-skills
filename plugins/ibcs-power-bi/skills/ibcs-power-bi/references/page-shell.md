@@ -23,7 +23,8 @@ Check the first page after publishing (SKILL.md §6 step 7).
 - [4. KPI row](#4-kpi-row)
 - [5. Chart cards](#5-chart-cards)
 - [6. Footnote card](#6-footnote-card)
-- [7. Checks](#7-checks)
+- [7. Phone (mobile layout)](#7-phone-mobile-layout)
+- [8. Checks](#8-checks)
 
 ## 1. Theme
 
@@ -71,15 +72,15 @@ Chrome tokens (both routes; the app uses the same values, ibcs-fabric-app report
 | content | 16 | — | 1248 | — |
 | gap between cards (both directions) | — | — | 16 | 16 |
 | card padding (inside, via visual padding) | 16 | 16 | — | — |
-| header card (two-line message) | 16 | 16 | 1248 | 215 (one-line message: 193) |
-| KPI cards (5) | 16, 268, 520, 772, 1024 | 247 | 236 (last 240) | 131 |
-| first chart card | 16 | 394 | 1248 | title 40 + subtitle 24 + charts + 16 |
+| header card (two-line message) | 16 | 16 | 1248 | 223 (one-line message: 201) |
+| KPI cards (5) | 16, 268, 520, 772, 1024 | 255 | 236 (last 240) | 131 |
+| first chart card | 16 | 402 | 1248 | title 40 + subtitle 24 + charts + 16 |
 | next card | 16 | previous bottom + 16 | 1248 (or 616 + 16 + 616 for two side by side) | — |
 | page height | — | — | — | last card bottom + 16 |
 
 Four KPI cards: width (1248 − 3 × 16) / 4 = 300; three: 405 (last 406). Two chart cards side by
-side: 616 each. With a one-line message every y below the header moves up by 22 (KPI row 225,
-first chart card 372). In fluent-cards mode add one shape per card at exactly these rectangles.
+side: 616 each. With a one-line message every y below the header moves up by 22 (KPI row 233,
+first chart card 380). In fluent-cards mode add one shape per card at exactly these rectangles.
 
 Cards in one row have **equal heights**: the row height is its tallest card's content + padding,
 and every card of the row gets that height (content top-aligned; the extra space sits at the
@@ -90,8 +91,6 @@ bottom of the shorter cards, the only allowed empty bottom).
 All visuals white, stacked edge to edge with no canvas showing between them (spans touch: a visual
 ends where the next begins), x = 16 unless stated:
 
-| Visual | Position (x, y, w, h) | Content |
-|---|---|---|
 **Vertical rhythm** (fixed, top to bottom): key message → 12 px → the three title lines at
 consecutive line height (no blank line between them) → at least 12 px → the slicer labels. The
 message visual ends where its text ends (no spare image height), and the 12 px gaps are the
@@ -100,13 +99,13 @@ message visual ends where its text ends (no spare image height), and the 12 px g
 | Visual | Position (x, y, w, h) | Content |
 |---|---|---|
 | key message | 16, 16, 1076, 65 | `tableEx` with the SVG key message (ibcs-svg-dax skeleton 7): one image column, `displayName: " "`, column header font 8 pt. Its empty header strip renders **about 17 px** high (measured in the service, 2026-10) and is the card's top padding. Column width 1030, SVG and `grid.imageWidth` 1010, `imageHeight` = lines × 22 + 4 (two lines of 17 px bold at 22 px line height: 48; one line: 26). Height = 17 + `imageHeight` (65; one line 43) |
-| logo (optional) | 1092, 16, 172, 65 | `image` visual, the organisation's logo at most 148 × 40, right-aligned, padding 16; the linter lists it (A1) for review: one logo in the header card's corner, nowhere else |
-| title lines | 16, 81, 1248, 70 | one text box (or three text cards edge to edge, the first one with the padding) with **padding top 12** (the rhythm gap; left/right 16): who / **what** in unit / when, 10–11 pt, 19 px per line: 12 + 3 × 19 + 1 = 70 |
-| slicers | 16, 151, 212, 80 / 228, 151, 272, 80 | dropdown slicers with **padding top 12** (the gap below title line 3) and bottom 16 (the card's bottom padding): 12 + 52 + 16 = 80; spans 16–228 and 228–500 |
-| scope chips | 500, 151, 764, 38 (+ a second line 500, 189, 764, 38) | text from the **slicer label top** (padding top 12): what the selection means ("all companies, intercompany included ¹", "none = Jan..last closed month ²"), 9 pt grey, footnote numbers; span 500–1264 |
+| logo (optional) | 1092, 16, 172, 65 | `image` visual on a registered resource (recipe: pbir-skeleton.md §4, Logo image), the organisation's logo at most 148 × 40, right-aligned, padding 16; the linter lists it (A1) for review: one logo in the header card's corner, nowhere else |
+| title lines | 16, 81, 1248, 78 | three `cardVisual` text measures edge to edge (dynamic lines: who with the active filters / **what** in unit / when), or one static text box: 10–11 pt, **22 px per line** (at 19–21 px a card clips descenders, proof run 2026-10); line 1 has **padding top 12** (the rhythm gap): line 1 at 16, 81, 1248, 34 (12 + 22), line 2 at 16, 115, 1248, 22, line 3 at 16, 137, 1248, 22; left/right padding 16, top/bottom 0 on lines 2 and 3 (`to_pbir.py --padding` for Deneb, the visual's padding for cards): 12 + 3 × 22 = 78 |
+| slicers | 16, 159, 212, 80 / 228, 159, 272, 80 | dropdown slicers with **padding top 12** (the gap below title line 3) and bottom 16 (the card's bottom padding): 12 + 52 + 16 = 80; spans 16–228 and 228–500 |
+| scope chips | 500, 159, 764, 38 (+ a second line 500, 197, 764, 38) | text from the **slicer label top** (padding top 12): what the selection means ("all companies, intercompany included ¹", "none = Jan..last closed month ²"), 9 pt grey, footnote numbers; span 500–1264 |
 
-The card ends at y 231 (151 + 80); with a one-line message 22 px higher (message 43, titles at 59,
-slicers at 129, card end 209). Never leave a gap between two visuals of one card: the grey canvas
+The card ends at y 239 (159 + 80); with a one-line message 22 px higher (message 43, titles at 59,
+slicers at 137, card end 217). Never leave a gap between two visuals of one card: the grey canvas
 shows through as a hole in the sheet. The linter fails slicer labels less than 12 px below the
 text box above them (it compares visual boxes and their own padding, not the rendered text).
 
@@ -132,7 +131,7 @@ message measure with `value.bold` true and 13 pt (pbir-skeleton.md §6): bold, n
 One visual per KPI, so the canvas shows between the cards (one `tableEx` holding all cards would
 be one white strip, and with column width < `imageWidth` + 20 it draws a stray "." per card):
 
-- `tableEx` (x, 247, 236, 131), one image column bound to the card's SVG measure
+- `tableEx` (x, 255, 236, 131), one image column bound to the card's SVG measure
   (ibcs-svg-dax skeleton 4), `displayName: " "`, column header 8 pt (its empty header strip,
   about 17 px, is the top padding); no rules (§3).
 - Visual padding left 14, right 0, top 0, bottom 0 (236 ≥ 14 + column 220 + 2); column width 220;
@@ -161,17 +160,37 @@ be one white strip, and with column width < `imageWidth` + 20 it draws a stray "
   months, without a gap. It has its own scale, and so do its Δ tiers: base and Δ tier of the
   Total use the **Total's** px per unit (ibcs-composition: one scale per column block), shown by a
   scale band in both visuals (Deneb `scaleBand`) and a footnote ("the Total has its own scale").
+  Show that own scale in the Total's variance tiers too: the same scale band value drawn in its
+  base tier, and a footnote marker on its Δ tier name ("ΔPY¹"), because its Δ bars are on the
+  Total's scale, not the months'.
   A Δ that is tiny on that scale (1–2 px) is still drawn at its true height with its label; never
   inflate it to be visible (the label carries the value).
 - **Tier proportions (one rule for Power BI and web apps).** Absolute Δ tiers always use the
-  base tier's px per unit. Relative-variance pins use the page's `"%"` scale group at **1 px per
-  percentage point** by default (Deneb knob `pinPxPerUnit`, default 1), lowered only when the cell
-  cannot hold the pin range at that scale; the pin range is the clipped range (outliers beyond
-  ±100 % are clipped with an outlier triangle at the clip point, the label keeps the full value). A
-  pin that does not round to zero is drawn at least head/2 + 2 px long so its colour shows. Size
-  the base tier so its largest column is about **1.5 × the category pitch** high when the cell
-  allows (`scale_layout.py` `maxExtentPx`); the web reference components use the same rules
+  base tier's px per unit. Relative-variance pins have **their own % scale per chart, sized to the
+  tier**, so the pin length carries the relative variance (proof run 2026-10: pins at a fixed
+  1 px per point were 1–3 px stubs on the axis): the tier extent is `pinTierPx` (ours: 48 px for
+  column tiers, 90 px for horizontal pin columns) and the clipped pin range fills about 90 % of it
+  (Deneb `pinPxPerUnit` 0 = this rule; `scale_layout.py` prints the value per member). No page-wide
+  % group: one −55 % structure variance would shrink the month pins to a few px. Only charts read
+  together share a pin scale: months and their Total (`alignTiers`). The pin range is the clipped
+  range (outliers beyond ±100 % are clipped with an outlier triangle at the clip point, the label
+  keeps the full value). The head is 6 px (token minimum) at the stem end; a pin that does not
+  round to zero is at least head + 2 px long; a Δ% that rounds to zero keeps its head on the axis
+  as a baseline marker (no stem, no colour); pin labels have one decimal (`+5.8%`). Check: a
+  chart's largest |Δ%| has a stem of at least 40 % of its tier (`scale_layout.py` warns). Size the
+  base tier so its largest column is about **1.5 × the category pitch** high when the cell allows
+  (`scale_layout.py` `maxExtentPx`); the web reference components use the same rules
   (ibcs-web-charts `react-reference`).
+- **No label on a line.** A value label never crosses an axis, a baseline, an assisting line, a
+  scale-band line or a magnifier frame or connector: a drop's label that would reach a line goes
+  to the far side of its bar start (or right of the bar), the AC→FC separator is a short tick on
+  the category axis, the base-level line of a bridge runs only from below the total bar to the
+  arrow, and a waterfall's scale-band line is a cap above the first row. The Deneb preview
+  renderer fails (WARN) on any label box that crosses a solid rule; check new templates with it.
+- **Period labels never get an ellipsis** ("J… F…" is ambiguous): a period label wider than its
+  step becomes its first letter (Jan → J, the year stays in the title), then the labels stagger
+  in two rows; quarters skip the letter step (Q1 is already short). Dimension names use the free
+  label room first, then wrap to two lines, and are cut only as a last resort.
 - **Data-bound ranges under a selection.** Give `scale_layout.py` the largest tier range any single
   selection produces (the largest company's months, not only the group's) and, where a selection
   may exceed it, a per-tier `reservePx`; the container then never clips a selection.
@@ -216,7 +235,34 @@ be one white strip, and with column width < `imageWidth` + 20 it draws a stray "
   card ("Definitions: page Notes") or into the tooltip of the visual they explain.
 - The page footnotes follow the numbered references in the title, chips and charts (¹ ² …).
 
-## 7. Checks
+## 7. Phone (mobile layout)
+
+The desktop page shrunk to a phone screen is about 30 % of its size and unreadable (proof run
+2026-10). A Power BI page gets a phone view only through its **mobile layout**, which the Power BI
+mobile apps show in portrait orientation; a web browser always shows the desktop layout (Learn:
+[Create mobile-optimized reports](https://learn.microsoft.com/power-bi/create-reports/power-bi-create-mobile-optimized-report-about)).
+
+- Author it in the **mobile layout view** (Desktop: View → Mobile layout, or the layout switcher;
+  the service: Edit → Mobile layout) by dragging the page's visuals onto the phone canvas. PBIR
+  stores it per visual in `visuals/<name>/mobile.json` (schema `visualContainerMobileState`, Learn:
+  [report folder](https://learn.microsoft.com/power-bi/developer/projects/projects-report#pbir-format));
+  let Desktop or Microsoft's `powerbi-authoring` skills write those files.
+- What to place, top to bottom (the same order as a web app at 390 px, report-shell.md of
+  ibcs-fabric-app): the header text box (message and title lines, the message at 11–12 pt), the
+  KPI cards two per row, the month chart at the phone width (the same Deneb visual: it fills its
+  container and redraws for it, period labels shorten Jan → J, value labels thin but keep first,
+  last, the extremes and the last AC), the Total under the months (same scale band), the
+  structure chart, the footnote card. A mobile layout can only place the page's own visuals:
+  a chart that does not work at 360 px (a structure chart with three tiers side by side) needs
+  a phone variant on the desktop page (e.g. the tiers stacked) or stays off the phone view, with
+  a note. Slicers go in one row at the top. Fonts never below 9 pt.
+- **Capture it at 390 px for real**, not as a resampled PDF: a screenshot from the Power BI mobile
+  app on a phone (or a simulator), or the report embedded with `layoutType: MobilePortrait`
+  (powerbi-client, Learn: [Embed with mobile layout](https://learn.microsoft.com/javascript/api/overview/powerbi/mobile))
+  in a browser emulating a 390 × 844 device (CDP `Emulation.setDeviceMetricsOverride`). The
+  export API renders the desktop layout only.
+
+## 8. Checks
 
 `python3 -I <ibcs-review skill dir>/scripts/ibcs_lint.py pbir <name>.Report --layout layout.json` (load the `ibcs-review` skill of plugin `ibcs` with the Skill tool; it prints its base directory) checks the shell mechanics:
 neutral canvas, content on a white card shape or with a white background (A2), no border or

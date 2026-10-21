@@ -10,7 +10,7 @@ type Base = { role: string; category?: string; impact?: ImpactKey; group?: "zoom
 
 export type Mark =
   | (Base & { kind: "rect"; x: number; y: number; w: number; h: number; fill?: Fill; stroke?: string; strokeWidth?: number; tooltip?: string })
-  | (Base & { kind: "line"; x1: number; y1: number; x2: number; y2: number; stroke: string; strokeWidth: number })
+  | (Base & { kind: "line"; x1: number; y1: number; x2: number; y2: number; stroke: string; strokeWidth: number; dash?: string })
   | (Base & { kind: "path"; d: string; fill?: Fill; stroke?: string; strokeWidth?: number })
   | (Base & { kind: "ellipse"; cx: number; cy: number; rx: number; ry: number; stroke: string; strokeWidth: number })
   | (Base & {
@@ -96,6 +96,20 @@ export function fitLines(text: string, size: number, maxPx: number, rowStep: num
     }
   }
   return [truncateEnd(text, size, maxPx)];
+}
+
+/**
+ * Period labels that fit a category step, never with an ellipsis (an "J…" is ambiguous): the full
+ * label (Jan); else, for month names, the first letter (J; the year is in the title); else two
+ * staggered rows (every second label one line lower), full labels when they fit two steps.
+ */
+export function periodLabels(labels: string[], size: number, step: number): { texts: string[]; rows: 1 | 2 } {
+  const fits = (ts: string[], w: number) => ts.every((t) => textWidth(t, size) <= w - 2);
+  if (fits(labels, step)) return { texts: labels, rows: 1 };
+  const months = labels.every((l) => /^[A-Za-zÀ-ž]{3,}\.?$/.test(l));
+  const letters = months ? labels.map((l) => [...l][0]!.toUpperCase()) : labels;
+  if (months && fits(letters, step)) return { texts: letters, rows: 1 };
+  return { texts: fits(labels, 2 * step) ? labels : letters, rows: 2 };
 }
 
 /** Do two boxes overlap (by more than `tol` px)? */

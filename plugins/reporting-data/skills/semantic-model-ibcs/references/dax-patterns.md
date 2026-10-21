@@ -585,6 +585,7 @@ Invariants worth asserting in CI:
 | Invariant | Query idea |
 |---|---|
 | ΔPY = AC − PY on every line | compare item values |
+| Σ member Δ = total Δ for every structure the report shows | `SUMX ( VALUES ( Entity[EntityCode] ), CALCULATE ( [Revenue], 'Scenario Analysis'[Scenario] = "ΔBU member" ) )` = `CALCULATE ( [Revenue], 'Scenario Analysis'[Scenario] = "ΔBU" )` at the total, within rounding; test with a discontinued and a new member in the test data (BLANK AC or BLANK reference) |
 | Subtotal = Σ details above | `WF End` of the last detail = `Report Value` of the subtotal |
 | Σ AC (model) = Σ AC (SQL gold) per entity/month | DAX vs the SQL load checks ([05_checks.sql](../../sql-reporting-backend/assets/sql/05_checks.sql)) |
 | No scenario summing | `[Amount]` with no filters = AC only |

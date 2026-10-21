@@ -11,8 +11,14 @@ export type KpiVariance = {
   code: string;
   /** Raw absolute Δ, or for kind "pp" the difference of two fractions. */
   absolute?: number | null;
-  /** Relative Δ as a fraction; null = N/A. Not used for kind "pp". */
+  /**
+   * Relative Δ as a fraction. Omitted (`undefined`): the card shows no Δ% for this comparison.
+   * `null` prints N/A only when `reference` is given and ≤ 0 (not interpretable); a `null` without
+   * a reference, or with a positive one, is treated as missing and left out. Not used for kind "pp".
+   */
   relative?: number | null;
+  /** The comparison's reference value (e.g. BU); decides whether a null Δ% is N/A. */
+  reference?: number | null;
   kind?: "absolute" | "pp";
   impact?: Impact | null;
   polarity?: number;
@@ -35,6 +41,8 @@ export type KpiCardProps = {
   definition?: string;
   colorMode?: ColorMode;
   cardStyle?: "fluent" | "square";
+  /** Content alignment: centred (default, as the report shell) or left. */
+  align?: "center" | "start";
 };
 
 const C = tokens.color;
@@ -50,10 +58,14 @@ export function KpiCard(p: KpiCardProps) {
   const defId = useId();
   const mode = p.colorMode ?? "color";
   const valueText = p.ratio ? formatRatio(p.value, p.scale.decimals) : formatValue(p.value, p.scale);
-  const pctDec = p.pctDecimals ?? 0;
+  const pctDec = p.pctDecimals ?? 1; // one decimal by default, in every route
 
+  const align = p.align ?? "center";
+  // N/A only for a null Δ% whose reference is known and ≤ 0; undefined (or null without that) is left out
+  const relState = (v: KpiVariance): "value" | "na" | "none" =>
+    typeof v.relative === "number" ? "value" : v.relative === null && v.reference != null && v.reference <= 0 ? "na" : "none";
   const lines = p.variances
-    .filter((v) => v.absolute != null || (v.kind !== "pp" && v.relative != null)) // a variance the measure lacks is left out
+    .filter((v) => v.absolute != null || (v.kind !== "pp" && relState(v) !== "none")) // a variance the measure lacks is left out
     .map((v) => {
       const pp = v.kind === "pp" || p.ratio;
       const absZero = v.absolute == null ? true : pp ? roundsToZero(v.absolute, { factor: 0.01, decimals: 1 }) : roundsToZero(v.absolute, p.scale);
@@ -62,8 +74,9 @@ export function KpiCard(p: KpiCardProps) {
       if (pp) parts.push({ text: formatPp(v.absolute), key: absKey });
       else {
         const abs = { text: v.absolute == null ? "" : formatDelta(v.absolute, p.scale), key: absKey };
-        const relZero = v.relative == null || roundsToZero(v.relative, { factor: 0.01, decimals: pctDec });
-        const rel = { text: formatPercentDelta(v.relative, pctDec), key: impactKey(v.relative, { impact: v.impact, polarity: v.polarity, isZero: relZero }) };
+        const state = relState(v);
+        const relZero = state !== "value" || roundsToZero(v.relative!, { factor: 0.01, decimals: pctDec });
+        const rel = { text: state === "none" ? "" : formatPercentDelta(state === "na" ? null : v.relative, pctDec), key: impactKey(state === "value" ? v.relative : null, { impact: v.impact, polarity: v.polarity, isZero: relZero }) };
         const pair = p.deltaOrder === "relative-first" ? [rel, abs] : [abs, rel];
         parts.push(...pair.filter((x) => x.text));
       }
@@ -71,12 +84,12 @@ export function KpiCard(p: KpiCardProps) {
     });
 
   return (
-    <div style={{ ...cardSurface(p.cardStyle), padding: "14px 16px", minWidth: 0, position: "relative", fontFamily: tokens.typography.family.web.join(", "), color: C.text.primary }}>
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", gap: 8 }}>
+    <div data-align={align} style={{ ...cardSurface(p.cardStyle), padding: "14px 16px", minWidth: 0, position: "relative", textAlign: align === "center" ? "center" : "left", fontFamily: tokens.typography.family.web.join(", "), color: C.text.primary }}>
+      <div style={{ display: "flex", justifyContent: align === "center" ? "center" : "space-between", alignItems: "baseline", gap: 8, paddingRight: align === "center" && p.definition ? 22 : 0, paddingLeft: align === "center" && p.definition ? 22 : 0 }}>
         <span style={{ fontWeight: tokens.typography.weight.emphasis, fontSize: 13.5 }}>{p.label}</span>
         {p.definition && (
           <button type="button" aria-expanded={open} aria-controls={defId} aria-label={`About ${p.label}`} onClick={() => setOpen(!open)}
-            style={{ border: `1px solid ${ink(0.25)}`, borderRadius: "50%", width: 18, height: 18, fontSize: 11, lineHeight: "16px", padding: 0, background: "transparent", cursor: "pointer" }}>
+            style={{ ...(align === "center" ? { position: "absolute", top: 14, right: 16 } : {}), border: `1px solid ${ink(0.25)}`, borderRadius: "50%", width: 18, height: 18, fontSize: 11, lineHeight: "16px", padding: 0, background: "transparent", cursor: "pointer" }}>
             i
           </button>
         )}
@@ -84,7 +97,7 @@ export function KpiCard(p: KpiCardProps) {
       <div style={{ fontSize: 12, color: C.text.secondary }}>{p.unit}</div>
       <div style={{ fontSize: 24, fontWeight: 650, fontVariantNumeric: "tabular-nums", margin: "6px 0 4px" }}>{valueText}</div>
       {lines.map((l) => (
-        <div key={l.code} style={{ fontSize: 12.5, fontVariantNumeric: "tabular-nums", display: "flex", gap: 6, alignItems: "baseline" }}>
+        <div key={l.code} style={{ fontSize: 12.5, fontVariantNumeric: "tabular-nums", display: "flex", gap: 6, alignItems: "baseline", justifyContent: align === "center" ? "center" : "flex-start" }}>
           {l.parts.map((part, k) => {
             const ringed = p.highlight === l.code && k === 0;
             return (

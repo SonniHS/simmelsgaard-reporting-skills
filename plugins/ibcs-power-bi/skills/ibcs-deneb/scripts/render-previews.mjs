@@ -18,6 +18,8 @@
 // Variants (usermeta.ibcs.previewVariants) may set params, sampleData and preview {width, height};
 // previewGroups render several members of one scale group side by side into one preview. A member
 // with pxPerUnit is checked: its value scale must render at that px per unit (else WARN, exit 1).
+// Every render is checked for labels on lines: a text box that crosses a solid rule (axis, baseline,
+// assisting line, scale-band line, magnifier frame or connector) is a WARN and exit 1.
 // It does NOT emulate pbiFormat, pbiColor or the pbiContainer* signals: templates avoid them.
 // PNG: headless Chrome screenshots an HTML page holding the SVG (device scale 2).
 //
@@ -136,11 +138,70 @@ async function renderOne(templatePath, variant = null, write = true) {
     console.log(`${ok ? "ok  " : "WARN"} ${id}: ${got.toFixed(3)} px per unit (pxPerUnit ${ppu})`);
     if (!ok) failed++;
   }
+  for (const c of labelLineCollisions(view)) {
+    console.log(`WARN ${id}: label "${c.text}" crosses a line at x ${c.x.toFixed(0)}, y ${c.y.toFixed(0)}` + (process.env.IBCS_DEBUG ? " " + JSON.stringify([c.t, c.r]) : ""));
+    failed++;
+  }
   let svg = await view.toSVG();
   const defs = patternDefs();
   if (defs) svg = svg.replace(/(<svg[^>]*>)/, `$1<defs>${defs}</defs>`);
   view.finalize();
   return write ? writeSvg(id, svg) : { id, svg };
+}
+
+// Label-vs-line check: no text box may cross an axis, baseline or rule line (rule marks, including
+// connectors and zoom-box lines). Vega measures text without a canvas by estimate, so boxes are
+// shrunk by 1 px before the test; a label that merely touches a line end passes.
+function labelLineCollisions(view) {
+  const texts = [], rules = [];
+  const visit = (node, dx, dy) => {
+    if (!node || typeof node !== "object") return;
+    if (node.marktype) {
+      for (const it of node.items ?? []) {
+        const x = dx + (it.x ?? 0), y = dy + (it.y ?? 0);
+        if (node.marktype === "group") { for (const m of it.items ?? []) visit(m, x, y); continue; }
+        const b = it.bounds; if (!b || !isFinite(b.x1)) continue;
+        const box = { x1: dx + b.x1, x2: dx + b.x2, y1: dy + b.y1, y2: dy + b.y2 };
+        if (node.marktype === "text" && it.text != null && !it.angle) {
+          // Vega's estimate without a canvas is about 0.8 em per character; the rendered Segoe UI
+          // digits are about 0.6 em: keep the anchor side of the box and shrink it to 0.6 em
+          const w = 0.6 * (it.fontSize ?? 11) * String(it.text).length;
+          if (it.align === "left") box.x2 = box.x1 + w;
+          else if (it.align === "right") box.x1 = box.x2 - w;
+          else { const mid = (box.x1 + box.x2) / 2; box.x1 = mid - w / 2; box.x2 = mid + w / 2; }
+        }
+        const visible = (it.opacity ?? 1) > 0 && (it.fillOpacity ?? 1) > 0;
+        if (node.marktype === "text" && visible && it.text != null && String(it.text).trim() !== "") texts.push({ box, text: String(it.text) });
+        // dashed rules are assisting references (a scatter's x = y diagonal) that labels may pass over
+        if (node.marktype === "rule" && !(it.strokeDash && it.strokeDash.length) && (it.opacity ?? 1) > 0 && (it.strokeOpacity ?? 1) > 0 && (it.strokeWidth ?? 1) > 0 && it.stroke) {
+          const sw = (it.strokeWidth ?? 1) / 2;
+          rules.push({ ax: x, ay: y, bx: dx + (it.x2 ?? it.x ?? 0), by: dy + (it.y2 ?? it.y ?? 0), sw });
+        }
+      }
+    } else if (node.items) for (const m of node.items) visit(m, dx, dy);
+  };
+  visit(view.scenegraph().root, 0, 0);
+  const hits = [];
+  for (const t of texts) {
+    const a = { x1: t.box.x1 + 1, x2: t.box.x2 - 1, y1: t.box.y1 + 1, y2: t.box.y2 - 1 };
+    for (const r of rules) {
+      if (segmentHitsBox(r, a)) { hits.push({ text: t.text, x: (r.ax + r.bx) / 2, y: (r.ay + r.by) / 2, t: t.box, r }); break; }
+    }
+  }
+  return hits;
+}
+
+// Liang–Barsky: does the segment (widened by half its stroke) pass through the box?
+function segmentHitsBox(r, a) {
+  const b = { x1: a.x1 - r.sw, x2: a.x2 + r.sw, y1: a.y1 - r.sw, y2: a.y2 + r.sw };
+  const ddx = r.bx - r.ax, ddy = r.by - r.ay;
+  let t0 = 0, t1 = 1;
+  for (const [p, q] of [[-ddx, r.ax - b.x1], [ddx, b.x2 - r.ax], [-ddy, r.ay - b.y1], [ddy, b.y2 - r.ay]]) {
+    if (p === 0) { if (q < 0) return false; continue; }
+    const t = q / p;
+    if (p < 0) { if (t > t1) return false; if (t > t0) t0 = t; } else { if (t < t0) return false; if (t < t1) t1 = t; }
+  }
+  return t0 < t1;
 }
 
 function writeSvg(id, svg) {

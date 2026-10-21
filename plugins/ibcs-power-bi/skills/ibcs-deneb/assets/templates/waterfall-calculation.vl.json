@@ -496,6 +496,14 @@
     {
       "calculate": "max(datum._xmax + datum._room * datum._unitPerPx, datum._ppu > 0 ? datum._xlo + width / datum._ppu : 0)",
       "as": "_xhi"
+    },
+    {
+      "calculate": "datum._left && !(min(datum._x0, datum._x1) >= 0 && min(datum._x0, datum._x1) - (3 + length(datum._lbl) * ibcsFontSize * 0.6) * datum._unitPerPx < 0)",
+      "as": "_leftL"
+    },
+    {
+      "calculate": "datum._leftL ? min(datum._x0, datum._x1) : max(datum._x0, datum._x1)",
+      "as": "_lxL"
     }
   ],
   "layer": [
@@ -793,10 +801,10 @@
           "expr": "datum.__selected__ == 'on' ? ibcsAssistArea : ibcsBackground"
         },
         "align": {
-          "expr": "datum._left ? 'right' : 'left'"
+          "expr": "datum._leftL ? 'right' : 'left'"
         },
         "dx": {
-          "expr": "datum._left ? -3 : 3"
+          "expr": "datum._leftL ? -3 : 3"
         },
         "fontWeight": {
           "expr": "datum._k == 'subtotal' || datum._k == 'total' ? ibcsBold : 'normal'"
@@ -814,7 +822,7 @@
           "sort": "ascending"
         },
         "x": {
-          "field": "_lx",
+          "field": "_lxL",
           "type": "quantitative"
         },
         "text": {
@@ -823,7 +831,7 @@
       }
     },
     {
-      "description": "value labels on the side of the bar end, unsigned for additions and subtractions (the fill shows the direction); a negative result keeps its sign",
+      "description": "value labels on the side of the bar end, unsigned for additions and subtractions (the fill shows the direction); a negative result keeps its sign; a label left of a bar that would reach the category axis goes right of the bar instead, so no label crosses a line",
       "mark": {
         "type": "text",
         "baseline": "middle",
@@ -834,10 +842,10 @@
           "expr": "ibcsText"
         },
         "align": {
-          "expr": "datum._left ? 'right' : 'left'"
+          "expr": "datum._leftL ? 'right' : 'left'"
         },
         "dx": {
-          "expr": "datum._left ? -3 : 3"
+          "expr": "datum._leftL ? -3 : 3"
         },
         "fontWeight": {
           "expr": "datum._k == 'subtotal' || datum._k == 'total' ? ibcsBold : 'normal'"
@@ -850,7 +858,7 @@
           "sort": "ascending"
         },
         "x": {
-          "field": "_lx",
+          "field": "_lxL",
           "type": "quantitative"
         },
         "text": {

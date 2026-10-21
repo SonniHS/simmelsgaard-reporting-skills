@@ -126,6 +126,13 @@ routes (§5).
   | FC (if the model has forecast versions) | FC as reference: AC only as primary, ΔFC on a hatched axis | ΔFC | `FC and AC, ΔFC` | FC clause |
 
   Offer only what the model supports; a measure without a budget falls back to PY and a chip says so.
+  In the visual spec the selector is a slicer with `titleLine: 3`; title line 3 carries
+  `{compare}` (the scenario list: "AC and BU" ↔ "AC and PY") and `{compare.delta}` (the Δ codes:
+  "ΔBU and ΔBU%" ↔ "ΔPY and ΔPY%"), as `ibcs-composition` visual-spec-format §3 defines; lint V3
+  fails a page whose title line 3 lacks the placeholder. "Budget and PY" draws **one** set of
+  tiers on the month chart (ΔBU, the default comparison) with PY as triangles; a spec that wants
+  both variances on one month chart stacks two absolute tiers (`tiers: ["delta", "delta2"]` with
+  `reference2: "PY"` in the reference `layoutColumnTiers`) and keeps Δ% for the default only.
 - Field labels small and uppercase above their control; each control as wide as its longest
   option, never cut. **Reset filters** at the right end of the bar.
 
@@ -195,6 +202,11 @@ behaviour contract §10). The shell adds:
   strict IBCS pages leave it out.
 - **Missing comparison**: with "Budget only" a KPI that has no budget shows its ΔPY line instead
   and a chip states it ("Budget for revenue only"); never an empty card or a zero Δ.
+- **States per card, not per row** (proof run 1): each card keeps its name and unit line while it
+  loads and after an error; a failed KPI query puts its short error text into every card it
+  feeds (or one row-wide notice), never into card 1 only while the others stay skeletons; a
+  skeleton has the card's final height. A timeout ends the skeletons (`queries-and-data.md`).
+- Δ% on the cards has **one decimal** (`+5.8%`), the same as the pin labels, in every route.
 
 ## 7. Chart cards
 
@@ -290,7 +302,7 @@ layout function receives that width, never the viewport, and sizes its label roo
 |---|---|
 | ≥ 1280 px | Tabs and tools on one header line, all filters on one line, five KPI cards in one row, month chart and Total side by side |
 | ≈ 1050 px (Fabric portal content width) | Compact tools: icon buttons without text, selects ≈ 112–136 px, tab padding 5 px; the tab row stays one line. Filters may wrap to a second row (never cut a control). KPI cards may wrap 3 + 2. Charts redraw for their width (label thinning by measured width, `ibcs-web-charts`) |
-| ≤ 760 px (phone; test at 390) | Header in two rows: brand, then a page select with the tools (tools wrap, never cut). The filter bar collapses to one toggle with a summary of the active filters. Page padding 14 × 12 px, one grid column, 12 px gap, card padding 12 px, headline 15.5 px. KPI cards two per row, a lone last card spans the row. The Total moves under the months as a Total-only chart (same scale band, tiers sized with the same `alignTiers` union as on desktop; chart-layer.md, phone layouts); structure tiers stack under the bars (behaviour contract §4). Label density: shorten Δ% labels to 0 decimals before thinning any label; keep one decimal down to a category step of ≈ 40 px at 11 px type; below that thin by measured width; never scroll the month chart sideways. Every value label is tested against every mark of its tier, including its own PY triangle, in priority order (Total, cited, selected, first/last, extremes, rest; chart-layer.md, label collisions): shift once or leave out, never over a bar; category names thin to every n-th in a regular rhythm; long names wrap to two lines when the row step is ≥ 2.2 × the font size, else they are cut from the end, never a middle ellipsis |
+| ≤ 760 px (phone; test at 390) | Header in two rows: brand, then a page select with the tools (tools wrap, never cut). The filter bar collapses to one toggle with a summary of the active filters. Page padding 14 × 12 px, one grid column, 12 px gap, card padding 12 px, headline 15.5 px. KPI cards two per row, a lone last card spans the row. The Total moves under the months as a Total-only chart (same scale band, tiers sized with the same `alignTiers` union as on desktop; chart-layer.md, phone layouts); structure tiers stack under the bars, same row order, names repeated (behaviour contract §4; reference `layoutStructureBars(rows, { …, stack: "auto" })`). Label density: shorten Δ% labels to 0 decimals before thinning any label; keep one decimal down to a category step of ≈ 40 px at 11 px type; below that thin by measured width; never scroll the month chart sideways. Every value label is tested against every mark of its tier, including its own PY triangle, in priority order (Total, cited, selected, first/last, extremes, rest; chart-layer.md, label collisions): shift once or leave out, never over a bar; month names fall back Jan → J → two rows, never an ellipsis; long names use the free width, then wrap to two lines when the row step is ≥ 2.2 × the font size, and are cut from the end only as a last resort, never a middle ellipsis |
 | Print | Header row, filter bar, tools and the canvas tint hidden; title lines show the state; cards do not break across pages |
 
 ## 11. Recipe: the Key figures page from scratch

@@ -1,0 +1,32 @@
+[
+  {
+    "Category": "Paris",
+    "AC": 795,
+    "PY": 648,
+    "TotalDelta": 83
+  },
+  {
+    "Category": "Rome",
+    "AC": 618,
+    "PY": 684,
+    "TotalDelta": 83
+  },
+  {
+    "Category": "Berlin",
+    "AC": 592,
+    "PY": 459,
+    "TotalDelta": 83
+  },
+  {
+    "Category": "Lyon",
+    "AC": 120,
+    "PY": null,
+    "TotalDelta": 83
+  },
+  {
+    "Category": "Vienna",
+    "AC": null,
+    "PY": 251,
+    "TotalDelta": 83
+  }
+]

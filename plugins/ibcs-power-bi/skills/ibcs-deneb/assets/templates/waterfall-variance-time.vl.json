@@ -620,6 +620,10 @@
     {
       "calculate": "datum._lo + height / datum._ppy",
       "as": "_yTop"
+    },
+    {
+      "calculate": "datum._k == 'variance' && datum._val < 0 && !datum._zero && !(datum._mag && datum._pBot + 3 + ibcsFontSize * 1.2 >= datum._PB - 1) && !(!datum._mag && max(datum._py0, datum._py1) < datum._pyZero && max(datum._py0, datum._py1) + 3 + ibcsFontSize * 1.2 >= datum._pyZero - 1)",
+      "as": "_below"
     }
   ],
   "layer": [
@@ -771,7 +775,7 @@
       }
     },
     {
-      "description": "value labels: above a column, below a negative variance; signed variances; in the magnifier tier instead when magnified",
+      "description": "value labels: above a column, below a negative variance; signed variances; in the magnifier tier instead when magnified; a drop's label that would reach an axis line goes to the far side of its column start (above it), so no label crosses a line",
       "transform": [
         {
           "filter": "!(datum._mag && datum._k == 'variance')"
@@ -787,7 +791,7 @@
           "expr": "ibcsText"
         },
         "baseline": {
-          "expr": "datum._k == 'variance' && datum._val < 0 && !datum._zero ? 'top' : 'bottom'"
+          "expr": "datum._below ? 'top' : 'bottom'"
         }
       },
       "encoding": {
@@ -798,7 +802,7 @@
         },
         "y": {
           "value": {
-            "expr": "datum._k == 'variance' && datum._val < 0 && !datum._zero ? max(datum._py0, datum._py1) + 3 : min(datum._py0, datum._py1) - 3"
+            "expr": "datum._below ? max(datum._py0, datum._py1) + 3 : min(datum._py0, datum._py1) - 3"
           }
         },
         "text": {
@@ -1059,7 +1063,7 @@
       }
     },
     {
-      "description": "magnifier: connectors (0.75 px, highlight colour) along the marker's left and right edges down to the tier: they run between category labels, never through one",
+      "description": "magnifier: dashed connectors (0.75 px, highlight colour) along the marker's left and right edges down to the tier: they run between category labels, never through one",
       "transform": [
         {
           "filter": "datum._mag && datum._k == 'variance' && datum._j == 1"
@@ -1079,7 +1083,11 @@
         "stroke": {
           "expr": "ibcsHighlight"
         },
-        "strokeWidth": 0.75
+        "strokeWidth": 0.75,
+        "strokeDash": [
+          3,
+          2
+        ]
       },
       "encoding": {
         "x": {
@@ -1318,7 +1326,7 @@
       }
     },
     {
-      "description": "magnifier: variance labels in the tier only, signed, above growth and below a drop",
+      "description": "magnifier: variance labels in the tier only, signed, above growth and below a drop; a drop's label that would reach the tier's origin line goes above its column start, so no label crosses a line",
       "transform": [
         {
           "filter": "datum._mag && datum._k == 'variance'"
@@ -1334,7 +1342,7 @@
           "expr": "ibcsText"
         },
         "baseline": {
-          "expr": "datum._val < 0 && !datum._zero ? 'top' : 'bottom'"
+          "expr": "datum._below ? 'top' : 'bottom'"
         }
       },
       "encoding": {
@@ -1345,7 +1353,7 @@
         },
         "y": {
           "value": {
-            "expr": "datum._val < 0 && !datum._zero ? datum._pBot + 3 : datum._pTop - 3"
+            "expr": "datum._below ? datum._pBot + 3 : datum._pTop - 3"
           }
         },
         "text": {

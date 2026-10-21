@@ -127,9 +127,12 @@ Data: period rows `{ period, period2?, closed?, AC?, FC?, PY?, PL?, BU? }`.
   selected and extremes win every collision with lower-priority labels. Never draw a label over a
   bar. Reference implementation: `layoutColumnTiers` in
   `assets/react-reference` (test "no placed label overlaps …").
-- **Category axis**: all names when they fit the step; otherwise every n-th name in a regular
-  rhythm (the first kept), and a name that still does not fit is cut from the end with an
-  ellipsis, never a middle ellipsis. A second line (`period2`, e.g. the year) under the first
+- **Category axis** (proof run, OURS): period names **never** get an ellipsis ("J… F… M…" is
+  ambiguous). Fallback chain: the full name (Jan) → for month names the first letter (J; the year
+  is in title line 3) → two staggered rows. Quarters and other codes skip the letter step
+  (Q1 → two rows). Value labels thin by priority: the Total and the cited values, the selected
+  period, first, last and **the last AC period**, then the extremes; neighbouring labels keep at
+  least 2 px between them. A second line (`period2`, e.g. the year) under the first
   period and where it changes, **only** when the periods span two values.
 
 ## 3. Variance chart (absolute bars, relative pins)
@@ -137,16 +140,27 @@ Data: period rows `{ period, period2?, closed?, AC?, FC?, PY?, PL?, BU? }`.
 Data: variance rows `{ category, value, scenario, impact?, outlier? }`. `value` is raw for
 absolute variances and a fraction for relative ones; `null` = N/A.
 
+- **Two references on one chart** (OURS): one comparison per chart by default, switched by a
+  compare-with selector; when a spec asks for the variance to BU **and** PY on one month chart,
+  stack two absolute tiers (ΔBU, then ΔPY), both on the base px per unit, each with its own
+  reference axis; keep the Δ% pins for the default comparison only (reference `delta2` tier).
 - **Absolute** (`kind: "absolute"`): bars of the same width as the base columns, on the **same**
   unit and px per unit as the base chart. Colour by impact.
 - **Relative** (`kind: "relative"`): pins — a thin stem in the impact colour plus a square head
   in the minuend's notation (AC solid, FC hatched, PL outlined). Pins join the `"%"` scale group.
   Stem = `geometry.pin.thicknessRatio` × bar width clamped to `geometry.pin.stemPx` (2–4 px);
-  head = `geometry.pin.headRatio` × bar width clamped to `geometry.pin.headPx` (6–10 px).
-  Scale (one rule for every route): **1 px per percentage point** by default (100 px per 1.0),
-  smaller only when the cell cannot fit the tier; the domain is the clipped range (± the outlier
-  limit). A pin that does not round to zero is at least head/2 + 2 px long, so its head never
-  sits on the axis. FC heads are hatched with the token period and stripe share at any size.
+  head = `geometry.pin.headPx.min` (6 px), at the **stem end**, never centred on the axis.
+  Scale (one rule for every route; replaces the earlier 1 px per percentage point, which left
+  1–3 px stems): the pin tier has **its own scale, sized to the tier** — tier height for vertical
+  pins, tier width for horizontal ones (OURS defaults: 48 px in column charts, 90 px in bar
+  charts) — so the largest clipped |Δ%| fills about 90 % of it. Charts read together (the months
+  and their Total, small multiples) share one pin scale: the smallest px per unit of their tiers
+  (`pinScale` in the reference components). Check: the stem of the largest |Δ%| is at least 40 %
+  of its tier. The domain is the clipped range (± the outlier limit). A pin that does not round
+  to zero is at least head/2 + 2 px long; a Δ% that **rounds to zero keeps a baseline marker**
+  (the head on the axis, minuend notation, uncoloured) next to its unsigned label. Pin labels
+  have **one decimal** (`+5.6%`) by default, the same in every route and on the KPI cards. FC
+  heads are hatched with the token period and stripe share at any size.
 - **Percentage points** (`kind: "pp"`): bar geometry, label `+2.1pp`, joins the `"%"` group.
 - The variance axis shows the **reference** scenario (UN 4.1): PY = solid light thick line, PL/BU
   = two thin parallel lines, FC = hatched band. Tokens `stroke.varianceAxis.*`, `color.axis.*`.
@@ -188,11 +202,17 @@ Data: structure rows `{ category, AC?, FC?, PY?, PL?, BU?, variances?, impact?/i
 - Narrow screens (phone rule for a base + ΔPL + ΔPL% structure chart): the base bars keep at
   least half of the plot width; the variance tiers share the rest, each at least its label room
   (≈ 60 px). Below that width, stack the tiers under the base chart (same row order, category
-  labels repeated, each tier keeps its scale) or let the chart scroll horizontally inside its
+  labels repeated, each tier keeps its scale; reference `stack: "auto"`) or let the chart scroll horizontally inside its
   own frame — never the page, and never by shrinking one tier's px per unit on its own. Long
-  category names wrap to two lines when the row step is at least 2.2 × the font size (split at
-  the space nearest the middle, one `<tspan>` per line), else they are cut from the end with an
-  ellipsis; never a middle ellipsis.
+  category names first take the free width of the chart (the label column grows into spare
+  space: "Services and oth…" with 90 px free is a defect), then wrap to two lines when the row
+  step is at least 2.2 × the font size (split at the space nearest the middle, one `<tspan>` per
+  line), and only then are cut from the end; never a middle ellipsis.
+- **A member with no AC and a reference** (discontinued, REF > 0): AC counts as 0 — the bar is
+  labelled `0.0` and the absolute Δ is 0 − REF, from the model's member items
+  (`Ibcs.DeltaMember`, semantic-model-ibcs), never blank; Δ% is −100 % (N/A only when REF ≤ 0 or
+  blank). The layout warns when a member with a reference has no Δ, and when the members' Δ do
+  not add up to the total row's Δ (OURS tolerance 0.5 %).
 
 ## 5. Calculation waterfall
 
@@ -209,8 +229,9 @@ Data: `{ label, kind: "base" | "delta" | "subtotal" | "total", value }`, delta `
   delta steps coloured by impact (`sign(value) × polarity`, or the model's impact); then delta
   labels are signed.
 - Warn when a subtotal does not reconcile with the running total (OURS tolerance 0.5 %).
-- Labels never cross an assisting line (connectors, the base-value line of a total-variance
-  marker): a label that would reach one moves to the other side of its bar.
+- Labels never cross a line (axis, baseline, assisting line, connector, frame): a label that would
+  reach one moves to the far side of its bar, or inside the bar when it fits, else it warns. The
+  same rule and test for every waterfall (§6).
 
 ## 6. Variance waterfall (bridge)
 
@@ -260,17 +281,20 @@ larger scale, and state that chart's scale. Our implementation:
   warn when the largest step is below 8 px on the page scale and no magnifier is drawn.
 - Factor `k` (OURS): the smallest of 1, 2, 5, 10, 20, 50 … that makes the largest step ≥ 40 px.
 - The overview keeps base, total and the steps on the **page** px per unit (never enlarge steps
-  inside it: two scales in one plot). The zoomed range is outlined (`zoom-box`, the highlight
-  colour) and joined to the panel by connectors (`magnifier-connector`).
-- The panel draws the **steps only**, at k × the page scale, from the lowest running total, with a
-  cut value axis (zigzag) and the caption "Steps ×k" (STD: state the scale). Step labels sit in the
-  panel only.
+  inside it: two scales in one plot). One form in every route: **source frame → connectors →
+  framed panel**. The zoomed range is outlined (`zoom-box`, the highlight colour), the panel has
+  its own frame (`magnifier-panel`), and two dashed connectors (`magnifier-connector`) join the
+  frames — no third, empty box between them.
+- The panel draws the **steps only**, at k × the page scale, from the lowest running total. Its
+  own origin line (baseline) carries the axis-break zigzag, **next to the caption "Steps ×k"**
+  (STD: state the scale). Step labels sit in the panel only.
 - A-29: the panel goes **beside** the overview with its rows on the same y (names once, at the left)
   when the cell is wide enough; otherwise (phone) **below**, with the names repeated. A-11: a steps
   tier **below** the overview, each column under its period.
-- Labels never sit on the zoom box or a connector: connectors run along the box's edges and above
-  the panel caption, clear of the end labels and the variance arrow; an end label's box clears
-  max(zoom box top, connector y). Test: no label box intersects the box outline or a connector.
+- No label touches a line: the axes and baselines, the panel's origin line, the frames, the
+  connectors and the assisting lines. A step label that would goes to the far side of its bar
+  start, or inside the bar (`color.text.onAc`) when it fits. Test: no label box intersects any of
+  these lines, at 390 px and at desktop widths.
 - Without room for any panel, keep the page scale, rely on the step labels and warn.
 
 - Warn when base + Σ steps ≠ total, or `variance.value` ≠ total − base (OURS tolerance 0.5 %).
@@ -360,7 +384,9 @@ relative, kind, polarity?, impact? }], series? }`.
   page's reference design, and only when neither says otherwise use absolute first
   (`+8.3  +5.8%  ΔPY`: the absolute Δ is the number the message usually cites). One order per page.
   A % measure shows pp only; a variance the measure lacks is left out
-  (no "N/A" line).
+  (no "N/A" line): an omitted Δ% (`undefined`) is never printed as N/A; N/A only for a Δ% the model
+  returned blank while the reference is ≤ 0. Cards are centred by default (report shell), left
+  aligned on request; Δ% with one decimal.
 - Formats per measure from the spec (`display`): decimals fixed per measure row, plain ratios
   with `number.format.plainRatio`, one-decimal Δ% with `number.format.relativeVariance1`.
 - Variance numbers coloured by impact (model impact, else sign × polarity) with the text tokens
