@@ -1,6 +1,6 @@
 {
   "name": "reporting-data",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "The data behind reporting: a semantic model that serves IBCS® visuals, a SQL gold layer for reporting, and source mappings for Dynamics 365 ERP.",
   "author": {
     "name": "Sonni Simmelsgaard",

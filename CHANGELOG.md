@@ -5,6 +5,8 @@ All notable changes to this marketplace and its plugins. The format follows
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-10-21
+
 ### Changed
 - The repository and marketplace are renamed from `simmelsgaard-skills` to `simmelsgaard-reporting-skills`.
   The old marketplace name is gone: remove it with `/plugin marketplace remove simmelsgaard-skills`, then add

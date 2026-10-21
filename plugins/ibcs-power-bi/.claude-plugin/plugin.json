@@ -1,6 +1,6 @@
 {
   "name": "ibcs-power-bi",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Build IBCS®-style Power BI reports: card routes per visual, Deneb (Vega-Lite) chart templates with token sync, and SVG-in-DAX tables.",
   "author": {
     "name": "Sonni Simmelsgaard",

@@ -1,6 +1,6 @@
 {
   "name": "ibcs",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "IBCS®-style business reporting: notation (scenarios, variances, colours, tokens), page composition with a visual spec, web chart components, and a review checklist with a linter.",
   "author": {
     "name": "Sonni Simmelsgaard",

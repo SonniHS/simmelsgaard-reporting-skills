@@ -1,6 +1,6 @@
 {
   "name": "fabric-apps",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Build and deploy IBCS®-style reporting apps on Microsoft Fabric, and package Power BI content as org apps.",
   "author": {
     "name": "Sonni Simmelsgaard",
