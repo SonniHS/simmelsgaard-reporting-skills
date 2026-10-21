@@ -188,6 +188,9 @@ shape each visual needs goes to the model author (the `semantic-model-ibcs` skil
 - [ ] Every claim visible on the page; cited value highlighted — SA 4.1, SA 4.3
 - [ ] Sources + data timestamp + footnotes on the page: full width, sized to the text, short; long
       definitions on a details page or tooltip — SA 4.4, UN 2.5
+- [ ] Page text is public copy (OURS): footnotes and chips give definitions, sources and scope only;
+      internal notes (model change requested, a proposed threshold, TBD) stay in the spec's
+      `deviations` / `openQuestions` or the build notes, never on the page
 - [ ] Three-line title; filters in line 1; descriptive only; subtitles carry only differences — UN 2.2
 - [ ] Pyramid storyline; MECE lists with remainder; consistent wording — ST 1–4
 - [ ] Everything needed is on this page/screen without clicking — CO 5

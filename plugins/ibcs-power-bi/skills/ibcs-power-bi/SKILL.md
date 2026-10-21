@@ -26,7 +26,7 @@ The notation itself (scenarios, variances, colours, scales, titles) is defined b
 `ibcs-notation` skill (plugin `ibcs`); page and storyline logic by `ibcs-composition`; review by
 `ibcs-review` / the `ibcs-reviewer` agent. This skill only says how to reach that notation in
 Power BI. PBIR/PBIP file mechanics (visual.json, page.json, report.json, theme serialisation) come
-from Microsoft's `powerbi-authoring` plugin where installed (`/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install powerbi-authoring@fabric-collection`; skills `powerbi-report-authoring` and `powerbi-report-management`, preview; [Learn](https://learn.microsoft.com/power-bi/developer/agentic/power-bi-planner-fabric-skill-overview)); do not duplicate them here. It does not cover Deneb or SVG
+from Microsoft's `powerbi-authoring` plugin where installed (`/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install powerbi-authoring@fabric-collection`; skills `powerbi-report-cli` and `semantic-model-authoring` as of microsoft/skills-for-fabric bc42aaf, 2026-10 (Learn's older names: `powerbi-report-authoring`, `powerbi-report-management`), preview; its validator: `powerbi-report-author validate <name>.Report`; [Learn](https://learn.microsoft.com/power-bi/developer/agentic/power-bi-planner-fabric-skill-overview)); do not duplicate them here. It does not cover Deneb or SVG
 measures: those come from `ibcs-deneb` and `ibcs-svg-dax` in this plugin.
 
 References:
@@ -90,6 +90,8 @@ footnoted compromise:
 | `line`, `line-grouped` | native for AC/PY; Deneb when FC/PL markers matter | no hatched or hollow markers natively |
 | `table-variance`, `table-time` | native matrix + SVG columns | scenario header rules need SVG or a footnote |
 | statement with write-back, or certification is a requirement | certified visual / Fabric Planning | — |
+
+**A spec tier is a knob, not an option.** When the visual spec gives a month chart a ΔX% tier (`pin-time` in its `tiers`), set `pinTier: true` on that `column-two-tier-variance` visual: the template draws pins only when asked (default off), and a proof run built a month chart without the spec's ΔBU% pins. Check after building: every tier of the spec is drawn, at its scale group's px per unit.
 
 Full table, `visual.json` properties and licensing: [references/card-routes.md](references/card-routes.md).
 
@@ -163,6 +165,8 @@ footnote card sized to its text. Without the shell the page is white and the ban
 - Visual headers off in reading view only if users do not need focus mode or export; tooltips on.
 
 ## 3a. Phone (390 px)
+
+**Power BI phone layout: not supported in 1.0.0.** A headless builder cannot author or capture a Power BI mobile layout (it needs the mobile layout view in Desktop or the service and a capture through the mobile app or a MobilePortrait embed), so no 390 px view is required of a Power BI report, and a review does not fail one for lacking it. The guidance below is unverified and for authors who build the layout by hand; a tested `mobile.json` recipe is planned for 1.1. Phone-first pages: build them as a Fabric App (plugin `fabric-apps`).
 
 A Power BI page gets a phone view only through its **mobile layout**, shown by the Power BI mobile
 apps in portrait; a browser always shows the desktop page, shrunk to about 30 % on a phone
@@ -259,7 +263,7 @@ Input: a visual spec file per page in your project (for example
    any `setParams` it prints (label room) as `--param`.
 5. Record every compromise in the page footnote and in the spec's `deviations`.
 6. Validate (`jq empty` on changed JSON, or `python3 -m json.tool <file> > /dev/null` if jq is not
-   installed; `scripts/report_measures.py <name>.Report --check`; `python3 -I <ibcs-review skill dir>/scripts/ibcs_lint.py pbir <name>.Report --layout layout.json` (load the `ibcs-review` skill of plugin `ibcs` with the Skill tool; it prints its base directory) without failed rules; a PBIP validator where available), preview each Deneb visual with live data (`render-previews.mjs --visual`), open in
+   installed; `scripts/report_measures.py <name>.Report --check`; `python3 -I <ibcs-review skill dir>/scripts/ibcs_lint.py pbir <name>.Report --layout layout.json` (load the `ibcs-review` skill of plugin `ibcs` with the Skill tool; it prints its base directory) without failed rules; Microsoft's PBIR validator `powerbi-report-author validate <name>.Report` from the `powerbi-authoring` plugin where installed (after every batch of edits; else another PBIP validator), preview each Deneb visual with live data (`render-previews.mjs --visual`), open in
    Desktop, compare with the spec, then run the `ibcs-review` skill.
 7. After publishing (only when the user asks), look at the rendered page: in a browser (*See
    details* on an error names the fields), or without one through *Export To File* as PDF with a

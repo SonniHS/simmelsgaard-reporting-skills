@@ -4,9 +4,9 @@
 import { tokens } from "../tokens.generated";
 import { formatDelta, formatPercentDelta, formatValue, roundsToZero, type NumberScale } from "../format";
 import { impactFill, impactKey, impactText, type ColorMode, type Impact } from "../impact";
-import { clamp, lineBox, textWidth, fitLines, type Fill, type Layout, type Mark } from "./marks";
+import { clamp, lineBox, textWidth, fitLines, shortPinWarning, type Fill, type Layout, type Mark } from "./marks";
 import type { Scenario } from "./columnTiers";
-import { pinScale, pinScaleBand } from "../scale";
+import { pinClip, pinScale, pinScaleBand } from "../scale";
 
 export type StructureRow = {
   category: string;
@@ -50,6 +50,8 @@ export type StructureBarsOptions = {
   selected?: string;
   highlight?: { category: string; tier: "base" | "delta" | "pct" };
   outlierLimit?: number;
+  /** A pin over `outlierRatio` × the next-largest |Δ%| is an outlier: clipped, the tier scaled from the others (OURS, default 3; 0 = off). */
+  outlierRatio?: number;
   rowStep?: number;
   fontSize?: number;
   /**
@@ -110,7 +112,7 @@ export function layoutStructureBars(input: StructureRow[], o: StructureBarsOptio
   const style = o.referenceStyle ?? "triangle";
   const tiers = ref ? (o.only ? [o.only] : (o.tiers ?? ["delta", "pct"])) : [];
   const pctDec = o.pctDecimals ?? 1; // one decimal by default, in every route
-  const limit = o.outlierLimit ?? 1;
+  const limit = pinClip(input.map((r) => r.deltaPct), o.outlierLimit ?? 1, o.outlierRatio ?? 3);
   const pctPpu = o.pctPpu ?? pinScale([{ ...structureExtents(input, o).pct, tierPx: o.pctTierPx ?? 90 }]);
   const head = T.geometry.pin.headPx.min; // small, at the stem end
   const refCode = ref ? `Δ${ref}` : "";
@@ -184,6 +186,11 @@ export function layoutStructureBars(input: StructureRow[], o: StructureBarsOptio
     labelCol += extra;
     spare -= extra;
   }
+  // a pin tier on its own scale shrinks first (down to 40 px) before the chart reports that it does not fit
+  const tierPx = o.pctTierPx ?? 90;
+  if (spare < 0 && o.pctPpu == null && tiers.includes("pct") && tierPx > 40) {
+    return layoutStructureBars(input, { ...o, pctTierPx: Math.max(40, Math.floor(tierPx + spare)) });
+  }
   if (spare < 0) warnings.push(`tiers need ${Math.ceil(need)} px but the chart has ${o.width} px: stack the tiers under the bars`);
   const gap = TIER_GAP + (parts.length > 1 ? Math.max(0, spare) / (parts.length - 1) : 0);
   const x0: Record<string, number> = {};
@@ -231,7 +238,10 @@ export function layoutStructureBars(input: StructureRow[], o: StructureBarsOptio
     const right = pct.right >= pct.left;
     const text = `${+(pctBand * 100).toFixed(0)}%`;
     back.push({ kind: "rect", role: "scale-band", tier: "pct", x: right ? ax : ax - w, y: top - 6, w, h: 5, fill: C.marker.scaleBandFill, stroke: C.marker.scaleBandLine, strokeWidth: 0.5 });
-    marks.push({ kind: "text", role: "scale-band-label", tier: "pct", x: right ? ax + w + 3 : ax - w - 3, y: top - 3.5, text, anchor: right ? "start" : "end", size, fill: C.text.secondary });
+    // keep the label clear of the tier name centred on the axis above it
+    const nameHalf = textWidth(`${refCode}%`, size) / 2 + 4;
+    const lx = right ? Math.max(ax + w + 3, ax + nameHalf) : Math.min(ax - w - 3, ax - nameHalf);
+    marks.push({ kind: "text", role: "scale-band-label", tier: "pct", x: lx, y: top - 3.5, text, anchor: right ? "start" : "end", size, fill: C.text.secondary });
   }
 
   const ring = (cx: number, cy: number, text: string, category: string) =>
@@ -341,16 +351,18 @@ export function layoutStructureBars(input: StructureRow[], o: StructureBarsOptio
   ];
   // pin marks carry their tier's px per 1.0, so a page check can see differing % scales (data-ppu)
   const tagPins = (m: Mark): Mark => (PIN_ROLES.has(m.role) && m.category != null ? { ...m, ppu: pctPpu } : m);
+  const short = shortPinWarning(marks);
+  if (short) warnings.push(short);
   return { width: o.width, height, marks: [...back, ...marks].map(tagPins), warnings, table };
 }
 
 /** Extents for the page registry: bars and Δ join the unit, pins join "%". */
-export function structureExtents(rows: StructureRow[], o: Pick<StructureBarsOptions, "primary" | "reference" | "outlierLimit">) {
+export function structureExtents(rows: StructureRow[], o: Pick<StructureBarsOptions, "primary" | "reference" | "outlierLimit" | "outlierRatio">) {
   const span = (vals: (number | null | undefined)[]) => {
     const nums = vals.filter((v): v is number => v != null && Number.isFinite(v));
     return { min: Math.min(0, ...nums), max: Math.max(0, ...nums) };
   };
-  const lim = o.outlierLimit ?? 1;
+  const lim = pinClip(rows.map((r) => r.deltaPct), o.outlierLimit ?? 1, o.outlierRatio ?? 3);
   return {
     base: span(rows.flatMap((r) => [r[o.primary ?? "AC"], o.reference ? r[o.reference] : null])),
     delta: span(rows.map((r) => r.delta)),

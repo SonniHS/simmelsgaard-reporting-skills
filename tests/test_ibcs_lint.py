@@ -894,3 +894,29 @@ class FinalRetestRegressions(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PublicCopy(unittest.TestCase):
+    """OURS (C16): page text is public copy; internal notes stay in the spec or the build notes."""
+
+    def dom(self, html):
+        with tempfile.TemporaryDirectory() as tmp:
+            page = Path(tmp) / "p.html"
+            page.write_text(html, encoding="utf-8")
+            return [x for x in run("dom", page, "--no-overrides")[1] if x["rule"] == "C16"]
+
+    MARK = "<svg><rect data-role='col-AC' fill='#404040'/></svg>"
+
+    def test_internal_notes_in_page_text_fail(self):
+        for note in ("In line = |ΔBU%| &lt; 0.5 % (proposed)", "AC&amp;FC computed in the app query; model change requested",
+                     "Threshold TBD", "Definition to be confirmed"):
+            f = self.dom(f"<body>{self.MARK}<footer><p>{note}</p></footer></body>")
+            self.assertEqual(len(f), 1, note)
+            self.assertEqual((f[0]["status"], f[0]["sev"]), ("fail", "M"))
+
+    def test_definitions_and_hidden_tables_pass(self):
+        ok = self.dom(f"<body>{self.MARK}<footer><p>In line: |ΔBU%| below 0.5 %. Source: Sales model.</p>"
+                      "<div style='position:absolute;clip:rect(0 0 0 0)'><table><td>TBD</td></table></div></footer></body>")
+        self.assertEqual(ok, [])
+        # a word that merely contains a flagged word stays allowed
+        self.assertEqual(self.dom(f"<body>{self.MARK}<p>Proposals pipeline, unproposed deals</p></body>"), [])

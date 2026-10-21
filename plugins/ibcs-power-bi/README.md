@@ -25,6 +25,10 @@ skills). `reporting-data` is optional; install it for the semantic-model skills.
 
 Scripts need Python 3 (stdlib only); preview rendering needs Node.js and, for PNGs, Chrome.
 
+## Scope
+
+Power BI phone layout: **not supported in 1.0.0**. The plugin builds desktop report pages; a mobile layout has to be authored and captured by hand (guidance, unverified: `ibcs-power-bi` SKILL.md §3a). For phone-first pages use a Fabric App (plugin `fabric-apps`).
+
 ## Skills and agents
 
 - `ibcs-power-bi` (skill) — theme, `new_pbip.py` scaffold, `scale_layout.py` (visual sizes of a scale group at one px per unit), `report_measures.py` (report-level measures the service can load: `"Schema": "extension"` bindings, `references`, no `hidden` / stray `active`), routing per IBCS chart/table type, `visual.json` recipes (slicer, text box, `tableEx` and interactions verified in the service), report measures, page layout, dynamic texts, slicer defaults, interactions, spec → PBIR procedure, checking the published page, checklist.
@@ -49,7 +53,7 @@ Scripts need Python 3 (stdlib only); preview rendering needs Node.js and, for PN
   groups and polarity in the model.
 - `fabric-apps` — the `fabric-org-apps` skill for distributing reports as org apps (audiences,
   dev/test/prod).
-- Upstream tools: Microsoft's `powerbi-authoring` plugin where installed (`/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install powerbi-authoring@fabric-collection`; skills `powerbi-report-authoring` and `powerbi-report-management`, preview; [Learn](https://learn.microsoft.com/power-bi/developer/agentic/power-bi-planner-fabric-skill-overview)) for PBIR/PBIP file mechanics (it does not cover Deneb or SVG
+- Upstream tools: Microsoft's `powerbi-authoring` plugin where installed (`/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install powerbi-authoring@fabric-collection`; skills `powerbi-report-cli` and `semantic-model-authoring` as of microsoft/skills-for-fabric bc42aaf, 2026-10 (Learn's older names: `powerbi-report-authoring`, `powerbi-report-management`), preview; its validator: `powerbi-report-author validate <name>.Report`; [Learn](https://learn.microsoft.com/power-bi/developer/agentic/power-bi-planner-fabric-skill-overview)) for PBIR/PBIP file mechanics (it does not cover Deneb or SVG
   measures); [Deneb](https://deneb.guide/) (custom visual); the community
   PowerofBI.IBCS DAX library ([daxlib.org](https://daxlib.org/) registry, source at
   [github.com/avatorl/dax-udf-svg-ibcs](https://github.com/avatorl/dax-udf-svg-ibcs); check its

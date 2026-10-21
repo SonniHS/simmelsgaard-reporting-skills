@@ -24,7 +24,7 @@
       "requiredFields": [
         "Period"
       ],
-      "notes": "ΔX% = (AC-REF)/REF with the SIGNED reference (never ABS). N/A when REF is blank or 0, or when REF < 0 and naOnNegativeRef is true (IBCS UN 4.1 p.54). If you pass a precomputed ΔPY% measure instead, keep the same rule in DAX. Same % scale on the page: the same pxPerUnit (px per percentage point) on every pin chart and each visual's height sized to its own Δ% range (usermeta.ibcs.layout), not the same yMin/yMax on visuals of one height. Rows with a blank Period are dropped (a constant measure such as a scale field would otherwise add a blank category). Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Outliers (UN 5.3, CH 4.4): set clipPct (fraction, e.g. 0.5 = 50%) or bind ClipPct for business-irrelevant relative outliers: the pin is cut at that value, has no head, keeps its full label, and a small triangle beyond the label points in the growth direction. Only for relative variances; never cut absolute columns or bars (CH 2.1). Differing % scales are marked (OURS, UN 5.2 / CH 4.3): this chart's pin scale is sized to its own tier, so when it differs from the page's other pin tiers set pinScaleBand (-1 = auto round value 1/2/5 × 10^n % at 25–60 % of the tier; or the same fraction in charts read together): a band at the left edge of the plot from the axis with its value label, the tier name moves to the other side of the axis; scale_layout.py sets -1 whenever the page's pin scales differ, and the page footnote says the % tiers are on different scales.",
+      "notes": "ΔX% = (AC-REF)/REF with the SIGNED reference (never ABS). N/A when REF is blank or 0, or when REF < 0 and naOnNegativeRef is true (IBCS UN 4.1 p.54). If you pass a precomputed ΔPY% measure instead, keep the same rule in DAX. Same % scale on the page: the same pxPerUnit (px per percentage point) on every pin chart and each visual's height sized to its own Δ% range (usermeta.ibcs.layout), not the same yMin/yMax on visuals of one height. Rows with a blank Period are dropped (a constant measure such as a scale field would otherwise add a blank category). Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Outliers (UN 5.3, CH 4.4): set clipPct (fraction, e.g. 0.5 = 50%) or bind ClipPct for business-irrelevant relative outliers: the pin is cut at that value, has no head, keeps its full label, and a small triangle beyond the label points in the growth direction. Only for relative variances; never cut absolute columns or bars (CH 2.1). Outlier pins (OURS): a pin whose |Δ%| exceeds pinOutlierFactor (3) × the next-largest |Δ%| of the tier, or the ±clip (default ±100 %), whichever is smaller, is an outlier: the tier is scaled from the other pins and the outlier is clipped at that limit with the outlier triangle and its full label. Reason: one immaterial reference (AC 0 against a budget that rounds to 0 gives −100 %) would otherwise set the scale and flatten every other pin. Differing % scales are marked (OURS, UN 5.2 / CH 4.3): this chart's pin scale is sized to its own tier, so when it differs from the page's other pin tiers set pinScaleBand (-1 = auto round value 1/2/5 × 10^n % at 25–60 % of the tier; or the same fraction in charts read together): a band at the left edge of the plot from the axis with its value label, the tier name moves to the other side of the axis; scale_layout.py sets -1 whenever the page's pin scales differ, and the page footnote says the % tiers are on different scales.",
       "knobs": [
         "refScenario",
         "polarity",
@@ -39,6 +39,7 @@
         "pxPerUnit",
         "showCategoryLabels",
         "clipPct",
+        "pinOutlierFactor",
         "pinScaleBand"
       ],
       "layout": {
@@ -98,6 +99,14 @@
             "pinScaleBand": -1
           },
           "note": "pinScaleBand -1: a scaling marker at the left edge for a % scale that differs from the page's other pin tiers."
+        },
+        {
+          "suffix": "-immaterial-reference",
+          "sampleData": "pin-immaterial-reference.json",
+          "params": {
+            "refScenario": "BU"
+          },
+          "note": "pinOutlierFactor 3 (default): Apr has AC 0.0 against a budget of 0.04 (rounds to 0.0), so ΔBU% = −100 %; it is more than 3 × the next-largest |Δ%|, so it is clipped at that limit with the outlier triangle and its full label, and the other pins (about ±2 %) keep their length."
         }
       ]
     }
@@ -163,6 +172,11 @@
       "name": "clipPct",
       "value": 1,
       "description": "relative outlier clip (UN 5.3, CH 4.4) as a fraction; default 1 = ±100 % (ours, the same rule in Power BI and web apps): pins beyond it are cut at the clip point, have no head, end in a triangle in the growth direction at the clip point and keep their full label; 0 = off (field ClipPct wins)"
+    },
+    {
+      "name": "pinOutlierFactor",
+      "value": 3,
+      "description": "outlier rule for pins (OURS): a pin beyond pinOutlierFactor × the next-largest |Δ%| of the tier is clipped there (outlier triangle, full label) and does not set the tier's scale; the ±clip still applies when it is smaller. 0 = off (only the ±clip)"
     },
     {
       "name": "pinScaleBand",
@@ -384,11 +398,41 @@
       "as": "_clip"
     },
     {
-      "calculate": "isValid(datum._p) && datum._clip > 0 && abs(datum._p) > datum._clip",
+      "calculate": "isValid(datum._p) ? abs(datum._p) : -1",
+      "as": "_pAbs"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_pAbs",
+          "as": "_pA1"
+        }
+      ]
+    },
+    {
+      "calculate": "datum._pAbs >= 0 && datum._pAbs < datum._pA1 ? datum._pAbs : -1",
+      "as": "_pAbsB"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_pAbsB",
+          "as": "_pA2"
+        }
+      ]
+    },
+    {
+      "calculate": "min(datum._clip > 0 ? datum._clip : 1e9, pinOutlierFactor > 0 && datum._pA2 > 0 ? pinOutlierFactor * datum._pA2 : 1e9)",
+      "as": "_lim"
+    },
+    {
+      "calculate": "isValid(datum._p) && datum._lim < 1e9 && abs(datum._p) > datum._lim",
       "as": "_out"
     },
     {
-      "calculate": "datum._out ? (datum._p > 0 ? datum._clip : -datum._clip) : datum._p",
+      "calculate": "datum._out ? (datum._p > 0 ? datum._lim : -datum._lim) : datum._p",
       "as": "_pd"
     },
     {

@@ -61,6 +61,21 @@ All notable changes to this marketplace and its plugins. The format follows
   when the largest step is under 5 % of the base (our default, knob `magnifyBelow`); base and total
   stay on the page scale.
 
+### Fixed (proof run 2)
+- Pin outliers: a pin beyond 3 × the next-largest |Δ%| of its tier (or the ±100 % clip) is clipped with
+  the outlier triangle and its full label, and the tier scales from the other pins (web `outlierRatio`,
+  Deneb `pinOutlierFactor`, `scale_layout.py`); a tier where most pins are too short fails a check (E12).
+- Bridges fit their width: one shared fitted scale for bridges read together, the magnifier below at
+  phone width, names wrap before they are cut; overflow is a failing check.
+- Public copy: page text never carries internal notes ("proposed", "TBD", "model change"); footnotes
+  state definitions only; new lint C16 (dom and pbir).
+- Power BI: phone layout declared not supported in 1.0.0; key message 72 px and one title-line recipe;
+  the calculation waterfall's scale band uses the band tokens; F6 exempts visuals without a base tier;
+  Microsoft's `powerbi-authoring` skills named (`powerbi-report-cli`, `semantic-model-authoring`) with
+  the `powerbi-report-author validate` step.
+- Label thinning keeps the extremes first; deploy wording in the Fabric App builder requires the user's
+  approval and a dry run.
+
 ### Changed (marked pin scales)
 - A relative-variance tier whose scale differs from the page's other pin tiers carries a scaling marker
   (UN 5.2 / CH 4.3): a round-value band with its label, in the scale-band style (web `pctScaleBand`,

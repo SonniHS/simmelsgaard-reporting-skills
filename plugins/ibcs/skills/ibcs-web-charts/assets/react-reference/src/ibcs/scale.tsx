@@ -38,6 +38,24 @@ export function pinScale(tiers: Iterable<{ min: number; max: number; tierPx: num
 }
 
 /**
+ * The clip of a pin tier (OURS): ±limit (default ±100 %), or tighter when one or a few pins are
+ * outliers, i.e. more than `ratio` × the next-largest |Δ%| of the tier. The tier is then scaled from
+ * the other pins: the outliers are drawn clipped at the tier edge with the outlier triangle and keep
+ * their full label. One immaterial reference (AC 0 against a budget that rounds to 0, so −100 %)
+ * must not flatten every other pin of the chart. ratio 0 turns the rule off.
+ */
+export function pinClip(values: Iterable<number | null | undefined>, limit = 1, ratio = 3): number {
+  const a = [...values].filter((v): v is number => v != null && Number.isFinite(v) && v !== 0)
+    .map((v) => Math.min(Math.abs(v), limit)).sort((x, y) => y - x);
+  if (!(ratio > 0) || a.length < 2) return limit;
+  // the outliers are the few pins above the deepest gap: a[j] > ratio × a[j + 1], at most half of the tier
+  let first = -1;
+  for (let j = 0; j + 1 < a.length && j + 1 <= a.length / 2; j++) if (a[j]! > ratio * a[j + 1]!) first = j + 1;
+  // clip a little beyond the largest regular pin, so it stays the longest stem
+  return first < 0 ? limit : Math.min(limit, a[first]! * 1.15);
+}
+
+/**
  * The scaling marker of a pin tier on its own scale (UN 5.2 / CH 4.3; OURS sizing): the round value
  * 1/2/5 × 10^n (as a fraction, 0.1 = 10 %) whose length is 25–60 % of the tier, so the reader can see
  * that this tier's % scale differs from the page's other % tiers.

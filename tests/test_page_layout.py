@@ -228,6 +228,61 @@ class PinScaleMarker(unittest.TestCase):
         self.assertEqual([r["location"].split(" / ")[-1] for r in one], ["regions"])
 
 
+class PinOutliers(unittest.TestCase):
+    """OURS: a pin beyond 3 × the next-largest |Δ%| is clipped and does not set the tier's scale; a tier
+    where most non-zero pins get stems under 4 px fails E12 (proof run 2: one −100 % flattened the rest)."""
+    LEGACY = [-1.8, -1.8, 1.7, -100, -1.7, 1.6, -1.8, -1.7]
+
+    def layout(self, params):
+        with tempfile.TemporaryDirectory() as tmp:
+            g = Path(tmp) / "g.json"
+            g.write_text(json.dumps({"maxExtentPx": 300, "members": [
+                {"id": "m", "template": "column-two-tier-variance", "params": {"pinTier": True, **params},
+                 "tiers": {"base": [0, 6.2], "variance": [-0.1, 0.1]}, "pinValues": self.LEGACY}]}))
+            p = subprocess.run([sys.executable, "-I", "-B", str(SCALE_LAYOUT), str(g), "--json"],
+                               capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        return json.loads(p.stdout)["members"][0], p.stderr
+
+    def test_one_extreme_pin_does_not_flatten_the_others(self):
+        row, err = self.layout({})
+        self.assertEqual(row["pinStemsShort"], {"short": 0, "total": 7})
+        self.assertNotIn("carry no magnitude", err)
+
+    def test_without_the_outlier_rule_the_short_stems_warn(self):
+        row, err = self.layout({"pinOutlierFactor": 0})
+        self.assertEqual(row["pinStemsShort"]["short"], 7)
+        self.assertIn("carry no magnitude", err)
+
+    def test_templates_default_to_the_outlier_factor(self):
+        for name in ("column-two-tier-variance", "pin-relative-variance"):
+            spec = json.loads((ROOT / f"plugins/ibcs-power-bi/skills/ibcs-deneb/assets/templates/{name}.vl.json")
+                              .read_text(encoding="utf-8"))
+            params = {q["name"]: q.get("value") for q in spec["params"]}
+            self.assertEqual(params.get("pinOutlierFactor"), 3, name)
+            self.assertIn("pinOutlierFactor", json.dumps(spec["transform"]), name)
+
+    def test_lint_fails_a_pin_tier_with_mostly_short_stems(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            rep = report(Path(tmp), {"p": [deneb("months", "column-two-tier-variance", (16, 400, 600, 300),
+                                                 {"pinTier": True})]})
+            lay = Path(tmp) / "layout.json"
+            lay.write_text(json.dumps({"pxPerUnit": 10, "members": [
+                {"id": "m", "visual": "months", "template": "column-two-tier-variance", "dimension": "height",
+                 "pinStemsShort": {"short": 6, "total": 7}}]}))
+            _, f, _ = lint(rep, "--layout", lay)
+        bad = rows(f, "E12", "months")
+        self.assertTrue(any(r["sev"] == "M" and r["status"] == "fail" for r in bad), f)
+
+    def test_variance_only_total_is_not_asked_for_a_scale_band(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            months = deneb("months", "column-two-tier-variance", (16, 400, 600, 300), {"pxPerUnit": 10})
+            total = deneb("total", "column-two-tier-variance", (640, 400, 120, 120),
+                          {"pxPerUnit": 3, "periodType": "year", "showBase": False})
+            _, f, _ = lint(report(Path(tmp), {"p": [months, total]}))
+        self.assertEqual(rows(f, "F6", "total"), [])
+
+
 class Truncation(unittest.TestCase):
     def test_long_slicer_header_fails_short_one_passes(self):
         with tempfile.TemporaryDirectory() as tmp:
@@ -267,6 +322,26 @@ class HeaderRhythm(unittest.TestCase):
             s = placed(slicer("padded", "Company", 212), 16, 162, 212, 76, pad_top=12)
             _, f, _ = lint(report(Path(tmp), {"p1": [title, s]}))
             self.assertEqual([x for x in rows(f, "LINT", "padded (") if "below the title" in x["evidence"]], [])
+
+
+class TitleLines(unittest.TestCase):
+    """page-shell §3: one visual type for the three title lines (cards bottom-align text, text boxes top-align)."""
+
+    def lines(self, types):
+        items = []
+        for k, (t, y, h) in enumerate(zip(types, (88, 122, 144), (34, 22, 22))):
+            name, v = placed(textbox(f"line{k}", "x"), 16, y, 1248, h)
+            v["visual"]["visualType"] = t
+            items.append((name, v))
+        with tempfile.TemporaryDirectory() as tmp:
+            _, f, _ = lint(report(Path(tmp), {"p1": items}))
+        return [x for x in rows(f, "LINT") if "title lines mix" in x["evidence"]]
+
+    def test_mixed_title_line_types_fail(self):
+        self.assertEqual(len(self.lines(["cardVisual", "textbox", "cardVisual"])), 1)
+
+    def test_one_type_passes(self):
+        self.assertEqual(self.lines(["cardVisual", "cardVisual", "cardVisual"]), [])
 
 
 class CardBottom(unittest.TestCase):
@@ -509,3 +584,16 @@ class LabelRoom(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class PublicCopyPbir(unittest.TestCase):
+    """OURS (C16): textbox runs and quoted literals in visual.json are public copy."""
+
+    def test_internal_note_in_a_textbox_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = report(Path(tmp), {"p1": [textbox("note", "In line: |ΔBU%| below 0.5 % (proposed)"),
+                                          textbox("src", "Source: Sales model")]})
+            _, f, _ = lint(r)
+            hits = rows(f, "C16")
+            self.assertEqual(len(hits), 1)
+            self.assertIn("note", hits[0]["location"])

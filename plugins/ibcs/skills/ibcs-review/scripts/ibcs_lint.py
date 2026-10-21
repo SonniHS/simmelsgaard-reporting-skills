@@ -987,6 +987,8 @@ def lint_scale_groups(infos: dict, ploc: str, layout_rows: dict):
     # 3. a Total / year visual on its own scale is marked (scale band or footnote)
     group_ppu = values | fields
     for n, i in absolute.items():
+        if i["params"].get("showBase") is False:
+            continue   # a variance-only visual draws no base tier, so it cannot draw the scale band
         if i["params"].get("periodType") == "year" and group_ppu and \
                 (i["ppu"] or i["ppuField"]) not in group_ppu and not i["params"].get("scaleBand"):
             add("F6", "UN 5.2, CH 4.3", "S", "check", f"{ploc} / {n}",
@@ -1017,6 +1019,16 @@ def lint_scale_groups(infos: dict, ploc: str, layout_rows: dict):
                     "template's own) without a scaling marker",
                     "Set pinScaleBand -1 (scale_layout.py prints it in setParams when the page's pin scales differ) and "
                     "footnote that the % tiers are on different scales; charts read together share one pinPxPerUnit.")
+    # 3c. pins carry magnitude: with --layout, scale_layout.py counts the non-zero pins of each pin member
+    #     that get a stem under 4 px at its pin scale (pinValues on the member, after the outlier rule)
+    for n, row in layout_rows.items():
+        short = row.get("pinStemsShort")
+        if n in infos and isinstance(short, dict) and short.get("total") and 2 * short.get("short", 0) > short["total"]:
+            add("E12", "UN 4.1", "M", "fail", f"{ploc} / {n}",
+                f"{short['short']} of {short['total']} non-zero pins get a stem under 4 px",
+                "Pins must carry the relative variance: size the pin tier to its own scale (pinPxPerUnit 0, "
+                "pinTierPx 48) and let the outlier rule (pinOutlierFactor 3, pinClip 1) take a single extreme "
+                "pin out of the scale; recompute with scale_layout.py.")
     # 4. sizes computed by scale_layout.py (--layout)
     for n, row in layout_rows.items():
         if n not in infos:
@@ -1129,6 +1141,21 @@ def lint_page_geometry(boxes: list[dict]):
                 f"slicer labels {gap:g} px below the title text box above ({t['loc'].split(' / ')[-1]})",
                 f"Header rhythm: message, 12 px, three title lines, at least {RHYTHM_GAP_PX} px, slicer labels "
                 "(page-shell.md §3): give the slicer padding top 12 or move it down.")
+    # title lines: one visual type for the three lines (a card visual bottom-aligns its text, a text box
+    # top-aligns it, so mixed lines sit unevenly); lines = text visuals stacked edge to edge, ≤ 40 px high
+    lines = sorted((b for b in ok if b["type"] in TEXT_TYPES and b["height"] <= 40), key=lambda b: (b["x"], b["y"]))
+    stack = []
+    for b in lines + [None]:
+        if b is not None and stack and abs(b["x"] - stack[-1]["x"]) <= 1 and abs(b["width"] - stack[-1]["width"]) <= 1 \
+                and abs(b["y"] - (stack[-1]["y"] + stack[-1]["height"])) <= 1:
+            stack.append(b)
+            continue
+        if len(stack) >= 2 and len({("textbox" if t["type"] == "textbox" else "card") for t in stack}) > 1:
+            add("LINT", "UN 2.2", "S", "fail", stack[0]["loc"],
+                "title lines mix text boxes and card visuals: " + ", ".join(t["type"] for t in stack),
+                "One visual type for all three title lines (page-shell.md §3): cardVisual text measures for dynamic "
+                "lines, or one text box for static titles; mixed types sit unevenly.")
+        stack = [b] if b is not None else []
     # content depth of each card (its last visual's bottom, from the card top); cards of one row (same
     # top and height) must be equally tall, so a shorter card is measured against the row's deepest card
     depth = {}
@@ -1216,6 +1243,7 @@ def lint_pbir(path: Path, tokens=None, layouts=None):
             if not vt:
                 continue
             boxes.append(visual_box(vfile, vtl, vloc, vco))
+            lint_public_copy(pbir_texts(vfile), vloc)
             lint_visual_bindings(vfile, v, vloc, report_measures)
             lint_truncation(vfile, v, vtl, vloc, objects, vco)
             if canvas and vtl not in ("shape", "basicshape", "image", "actionbutton"):
@@ -1605,6 +1633,69 @@ def lint_spec(spec: dict, loc):
                     fail("V15", f"{v.get('id')}.markers", "no separator at asOf", "Add {kind: separator, at: asOf}.")
 
 
+
+# ----------------------------------------------------------------------------- public copy (OURS)
+
+INTERNAL_NOTE = re.compile(r"\b(?:proposed|tbd|to be confirmed|model change)\b", re.I)
+
+
+def lint_public_copy(texts, loc) -> None:
+    """C16 (OURS): page text is public copy. Internal notes (a proposed threshold, TBD, a model change
+    request) belong in the visual spec's deviations / openQuestions or the build notes."""
+    seen = set()
+    for t in texts:
+        t = " ".join(str(t).split())
+        m = INTERNAL_NOTE.search(t)
+        if m and t not in seen:
+            seen.add(t)
+            add("C16", "SA 4.4", "M", "fail", loc, f"page text {t[:80]!r} contains {m.group(0)!r}",
+                "Footnotes, chips and titles state definitions, sources and scope only; move internal notes "
+                "to the visual spec (deviations, openQuestions) or the build notes.")
+
+
+class _PageText(HTMLParser):
+    """Visible page text: skips script/style, visually hidden wrappers (the hidden data tables) and SVG <title>/<desc>."""
+    SKIP = {"script", "style", "title", "desc"}
+    HIDDEN = re.compile(r"clip\s*:\s*rect\(|(?:^|;)\s*display\s*:\s*none|visually-hidden|sr-only", re.I)
+    VOID = {"img", "br", "input", "meta", "link", "rect", "line", "path", "circle", "ellipse", "polygon", "polyline", "use"}
+
+    def __init__(self):
+        super().__init__(convert_charrefs=True)
+        self.stack, self.texts = [], []
+
+    def handle_starttag(self, tag, attrs):
+        if tag in self.VOID:
+            return
+        d = dict(attrs)
+        hidden = tag in self.SKIP or bool(self.HIDDEN.search((d.get("style") or "") + " " + (d.get("class") or "")))
+        self.stack.append((tag, hidden or (self.stack[-1][1] if self.stack else False)))
+
+    def handle_endtag(self, tag):
+        for i in range(len(self.stack) - 1, -1, -1):
+            if self.stack[i][0] == tag:
+                del self.stack[i:]
+                break
+
+    def handle_data(self, data):
+        if data.strip() and not (self.stack and self.stack[-1][1]):
+            self.texts.append(data)
+
+
+def pbir_texts(node):
+    """Text a reader sees in a visual.json: textbox runs and quoted literals (titles, card text)."""
+    if isinstance(node, dict):
+        for k, v in node.items():
+            if k == "value" and isinstance(v, str) and node.get("textStyle") is not None:
+                yield v
+            elif k == "Value" and isinstance(v, str) and len(v) > 2 and v[0] == v[-1] == "'":
+                yield v[1:-1]
+            else:
+                yield from pbir_texts(v)
+    elif isinstance(node, list):
+        for v in node:
+            yield from pbir_texts(v)
+
+
 # ----------------------------------------------------------------------------- dom (rendered web charts)
 
 SCENARIO_ROLE = re.compile(r"^(?:col|bar|triangle|line|dot|marker|area)-(AC|PY|PL|BU|FC)\b")
@@ -1653,6 +1744,7 @@ class _MarkCollector(HTMLParser):
                                "stroke": eff.get("stroke"),
                                "transform": d.get("transform") or "", "id": d.get("id"), "content": "",
                                "ppu": d.get("data-ppu"), "tier": d.get("data-tier"),
+                               "w": d.get("width"), "h": d.get("height"),
                                "svg": self.svg_count if self.svg_open else 0})
             if text and not closed and tag not in self.VOID:
                 self.open_text.append((len(self.stack), len(self.marks) - 1))
@@ -1697,6 +1789,26 @@ def lint_dom_pin_scales(marks: list, loc) -> None:
                 "and the page footnote says so; charts read together share one pin scale (pagePinScales).")
 
 
+def lint_dom_short_pins(marks: list, loc, min_stem=5.0, magnitude=4.0) -> None:
+    """E12 (OURS): in a chart (SVG) where more than half of the pins carry less than 4 px of magnitude
+    beyond the minimum stem (head / 2 + 2 px), the pin length says nothing: scale the tier from the
+    non-outlier pins (an outlier over 3 × the next-largest |Δ%| is clipped with its marker)."""
+    by_svg: dict[int, list] = {}
+    for m in marks:
+        if m["role"] == "pin":
+            try:
+                by_svg.setdefault(m["svg"], []).append(max(float(m.get("w") or 0), float(m.get("h") or 0)))
+            except ValueError:
+                pass
+    for svg, lens in sorted(by_svg.items()):
+        short = sum(1 for x in lens if x < min_stem + magnitude)
+        if len(lens) >= 2 and short > len(lens) / 2:
+            add("E12", "UN 4.1", "M", "fail", f"{loc}: chart {svg}",
+                f"{short} of {len(lens)} pins under {magnitude:g} px beyond the minimum stem",
+                "Size the pin tier from the non-outlier pins (pinClip: one pin over 3 x the next-largest |Δ%| is "
+                "clipped with the outlier marker), so the largest regular pin fills about 90 % of the tier.")
+
+
 def lint_dom(text: str, loc, tokens):
     """Rendered marks (data-role on each SVG mark, ibcs-web-charts §8) against the effective tokens."""
     p = _MarkCollector()
@@ -1706,6 +1818,10 @@ def lint_dom(text: str, loc, tokens):
             "Render every mark with data-role (and data-impact on variances), see ibcs-web-charts §8.")
         return
     lint_dom_pin_scales(p.marks, loc)
+    lint_dom_short_pins(p.marks, loc)
+    pt = _PageText()
+    pt.feed(text)
+    lint_public_copy(pt.texts, loc)
     flat = {}
     def walk(node, path):
         if isinstance(node, dict):

@@ -84,7 +84,7 @@ openQuestions: [ … ]   # things the designer could not decide
 | `title.when` | string | ✓ | line 3: period(s), then scenarios/variances (`&` vs `and`). `{<slicer-id>}` expands to the slicer's selection as an IBCS period label: one member → its label (`2026-09`); a contiguous range → a span (`Jan..Sep 2026`, token `date.notation.span`); with `label: ytd` a range from the year's first period → YTD (`_Sep 2026`); otherwise a comma list. `{<slicer-id>-11}` = 11 periods before the selection's end; `_{<slicer-id>}` = YTD notation of a single period; `{<slicer-id>.year}` = the year of the selection's last period. The examples use the slicer ids `month`, `quarter` and `period` |
 | `footer.sources` | list | ✓ | system, model, table |
 | `footer.asOf` | value ref or field | ✓ | data timestamp (refresh time or reference date); the last closed period is `context.period.asOf` |
-| `footer.footnotes` | list of `{marker, text}` | – | definitions ("*Currency adjusted") |
+| `footer.footnotes` | list of `{marker, text}` | – | definitions ("*Currency adjusted"), printed as written: public copy only. Internal notes (a model change requested, a proposed threshold, TBD) go into `deviations` or `openQuestions`, never into a footnote, chip or title |
 | `layout.grid` | `{columns, rows, margin, gutter}` | ✓ | default 12 columns, tokens `layout.*` |
 | `layout.header` | `messagePosition: above-title \| right-of-title` | ✓ | identical on every page of the report |
 | `layout.responsive` | notes for phone/tablet | – | e.g. one-line title, panel reflow |

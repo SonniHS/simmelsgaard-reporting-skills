@@ -62,7 +62,7 @@ Two Microsoft repositories carry agent skills for Fabric (checked 2026-10):
 | | [microsoft/fabric-cli](https://github.com/microsoft/fabric-cli) | [microsoft/skills-for-fabric](https://github.com/microsoft/skills-for-fabric) |
 |---|---|---|
 | What it is | The Fabric CLI (`fab`) itself, a Python package (`pip install ms-fabric-cli`) | A skill collection for coding agents, published as the marketplace **`fabric-collection`** |
-| Skills | `.ai-assets/skills/`: `fabric-cli-core` and `fabric-cli-powerbi` (how to drive `fab`), plus context files and a prompt | `fabric-skills`: one bundle of 24 skills (warehouse, SQL database, Spark, eventhouse, dataflows, deployment pipelines, Git integration, semantic model authoring, cost estimation, migrations …), 4 agents and 3 remote MCP servers; `powerbi-authoring`: semantic model authoring and Power BI report skills |
+| Skills | `.ai-assets/skills/`: `fabric-cli-core` and `fabric-cli-powerbi` (how to drive `fab`), plus context files and a prompt | `fabric-skills`: one bundle of 24 skills (warehouse, SQL database, Spark, eventhouse, dataflows, deployment pipelines, Git integration, semantic model authoring, cost estimation, migrations …), 4 agents and 3 remote MCP servers; `powerbi-authoring`: the skills `powerbi-report-cli` (PBIR/PBIP authoring, validation with `powerbi-report-author validate`, preview, publish) and `semantic-model-authoring` (at bc42aaf, 2026-10) |
 | Claude Code install | No marketplace manifest: copy the skill folders into your skills directory by hand and update them by hand | `/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install …@fabric-collection` |
 | Other plugin ids | – | `skills-for-fabric`, `fabric-authoring`, `fabric-consumption` and `fabric-operations` are **deprecated aliases** of `fabric-skills` (the persona bundles were retired) |
 
@@ -77,7 +77,8 @@ Why: it is the only one of the two that installs and updates as a Claude Code pl
 current, complete bundle (the other ids are deprecated aliases of it), and it covers the Fabric work
 around these plugins: the SQL gold layer, semantic models, deployment pipelines and Git integration.
 Its skills call the Fabric REST APIs through the Azure CLI (`az`), and its MCP servers reuse your Azure
-CLI sign-in, so install the Azure CLI and run `az login` first. Enable auto-update for the
+CLI sign-in, so install the Azure CLI and run `az login` first. For Power BI reports also install `powerbi-authoring@fabric-collection`: the `ibcs-power-bi`
+builder runs its `powerbi-report-author validate` on every report it writes. Enable auto-update for the
 `fabric-collection` marketplace in `/plugin` > **Marketplaces** if you want new releases automatically.
 
 If you script Fabric with `fab` (as some skills here do for previews and org app promotion), you can

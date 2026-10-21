@@ -25,7 +25,7 @@ visual spec.
 - The notation (`ibcs-notation`), the visual-spec format (`ibcs-composition`) and `ibcs-review`
   (its `ibcs_lint.py` is the build gate in step 7), plugin `ibcs` (a dependency of this plugin;
   load them with the Skill tool, which prints each skill's base directory).
-- PBIR/PBIP file mechanics from Microsoft's `powerbi-authoring` plugin where installed (`/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install powerbi-authoring@fabric-collection`; skills `powerbi-report-authoring` and `powerbi-report-management`, preview; [Learn](https://learn.microsoft.com/power-bi/developer/agentic/power-bi-planner-fabric-skill-overview)). It does not cover Deneb or SVG measures
+- PBIR/PBIP file mechanics from Microsoft's `powerbi-authoring` plugin where installed (`/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install powerbi-authoring@fabric-collection`; skills `powerbi-report-cli` and `semantic-model-authoring` as of microsoft/skills-for-fabric bc42aaf, 2026-10 (Learn's older names: `powerbi-report-authoring`, `powerbi-report-management`), preview; its validator: `powerbi-report-author validate <name>.Report`; [Learn](https://learn.microsoft.com/power-bi/developer/agentic/power-bi-planner-fabric-skill-overview)). It does not cover Deneb or SVG measures
   (`ibcs-deneb`, `ibcs-svg-dax`). Measures and calculation
   groups belong in the semantic model (the `semantic-model-ibcs` skill, if the `reporting-data`
   plugin is installed), not as ad-hoc DAX in visuals. When the shared model must not change, the
@@ -86,7 +86,8 @@ visual spec.
 7. Validate: `jq empty` on every changed JSON (or `python3 -m json.tool <file> > /dev/null` if jq
    is not installed); `report_measures.py <report> --check`; `python3 -I <ibcs-review skill dir>/scripts/ibcs_lint.py
    pbir <report> --layout layout.json` (no failed rule: sizes, px per unit, label room, cut
-   headers, image column widths); a PBIP validator where available;
+   headers, image column widths); Microsoft's `powerbi-report-author validate <report>` (plugin
+   `powerbi-authoring`) after every batch of edits where installed, else another PBIP validator;
    `build_pbi_theme.py --check` and `sync_tokens.py --check`; a live-data preview of each Deneb
    visual (`render-previews.mjs --visual`); then the `ibcs-review` skill on the result if
    available.

@@ -34,6 +34,9 @@ at phone and desktop width.
 - Footnote markers match both ways: every ¹ in a title, chip or label has the same number in the
   footnote list, and every numbered footnote is referenced. An unnumbered footnote list next to
   numbered chips is a defect.
+- Page text is public copy: no internal notes in chips, footnotes or titles ("model change
+  requested", "proposed", "TBD", which query computes a number). They belong in the spec's
+  `deviations`/`openQuestions` or the build notes; a footnote states the definition only.
 - Series and scenario labels (AC, PY, BU, FC) once per chart, never repeated above and below.
 - Impact-coloured **text** (KPI deltas, coloured labels) uses the text tokens `goodText`/`badText`;
   the graphic green and red are for marks only.

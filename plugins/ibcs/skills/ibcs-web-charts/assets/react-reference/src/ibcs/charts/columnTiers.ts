@@ -5,8 +5,8 @@
 import { tokens } from "../tokens.generated";
 import { formatDelta, formatPercentDelta, formatValue, roundsToZero, type NumberScale } from "../format";
 import { impactFill, impactKey, impactText, type ColorMode, type Impact } from "../impact";
-import { clamp, lineBox, markBox, overlaps, periodLabels, spreadLabels, textWidth, type Fill, type Layout, type Mark } from "./marks";
-import { pinScale, pinScaleBand } from "../scale";
+import { clamp, lineBox, markBox, overlaps, periodLabels, shortPinWarning, spreadLabels, textWidth, type Fill, type Layout, type Mark } from "./marks";
+import { pinClip, pinScale, pinScaleBand } from "../scale";
 
 export type Scenario = "AC" | "FC" | "PY" | "PL" | "BU";
 
@@ -71,6 +71,8 @@ export type ColumnTiersOptions = {
   highlight?: { category: string; tier: TierKey };
   /** Pins beyond ±limit (fraction) are truncated with an outlier marker. Default 1 (±100 %). */
   outlierLimit?: number;
+  /** A pin over `outlierRatio` × the next-largest |Δ%| is an outlier: clipped, the tier scaled from the others (OURS, default 3; 0 = off). */
+  outlierRatio?: number;
   /** Minimum px above and below each tier's zero line: pass the union with a Total chart. */
   minTierPx?: Partial<Record<TierKey, TierPx>>;
   /** Draw a scale band (UN 5.2) at this round raw value: required on every chart of the unit when one chart has its own scale. */
@@ -107,7 +109,7 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
   const box = lineBox(size);
   const room = box + 2;
   const pctDec = o.pctDecimals ?? 1; // one decimal by default, in every route
-  const limit = o.outlierLimit ?? 1;
+  const limit = pinClip(input.map((r) => r.deltaPct), o.outlierLimit ?? 1, o.outlierRatio ?? 3);
   const mode = o.colorMode ?? "color";
   const tierList = o.tiers ?? ["pct", "delta"];
   if (tierList.includes("delta2") && !o.reference2) warnings.push("delta2 tier without reference2");
@@ -348,7 +350,7 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
     }
   });
 
-  // 7. place the labels: by priority (Total, cited, selected, first/last, extremes, rest), each
+  // 7. place the labels: by priority (Total, extremes, cited, selected, last AC, first/last, rest), each
   // tested against every mark of its tier (columns, triangles, pins, heads) and the labels already
   // placed; a label that hits a mark moves past it once, else it is left out (its value stays in the
   // hidden table and the tooltip).
@@ -364,13 +366,18 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
     pct: extremes(rows.map((r) => r.deltaPct)),
   };
   const lastAc = prim.map((p) => p?.scenario).lastIndexOf("AC");
+  // placing order: Total, the extremes of each tier (largest and smallest Δ, Δ%, value), cited,
+  // selected, last AC, first and last, rest; the Total and cited values are never left out
+  const keepAlways = (c: Cand) => !!rows[c.i]!.total || cited.has(rows[c.i]!.period);
   const rank = (c: Cand) => {
     const r = rows[c.i]!;
-    if (r.total || cited.has(r.period)) return 0;
-    if (c.i === selIdx) return 1;
-    if (c.i === 0 || c.i === rows.length - 1 || c.i === lastAc) return 2;
-    if (ext3[c.t].includes(c.i)) return 3;
-    return 4;
+    if (r.total) return 0;
+    if (ext3[c.t].includes(c.i)) return 1;
+    if (cited.has(r.period)) return 2;
+    if (c.i === selIdx) return 3;
+    if (c.i === lastAc) return 4;
+    if (c.i === 0 || c.i === rows.length - 1) return 5;
+    return 6;
   };
   const band = (t: TierKey) => ({ top: tiers[t].y0 - tiers[t].up - (t === "pct" ? room + 9 : room), bottom: tiers[t].y0 + tiers[t].down + (t === "pct" ? room + 9 : room) });
   const obstacleRoles = /^(col-|triangle-|pin|pin-head|variance$|outlier)/;
@@ -391,12 +398,12 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
     // neighbouring labels keep at least 2 px between them ("4.14.0" reads as one number)
     const padded = { x: bx.x - 2, y: bx.y, w: bx.w + 4, h: bx.h };
     const free = inside(bx) && !obstacles.some((ob) => overlaps(bx, ob)) && !placed.some((pl) => overlaps(padded, pl, 0));
-    if (!free && rank(c) > 0) { dropped++; continue; }
+    if (!free && !keepAlways(c)) { dropped++; continue; }
     placed.push(bx);
     marks.push(c.m);
     if (o.highlight?.category === rows[c.i]!.period && o.highlight.tier === c.t) ring(c.m.x, c.m.y, c.m.text, rows[c.i]!.period);
   }
-  if (dropped) warnings.push(`${dropped} labels left out to avoid collisions (priority: Total, cited, selected, first and last, extremes)`);
+  if (dropped) warnings.push(`${dropped} labels left out to avoid collisions (priority: Total, extremes, cited, selected, last AC, first and last)`);
 
   // 8. category labels, never with an ellipsis: the full period (Jan), else its first letter (J; the
   // year is in the title), else two staggered rows
@@ -475,6 +482,8 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
 
   // pin marks carry their tier's px per 1.0, so a page check can see differing % scales (data-ppu)
   const tagPins = (m: Mark): Mark => (PIN_ROLES.has(m.role) && m.category != null && m.ppu == null ? { ...m, ppu: pctPpu } : m);
+  const short = shortPinWarning(marks);
+  if (short) warnings.push(short);
   return { width: o.width, height, marks: [...back, ...marks].map(tagPins), warnings, table, tiers, step };
 }
 
@@ -496,12 +505,12 @@ export function alignTiers(...layouts: ColumnTiersLayout[]): Record<TierKey, Tie
  * Extents for the page registry, one request per tier: the base and the Δ tier both join the
  * chart's unit (each with the px its tier may use), the pins join "%".
  */
-export function columnTiersExtents(rows: PeriodRow[], o: Pick<ColumnTiersOptions, "reference" | "triangle" | "outlierLimit">) {
+export function columnTiersExtents(rows: PeriodRow[], o: Pick<ColumnTiersOptions, "reference" | "triangle" | "outlierLimit" | "outlierRatio">) {
   const span = (vals: (number | null | undefined)[]) => {
     const nums = vals.filter((v): v is number => v != null && Number.isFinite(v));
     return { min: Math.min(0, ...nums), max: Math.max(0, ...nums) };
   };
-  const lim = o.outlierLimit ?? 1;
+  const lim = pinClip(rows.map((r) => r.deltaPct), o.outlierLimit ?? 1, o.outlierRatio ?? 3);
   return {
     base: span(rows.flatMap((r) => [r.AC, r.FC, r[o.reference], o.triangle ? r[o.triangle] : null])),
     delta: span(rows.map((r) => r.delta)),

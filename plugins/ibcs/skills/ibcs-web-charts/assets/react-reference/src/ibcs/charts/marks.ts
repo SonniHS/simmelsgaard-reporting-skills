@@ -1,6 +1,7 @@
 // The mark primitives every layout function returns (SKILL §8). The renderer maps them to SVG and
 // writes `role` as data-role, `impact` as data-impact; tests and the ibcs-review linter query them.
 import type { ImpactKey } from "../impact";
+import { tokens } from "../tokens.generated";
 
 /** A solid colour, or the FC hatch with its stripe colour (one pattern per stripe colour). */
 export type Fill = string | { hatch: string };
@@ -42,6 +43,8 @@ export type Layout = {
   warnings: string[];
   /** Every plotted number for the visually hidden data table (first row = header). */
   table: string[][];
+  /** The px per unit actually used, when a layout had to shrink the page scale to fit its width. */
+  ppu?: number;
 };
 
 /** Bounding box of a mark; text boxes are 1.2 em high and ≈ 0.6 em per character wide. */
@@ -161,4 +164,16 @@ export function spreadLabels(ys: number[], gap: number, lo: number, hi: number):
   const out = new Array<number>(ys.length);
   order.forEach((o, k) => (out[o.i] = pos[k]!));
   return out;
+}
+
+/**
+ * Pin readability (OURS check): returns a warning when more than half of the drawn pins of a tier
+ * carry less than 4 px of magnitude beyond the minimum stem (head / 2 + 2 px, so the head never sits
+ * on the axis); their length then says nothing (scale the tier from the non-outlier pins, pinClip).
+ */
+export function shortPinWarning(marks: Mark[], magnitudePx = 4, minStemPx = tokens.geometry.pin.headPx.min / 2 + 2): string | null {
+  const pins = marks.filter((m): m is Extract<Mark, { kind: "rect" }> => m.kind === "rect" && m.role === "pin");
+  const short = pins.filter((p) => Math.max(p.w, p.h) < minStemPx + magnitudePx).length;
+  return pins.length >= 2 && short > pins.length / 2
+    ? `pin tier: ${short} of ${pins.length} pins are under ${magnitudePx} px beyond the minimum stem` : null;
 }

@@ -148,7 +148,9 @@ title token, 11 pt in Power BI), 19 px line height, no blank line between them �
   never the graphic green), the measure value in ink. A 1.5 px rule in ink under it.
 - **Materiality**: a comparison below the page's threshold reads "in line with BU (+0.5 mEUR,
   +0.3%)" instead of "+0.5 mEUR vs BU". The threshold comes from the visual spec (e.g. |Δ%| <
-  0.5 %); until the report owner confirms it, the footer says it is proposed.
+  0.5 %); its footnote states the rule ("In line: |ΔBU%| below 0.5 %"). Until the report owner
+  confirms the threshold, track that in the spec's `openQuestions`, never on the page (no
+  "proposed", "TBD" or "model change requested" in chips, footnotes or titles).
 - At most two findings: the headline measure and the single largest material mover ("E2 has the
   largest gap to BU (−3.4 mEUR)"). The mover is ringed where it appears (§6, §7).
 - Title lines: line 1 muted (who, with every active filter), line 2 measure bold and unit, line 3
@@ -246,6 +248,10 @@ behaviour contract §10). The shell adds:
   clipped by the card's overflow, and the host CSS may reset them), so the chips ①–⑧ pointed to
   unnumbered notes. A local harness can show them while the portal does not: check in the portal.
 - Long or many notes go into the How-to-read popover or a details page, with a one-line pointer.
+- **Page text is public copy.** Footnotes, chips and titles state definitions, sources and scope
+  only. Internal notes (a model change requested, a proposed threshold, TBD, open questions, which
+  query computes what) belong in the visual spec (`deviations`, `openQuestions`) or the build notes.
+  The `ibcs-review` linter fails page text with "proposed", "TBD", "to be confirmed" or "model change".
 
 ## 9. Layout tokens
 

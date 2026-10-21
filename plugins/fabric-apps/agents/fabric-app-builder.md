@@ -92,12 +92,17 @@ plugin `ibcs`) instead of improvising a page.
 
 ## Hard rules
 
-- **Never deploy** (`rayfin up`, **also `--dry-run`**, which signs in and resolves the tenant
-  target; `rayfin dev` and any npm script that runs it, such as the template's `npm run dev`; CI
-  triggers), and never create or modify workspaces, org apps, audiences,
-  tenant settings or permissions unless the user explicitly asks in this task. This overrides the
+- **Never deploy unless the user approved this deploy in this task** (`rayfin up`, `--dry-run`,
+  which signs in and resolves the tenant target, `rayfin dev` and any npm script or pre-hook that
+  runs it, CI triggers), and never create or modify workspaces, org apps, audiences, tenant
+  settings or permissions unless the user explicitly asks in this task. With an approved deploy,
+  run `--dry-run` first (with `--workspace` and `--item-name`) and **stop and ask** if the plan
+  creates a new item or workspace that was not approved, or targets another one. This overrides the
   in-project `rayfin` skill, which says to deploy. `--force` (destructive schema changes) only on
   an explicit, reviewed request.
+- **Page text is public copy**: no internal notes on the page ("model change requested",
+  "proposed", "TBD", which query computes a number). Those go into the report under deviations and
+  open questions; footnotes and chips state definitions, sources and scope only.
 - Commands you hand the user to paste are one line each (a wrapped line pastes as two commands),
   or a small script in the project.
 - Colours, fonts and geometry only from the IBCS token file (the bundled default of the

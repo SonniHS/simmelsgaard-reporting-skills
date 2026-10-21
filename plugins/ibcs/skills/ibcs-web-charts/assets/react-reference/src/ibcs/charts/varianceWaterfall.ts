@@ -34,6 +34,8 @@ export type WaterfallOptions = {
   magnifyBelow?: number;
   /** Where the magnifier panel goes: beside the overview when it fits (default), or below it (phones). */
   magnifier?: "auto" | "below" | "off";
+  /** Shrink the page scale to fit the width (default true): at phone width the bridge never overflows its card. */
+  fit?: boolean;
 };
 
 /** Smallest of 1, 2, 5, 10, 20, 50, … that makes `px` at least `minPx`. */
@@ -62,11 +64,14 @@ const T = tokens;
 const C = T.color;
 const PANEL_GAP = 24;
 
-export function layoutVarianceWaterfall(b: Bridge, o: WaterfallOptions): Layout {
+function layoutAt(b: Bridge, o: WaterfallOptions): Layout {
   const warnings: string[] = [];
   const size = o.fontSize ?? T.typography.size.label.px;
   const box = lineBox(size);
-  const step = o.rowStep ?? Math.max(T.geometry.categoryStepPx.structureRow, box + 6);
+  // a name wider than its column (at most 35 % of the width) wraps to two lines: that needs a row step of
+  // 2.2 × the font size; cut from the end only when even two lines do not fit
+  const longName = [b.base.label, ...b.steps.map((s) => s.label), b.total.label].some((l) => textWidth(l, size) + 8 > o.width * 0.35);
+  const step = o.rowStep ?? Math.max(T.geometry.categoryStepPx.structureRow, box + 6, longName ? Math.ceil(2.2 * size) : 0);
   const B = step * T.geometry.barWidthRatio.absolute;
   const mode = o.colorMode ?? "color";
   const tol = (o.tolerance ?? 0.005) * Math.max(Math.abs(b.total.value), 1e-9);
@@ -101,9 +106,11 @@ export function layoutVarianceWaterfall(b: Bridge, o: WaterfallOptions): Layout 
   const zLo = magnify ? Math.min(...runs) : 0;
   const zHi = magnify ? Math.max(...runs) : 0;
   const panelW = room + (zHi - zLo) * o.ppu * k + room;
+  // the total-variance label sits right of the arrow at the AC level (left of it for a drop)
+  const vTextW = textWidth(`${b.variance.code} ${formatDelta(b.variance.value, o.scale)}`, size) + 6;
   const geom = (labelCol: number) => {
     const x0 = labelCol + room - lo * o.ppu;
-    const overviewRight = x0 + hi * o.ppu + room;
+    const overviewRight = x0 + hi * o.ppu + Math.max(room, b.total.value >= b.base.value ? vTextW : 0);
     const beside = magnify && o.magnifier !== "below" && overviewRight + PANEL_GAP + panelW <= o.width;
     const need = magnify && beside ? overviewRight + PANEL_GAP + panelW : Math.max(overviewRight, magnify ? labelCol + panelW : 0);
     return { labelCol, x0, overviewRight, beside, need };
@@ -256,5 +263,47 @@ export function layoutVarianceWaterfall(b: Bridge, o: WaterfallOptions): Layout 
   }
 
   const table = [["Row", "Value"], ...labels.map((l, i) => [l, valueLabels[i]!]), [b.variance.code, formatDelta(b.variance.value, o.scale)]];
-  return { width: o.width, height, marks: [...back, ...marks], warnings, table };
+  return { width: o.width, height, marks: [...back, ...marks], warnings, table, ppu: o.ppu };
+}
+
+const overflows = (l: Layout) => l.warnings.some((w) => w.startsWith("waterfall needs"));
+
+/**
+ * The largest px per unit (≤ o.ppu) at which the bridge fits its width, with the magnifier below the
+ * overview once it no longer fits beside it. Use the smallest result of all bridges that are read
+ * together (fitWaterfalls) so they keep one scale.
+ */
+export function fitWaterfallPpu(b: Bridge, o: WaterfallOptions): number {
+  if (!overflows(layoutAt(b, o))) return o.ppu;
+  const below = { ...o, magnifier: o.magnifier === "off" ? ("off" as const) : ("below" as const) };
+  if (!overflows(layoutAt(b, below))) return o.ppu;
+  let lo = 0;
+  let hi = o.ppu;
+  for (let i = 0; i < 30; i++) {
+    const mid = (lo + hi) / 2;
+    if (overflows(layoutAt(b, { ...below, ppu: mid }))) hi = mid;
+    else lo = mid;
+  }
+  return lo;
+}
+
+/** One shared px per unit for bridges read together (e.g. two bridges on one phone page). */
+export function fitWaterfalls(bridges: Bridge[], o: WaterfallOptions): number {
+  return Math.min(o.ppu, ...bridges.map((b) => fitWaterfallPpu(b, o)));
+}
+
+/**
+ * Variance waterfall (A-29). When it does not fit its width at the page scale, it shrinks the scale
+ * (OURS; `fit: false` keeps the page scale and reports the overflow) and moves the magnifier below;
+ * the result's `ppu` says which scale was drawn, and a warning names the change.
+ */
+export function layoutVarianceWaterfall(b: Bridge, o: WaterfallOptions): Layout {
+  const first = layoutAt(b, o);
+  if (o.fit === false || !overflows(first)) return first;
+  const ppu = fitWaterfallPpu(b, o);
+  // it overflowed beside: the magnifier goes below (unless it is switched off)
+  const magnifier = o.magnifier === "off" ? "off" : "below";
+  const l = layoutAt(b, { ...o, ppu, magnifier });
+  if (ppu < o.ppu) l.warnings.push(`scale shrunk to ${Math.round((ppu / o.ppu) * 100)} % of the page scale to fit ${o.width} px: use the same px per unit for every bridge read with it (fitWaterfalls)`);
+  return l;
 }

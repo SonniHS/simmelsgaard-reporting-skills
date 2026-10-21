@@ -59,6 +59,12 @@ Optional per template member (the docs' extra paddings, so nothing is cut or squ
                              layout crossFixedPx (waterfall-variance 50), else 30
     "planFootnote": false    line-scenarios without its plan footnote (also params showPL false)
     "reservePx": {"pins": 8} extra px per tier on top of its range (a reserve for data-bound ranges)
+    "pinValues": [-1.8, -100, 1.7]  the chart's Δ% per category in percentage points (null = N/A): the
+                             script applies the outlier rule (OURS: a pin beyond pinOutlierFactor 3 × the
+                             next-largest |Δ%|, or beyond ±pinClip, is clipped there and does not set the
+                             scale), sets tiers.pins from the clipped values and reports pinStemsShort
+                             {short, total}: non-zero pins under 4 px; more than half = a warning (and a
+                             failing E12 in ibcs_lint.py pbir --layout)
     "magnify": true          waterfall-variance / waterfall-variance-time with the magnifying glass active
                              (largest step < magnifyBelow × base): adds the panel, magnifyPx + 24 px (and the
                              time template's 42 px label band), to the value-axis dimension for the time
@@ -315,6 +321,39 @@ PIN_TIER_PX = 48.0      # pin tier extent of a column template (ours; horizontal
 PIN_MIN_SHARE = 0.4     # check: a chart's (or aligned group's) largest |Δ%| has a stem of at least 40 % of its tier
 
 
+PIN_OUTLIER_FACTOR = 3.0  # a pin beyond 3 × the next-largest |Δ%| of its tier is an outlier (ours)
+PIN_SHORT_PX = 4.0        # check: more than half the non-zero pins under 4 px = pins carry no magnitude
+
+
+def pin_outliers(m: dict, tdir: Path) -> None:
+    """Member "pinValues" (the chart's Δ% per category, in percentage points; null = N/A): apply the
+    templates' outlier rule (OURS: clip at the smaller of ±pinClip / clipPct and pinOutlierFactor × the
+    next-largest |Δ%|), so one extreme pin (AC 0 against a budget that rounds to 0: −100 %) does not set
+    the tier's scale; set the pin tier range from the clipped values and reserve the outlier triangle."""
+    vals = m.get("pinValues")
+    if not isinstance(vals, list) or m.get("template", "svg") == "svg":
+        return
+    hit = pin_tier(m, tdir)
+    params = hit[1] if hit else {**load_template(m["template"], tdir)["params"], **m.get("params", {})}
+    clip = params.get("pinClip", params.get("clipPct", 1))
+    clip = float(clip) * 100 if is_num(clip) and float(clip) > 0 else math.inf
+    factor = float(params.get("pinOutlierFactor", PIN_OUTLIER_FACTOR) or 0)
+    nums = [abs(float(v)) for v in vals if is_num(v)]
+    a1 = max(nums, default=0.0)
+    a2 = max((v for v in nums if v < a1), default=0.0)
+    lim = min(clip, factor * a2 if factor > 0 and a2 > 0 else math.inf)
+    clipped = [max(-lim, min(lim, float(v))) for v in vals if is_num(v)]
+    m.setdefault("tiers", {})["pins"] = [min(0.0, *clipped), max(0.0, *clipped)] if clipped else [0.0, 0.0]
+    if any(abs(float(v)) > lim for v in vals if is_num(v)):
+        m["clipPct"] = True   # the outlier triangle beyond the label needs its padding
+    decimals = int(params.get("pinDecimals", params.get("decimals", 1)) or 0)
+    m["_pinStemValues"] = [abs(v) for v in clipped if abs(v) * 10 ** decimals >= 0.5 and abs(v) < lim]
+
+
+def is_num(v) -> bool:
+    return isinstance(v, (int, float)) and not isinstance(v, bool) and math.isfinite(v)
+
+
 def pin_tier(m: dict, tdir: Path):
     """The member's active pin tier (its own % scale) with its merged params, or None."""
     if m.get("template", "svg") == "svg":
@@ -492,7 +531,19 @@ def main() -> int:
             set_params[m["id"]] = knobs
             m["params"] = {**m.get("params", {}), **knobs}   # size with the label room it needs
         warnings[m["id"]] += warns
+    for m in members:
+        pin_outliers(m, tdir)                                          # one extreme pin does not set the scale
     pin_ppu = pin_group(g, members, tdir, warnings, set_params)      # pin scale per chart (aligned charts share)
+    for mid, k in pin_ppu.items():                                   # pins carry magnitude: few stems < 4 px
+        stems = next((m.get("_pinStemValues") for m in members if m["id"] == mid), None)
+        if stems:
+            short = sum(1 for v in stems if v * k < PIN_SHORT_PX)
+            for m in members:
+                if m["id"] == mid:
+                    m["_pinStemsShort"] = {"short": short, "total": len(stems)}
+            if 2 * short > len(stems):
+                warnings[mid].append(f"member {mid}: {short} of {len(stems)} non-zero pins get a stem under "
+                                     f"{PIN_SHORT_PX:g} px at {k:g} px per point: pins carry no magnitude")
     pin_markers(pin_ppu, members, set_params)                        # differing % scales are marked
     derive = [m for m in members if m.get("own") and not m.get("basePxPerUnit")]
     for m in derive:
@@ -537,6 +588,8 @@ def main() -> int:
             row["ownPxPerUnit"] = m.get("basePxPerUnit")
         if set_params.get(m["id"]):
             row["setParams"] = set_params[m["id"]]
+        if m.get("_pinStemsShort"):
+            row["pinStemsShort"] = m["_pinStemsShort"]
         if "cross" in p:
             row["crossPx"] = p["cross"]
             if m.get("widthPx") is not None and float(m["widthPx"]) < p["cross"]:

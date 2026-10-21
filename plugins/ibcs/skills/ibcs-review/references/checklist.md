@@ -74,6 +74,7 @@
 | C13 | data labels next to their element (leader lines otherwise) | UN 2.3 | S | img | — |
 | C14 | annotations linked by paired numbered references | UN 2.4 | S | img | — |
 | C15 | footnotes at page bottom (sources, definitions, dates) | UN 2.5 | S | img | may be omitted on live slides |
+| C16 | page text is public copy: footnotes, chips and titles state definitions, sources and scope only; no internal notes ("proposed", "TBD", "to be confirmed", "model change requested") | SA 4.4 | M | lint, text | *(ours)*; LINT: dom (visible text, hidden data tables skipped) and pbir (textbox runs, quoted literals). Internal notes go to the visual spec (`deviations`, `openQuestions`) or the build notes |
 
 ## D. Dimensions (UN 3)
 

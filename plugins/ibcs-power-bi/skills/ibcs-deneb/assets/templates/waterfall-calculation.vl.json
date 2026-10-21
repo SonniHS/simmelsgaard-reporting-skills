@@ -201,6 +201,14 @@
       "value": "#F2F2F2"
     },
     {
+      "name": "ibcsScaleBandFill",
+      "value": "#DCE8FA"
+    },
+    {
+      "name": "ibcsScaleBandLine",
+      "value": "#5B9BD5"
+    },
+    {
       "name": "ibcsBarRatio",
       "value": 0.6667
     },
@@ -558,7 +566,7 @@
       }
     },
     {
-      "description": "scale band (CH 4.3): common positive value from zero, behind all calculation rows",
+      "description": "scale band (CH 4.3): light area in the scale-band colour from zero to the common value, behind all calculation rows",
       "transform": [
         {
           "filter": "datum._i == 1 && datum._band > 0"
@@ -567,7 +575,7 @@
       "mark": {
         "type": "rect",
         "fill": {
-          "expr": "ibcsAssistArea"
+          "expr": "ibcsScaleBandFill"
         }
       },
       "encoding": {
@@ -589,7 +597,7 @@
       }
     },
     {
-      "description": "scale band reference line",
+      "description": "scale band line: a short cap at the band value above the first row (the light area behind the rows shows the band), never a line through the rows, so no label crosses it",
       "transform": [
         {
           "filter": "datum._i == 1 && datum._band > 0"
@@ -598,11 +606,9 @@
       "mark": {
         "type": "rule",
         "stroke": {
-          "expr": "ibcsAssist"
+          "expr": "ibcsScaleBandLine"
         },
-        "strokeWidth": {
-          "expr": "ibcsAssistWidth"
-        }
+        "strokeWidth": 1
       },
       "encoding": {
         "x": {
@@ -610,12 +616,10 @@
           "type": "quantitative"
         },
         "y": {
-          "value": 0
+          "value": -6
         },
         "y2": {
-          "value": {
-            "expr": "height"
-          }
+          "value": 0
         }
       }
     },
@@ -913,7 +917,7 @@
           "expr": "ibcsFontSize"
         },
         "fill": {
-          "expr": "ibcsAssist"
+          "expr": "ibcsScaleBandLine"
         }
       },
       "encoding": {
@@ -922,7 +926,7 @@
           "type": "quantitative"
         },
         "y": {
-          "value": 0
+          "value": -6
         },
         "text": {
           "value": {

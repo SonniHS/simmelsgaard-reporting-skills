@@ -117,22 +117,22 @@ Data: period rows `{ period, period2?, closed?, AC?, FC?, PY?, PL?, BU? }`.
   template (`column-two-tier-variance` legendSide "end").
 - **Label collisions** (every width, decisive on a phone): each label is a box 1.2 em high and
   as wide as its measured text (≈ 0.6 em per digit). Place the labels of a tier in priority order
-  — a Total, the values the key message cites, the selected period, first and last, the extremes,
-  the rest — and test each against **every mark of its tier** (columns, the reference behind,
+  — a Total, **the extremes** (the largest and smallest value, Δ and Δ% of the tier), the values the
+  key message cites, the selected period, the last AC period, first and last, the rest — and test each against **every mark of its tier** (columns, the reference behind,
   triangles including the category's own PY triangle, which reaches half its size above its
   value, variance bars, pins and heads) and against the labels already placed. A label that hits
   a mark moves once past it on its own side (above for positive values, below for negative);
   if it still collides or leaves the tier's label room it is left out (the value stays in the
-  hidden table and the tooltip). The Total and the cited values are always drawn; first, last,
-  selected and extremes win every collision with lower-priority labels. Never draw a label over a
+  hidden table and the tooltip). The Total and the cited values are always drawn; the extremes
+  win every collision with lower-priority labels (a phone chart that dropped Aug +12.4 % lost the
+  month the reader looks for). Never draw a label over a
   bar. Reference implementation: `layoutColumnTiers` in
   `assets/react-reference` (test "no placed label overlaps …").
 - **Category axis** (proof run, OURS): period names **never** get an ellipsis ("J… F… M…" is
   ambiguous). Fallback chain: the full name (Jan) → for month names the first letter (J; the year
   is in title line 3) → two staggered rows. Quarters and other codes skip the letter step
-  (Q1 → two rows). Value labels thin by priority: the Total and the cited values, the selected
-  period, first, last and **the last AC period**, then the extremes; neighbouring labels keep at
-  least 2 px between them. A second line (`period2`, e.g. the year) under the first
+  (Q1 → two rows). Value labels thin by the priority above (Total, extremes, cited, selected, last
+  AC, first and last); neighbouring labels keep at least 2 px between them. A second line (`period2`, e.g. the year) under the first
   period and where it changes, **only** when the periods span two values.
 
 ## 3. Variance chart (absolute bars, relative pins)
@@ -182,7 +182,13 @@ absolute variances and a fraction for relative ones; `null` = N/A.
   visual's decimals — is unsigned, uncoloured and draws no mark.
 - **Outliers** (UN 5.3), the one rule for every route (web, Deneb, SVG): relative pins beyond
   an `outlierLimit` (OURS default ±100 %) are clipped at the limit without a head and get an
-  outlier triangle in growth direction at the clip point; the label shows the full value. Only business-irrelevant relative values may be truncated this way (CH 2.1,
+  outlier triangle in growth direction at the clip point; the label shows the full value.
+  **A pin over 3 × the next-largest |Δ%| of its tier is an outlier too** (OURS, `outlierRatio`,
+  default 3; 0 = off): the tier is scaled from the other pins (clip just beyond the largest regular
+  pin) and the outlier is clipped at the tier edge with its triangle and full label. Reason: one
+  immaterial reference (AC 0 against a budget that rounds to 0, so −100 %) must not flatten every
+  other pin of the chart to 0–4 px. Check (OURS): a tier where more than half of the pins carry
+  less than 4 px beyond the minimum stem fails (`shortPinWarning`, `ibcs_lint.py dom` E12). Only business-irrelevant relative values may be truncated this way (CH 2.1,
   CH 4.4). Absolute variance bars, totals and "Other" are never truncated: the extent is sized
   to the data, or a scale band or magnifying glass is used (CH 4.2–4.5). State truncation in a
   footnote.
@@ -252,6 +258,14 @@ Data: `{ base: { label, scenario, value }, steps: [{ label, delta, impact?, rema
 
 `variance` is the model's total Δ (e.g. ΔPY with its impact) from the same query; the chart never
 computes it as total − base (the data contract forbids client-side variances).
+
+**Fit to the width (OURS).** A structure bridge (A-29) never overflows its card: when it needs more
+width than it has at the page scale, it shrinks its px per unit until it fits (the total-variance
+label and the value labels included), moves a magnifier below the overview, and wraps long names to
+two lines (a taller row step) before cutting them. Bridges read together keep one scale: fit them
+together (`fitWaterfalls`) and draw both at the smaller px per unit. The layout returns the px per
+unit it drew (`ppu`) and a warning; `fit: false` keeps the page scale and reports the overflow.
+Test at 390 px: no mark outside the chart box.
 
 **One canonical form per decomposition, chosen by the category type** (the same in every renderer:
 web, Deneb, SVG-DAX). Tags: STD = stated by IBCS v2.0 (page), FIG = measured from an IBCS figure,

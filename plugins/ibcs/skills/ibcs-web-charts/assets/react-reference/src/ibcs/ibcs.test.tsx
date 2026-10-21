@@ -252,10 +252,14 @@ describe("rev-4: labels, legend, pins, bands", () => {
     const boxes = byRole(l, "label").map(markBox).sort((a, b) => a.x - b.x);
     for (let k = 1; k < boxes.length; k++) if (Math.abs(boxes[k]!.y - boxes[k - 1]!.y) < boxes[k]!.h) expect(boxes[k]!.x - (boxes[k - 1]!.x + boxes[k - 1]!.w)).toBeGreaterThanOrEqual(2 - 1e-6);
   });
-  it("keeps the last AC month and the extremes when labels are thinned", () => {
-    const l = layoutColumnTiers(months, { ...opts, width: 170 });
-    const base = byRole(l, "label").map((m) => m.category);
-    expect(base).toContain("Mar"); // last AC
+  it("keeps the extremes first, then the last AC month, when labels are thinned", () => {
+    const narrow = byRole(layoutColumnTiers(months, { ...opts, width: 170 }), "label").map((m) => m.category);
+    expect(narrow).toEqual(expect.arrayContaining(["Jan", "Apr"])); // smallest and largest value
+    for (const width of [200, 230, 260, 300]) {
+      const base = byRole(layoutColumnTiers(months, { ...opts, width }), "label").map((m) => m.category);
+      if (base.length >= 3) { expect(base).toContain("Mar"); return; } // last AC once there is room for a third
+    }
+    throw new Error("no width placed three labels");
   });
   it("labels the scale band above it at the left edge, inside the box, in the secondary text colour", () => {
     const l = layoutColumnTiers(months, { ...base, scaleBand: 2e6 });

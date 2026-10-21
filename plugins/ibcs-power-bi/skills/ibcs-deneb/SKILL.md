@@ -20,7 +20,7 @@ Status (as of 2026-10): **11 templates done and render-checked** against the IBC
 templates in a live-connected report in the Power BI service; not opened in Desktop by this
 plugin; see "Not verified".
 
-PBIR file mechanics come from Microsoft's `powerbi-authoring` plugin where installed (`/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install powerbi-authoring@fabric-collection`; skills `powerbi-report-authoring` and `powerbi-report-management`, preview; [Learn](https://learn.microsoft.com/power-bi/developer/agentic/power-bi-planner-fabric-skill-overview)); it has no Deneb skill, so Deneb
+PBIR file mechanics come from Microsoft's `powerbi-authoring` plugin where installed (`/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install powerbi-authoring@fabric-collection`; skills `powerbi-report-cli` and `semantic-model-authoring` as of microsoft/skills-for-fabric bc42aaf, 2026-10 (Learn's older names: `powerbi-report-authoring`, `powerbi-report-management`), preview; its validator: `powerbi-report-author validate <name>.Report`; [Learn](https://learn.microsoft.com/power-bi/developer/agentic/power-bi-planner-fabric-skill-overview)); it has no Deneb skill, so Deneb
 escaping and properties are written by `to_pbir.py` here. The notation rules come from the `ibcs-notation`
 skill (plugin `ibcs`). The templates apply them as follows: relative variance divides by the
 **signed** reference and shows `N/A` when it cannot be interpreted; geometry follows the
@@ -33,7 +33,7 @@ arithmetic sign, polarity only selects the colour (good / bad / **neutral blue**
 | File | Visual-spec `type` | IBCS | Preview |
 |---|---|---|---|
 | `column-two-tier-variance.vl.json` | `grouped-column` (+ triangle tier) + `variance-column` tier (+ `pin-time` tier) | EX 1.1 cards 5, 6, 7, 8; CO 4.2 | `column-two-tier-variance{,-pl,-bu-py-triangle,-scale-group,-scale-band,-comments,-pins,-pins-px,-variance-only,-variance-only-pins}.png` |
-| `pin-relative-variance.vl.json` | `pin-time` | card 8; UN 4.1 | `pin-relative-variance{,-pl,-cost,-wide,-outlier}.png` |
+| `pin-relative-variance.vl.json` | `pin-time` | card 8; UN 4.1 | `pin-relative-variance{,-pl,-cost,-wide,-outlier,-immaterial-reference}.png` |
 | `bar-structure-variance.vl.json` | `bar-triangles` / `grouped-bar` (+ triangle tier) + `variance-bar` tier | cards 23–25; EX 4.2; CO 4.2 | `bar-structure-variance{,-py-overlap,-bu-py-triangle,-scale-band}.png` |
 | `waterfall-calculation.vl.json` | `calculation-waterfall` | card 28 | `waterfall-calculation.png` |
 | `waterfall-variance.vl.json` | `variance-waterfall-structure` | card 29; CH 4.5 | `waterfall-variance{,-scale-band-highlight,-magnifier}.png` |
@@ -118,7 +118,7 @@ Fields, knobs and notes per template are in each file's `usermeta.ibcs` and in
 - **Outliers** (UN 5.3, CH 4.4): one rule for Power BI and web apps. Pins beyond ±100 % (ours;
   `pin-relative-variance` knob `clipPct`, field `ClipPct`; pin tier knob `pinClip`) are cut at the
   clip point: no head, a triangle at the clip point in the growth direction, the full value in the
-  label beyond it. Set 0 to switch it off; never cut at a low value such as ±20 %. Absolute columns and bars are never cut
+  label beyond it. Set 0 to switch it off; never cut at a low value such as ±20 %. **One extreme pin does not set the scale** (OURS): a pin whose |Δ%| exceeds 3 × the next-largest |Δ%| of its tier (knob `pinOutlierFactor`, 0 = off), or the ±100 % clip, whichever is smaller, is an outlier: the tier is scaled from the other pins, and the outlier is clipped at that limit with the outlier triangle and its full label. Why: one immaterial reference (AC 0 against a budget that rounds to 0 gives −100 %) set the scale in a proof run and left every other pin at 0–4 px. `scale_layout.py` applies the same rule to a member's `pinValues` and reports `pinStemsShort`; the linter fails a pin tier where more than half the non-zero pins get stems under 4 px (E12 with `--layout`). Absolute columns and bars are never cut
   (CH 2.1): give them their own scale with a **scale band** instead.
 - **Scale band** (CH 4.3): `column-two-tier-variance`, `bar-structure-variance` and
   `waterfall-variance` knob `scaleBand` (or field `ScaleBand`) draws a band from the axis to
@@ -191,7 +191,7 @@ Fields, knobs and notes per template are in each file's `usermeta.ibcs` and in
   `pinPxPerUnit`). Pins carry the relative variance by their length (the cross-tool rule in
   ibcs-power-bi page-shell.md §5): own scale per chart, 6 px heads at the stem end, at least
   head + 2 px long, a baseline marker (head on the axis, no colour) for a Δ% that rounds to zero,
-  labels with one decimal (`pinDecimals` 1), clipped at ±100 % (`pinClip`). The last closed month gets the assisting band through all tiers
+  labels with one decimal (`pinDecimals` 1), clipped at ±100 % (`pinClip`) or at 3 × the next-largest |Δ%| (`pinOutlierFactor`). The last closed month gets the assisting band through all tiers
   (`markLastClosed`, default on; a selection wins).
 - **Variance-only tier:** `column-two-tier-variance` knob `showBase: false` draws only the
   variance tier (axis, columns, labels, tier name; with `pinTier` a ΔX + ΔX% pair), e.g. a ΔPY tier

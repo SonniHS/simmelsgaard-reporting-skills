@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 import {
   KpiCard, MarksSvg, alignTiers, cardSurface, columnTiersExtents, layoutColumnTiers, layoutStructureBars,
-  layoutTimeWaterfall, layoutVarianceWaterfall, pagePinScales, pickScale, pxPerUnit, structureExtents, tokens, type Layout, type PeriodRow,
+  fitWaterfalls, layoutTimeWaterfall, layoutVarianceWaterfall, pagePinScales, pickScale, pxPerUnit, structureExtents, tokens, type Layout, type PeriodRow,
 } from "../src/ibcs";
 
 const out = join(fileURLToPath(new URL(".", import.meta.url)), "../previews");
@@ -75,7 +75,7 @@ const ytdScale = pickScale([regionTotal.AC]);
 const pins = pagePinScales([
   { id: "months", ...mExt.pct, tierPx: 48, group: "months" },
   { id: "total", ...tExt.pct, tierPx: 48, group: "months" },
-  { id: "regions", ...structureExtents(structure, { reference: "BU" }).pct, tierPx: 90 },
+  { id: "regions", ...structureExtents(structure, { reference: "BU" }).pct, tierPx: 60 }, // fits a 560 px card with its labels
 ]);
 const pct = pins.get("months")!.ppu;
 const pctBand = pins.get("months")!.band ?? undefined;
@@ -86,7 +86,7 @@ const t1 = layoutColumnTiers(total, { ...base, width: W.total, ppu: ppu.get("EUR
 const align = alignTiers(m1, t1);
 const monthsL = layoutColumnTiers(months, { ...base, width: W.months, ppu: ppu.get("EUR")!, selected: "Sep", highlight: { category: "Sep", tier: "delta" }, minTierPx: align, scaleBand: 2e6, deltaScaleBand: 0.5e6, keep: ["Sep"] });
 const totalL = layoutColumnTiers(total, { ...base, width: W.total, ppu: ppu.get("EUR:total")!, scale: pickScale([totAF]), minTierPx: align, scaleBand: 2e6, deltaScaleBand: 0.5e6, primaryLabel: "AC&FC" });
-const structL = layoutStructureBars(structure, { width: W.half, reference: "BU", ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1, highlight: { category: "Region West", tier: "delta" }, ...regionPins });
+const structL = layoutStructureBars(structure, { width: W.half, reference: "BU", ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1, highlight: { category: "Region West", tier: "delta" }, ...regionPins, pctTierPx: 60 });
 const bridgeL = layoutVarianceWaterfall(bridge, { width: W.half, ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1 });
 
 // Small contributions next to a large base: the magnifier case (CH 4.5). Costs: polarity -1.
@@ -168,17 +168,20 @@ writeFileSync(
 // Phone check (390 px viewport, 16 px gutters): the same data redrawn for the width, not shrunk.
 const PW = 390 - 2 * 16 - 2 * 16; // viewport − page gutters − card padding
 const pMonths = layoutColumnTiers(months, { ...base, width: PW, ppu: ppu.get("EUR")!, selected: "Sep", keep: ["Sep"], scaleBand: 2e6 });
-const pStruct = layoutStructureBars(structure, { width: PW, reference: "BU", stack: "auto", ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1, ...regionPins });
-const pCost = layoutVarianceWaterfall(costBridge, { width: PW, ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: -1, magnifier: "below" });
+const pStruct = layoutStructureBars(structure, { width: PW, reference: "BU", stack: "auto", ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1, ...regionPins, pctTierPx: 60 });
+// the two A-29 bridges are read together: one px per unit that fits both at phone width (fitWaterfalls)
+const phoneBridgePpu = fitWaterfalls([bridge, costBridge], { width: PW, ppu: ppu.get("EUR:ytd")!, scale: ytdScale });
+const pBridge = layoutVarianceWaterfall(bridge, { width: PW, ppu: phoneBridgePpu, scale: ytdScale, polarity: 1 });
+const pCost = layoutVarianceWaterfall(costBridge, { width: PW, ppu: phoneBridgePpu, scale: ytdScale, polarity: -1, magnifier: "below" });
 const pQuarter = layoutTimeWaterfall(quarterBridge, { width: PW, ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1 });
 const phone = (
   <main style={{ background: "rgba(0,0,0,0.05)", padding: 16, display: "grid", gap: 12, width: 390 - 2 * 16, fontFamily: tokens.typography.family.web.join(", ") }}>
-    {([[pMonths, "Revenue by month"], [pStruct, "Revenue by region"], [pCost, "Operating costs, BU to AC"], [pQuarter, "Revenue by quarter, PY to AC"]] as const).map(([l, t]) => (
+    {([[pMonths, "Revenue by month"], [pStruct, "Revenue by region"], [pBridge, "Revenue, PY to AC"], [pCost, "Operating costs, BU to AC"], [pQuarter, "Revenue by quarter, PY to AC"]] as const).map(([l, t]) => (
       <Card key={t} title={t}><MarksSvg layout={l} title={t} /></Card>
     ))}
   </main>
 );
-for (const [name, l] of [["phone months", pMonths], ["phone structure", pStruct], ["phone cost bridge", pCost], ["phone quarter bridge", pQuarter]] as const)
+for (const [name, l] of [["phone months", pMonths], ["phone structure", pStruct], ["phone bridge", pBridge], ["phone cost bridge", pCost], ["phone quarter bridge", pQuarter]] as const)
   for (const w of l.warnings) console.warn(`${name}: ${w}`);
 writeFileSync(
   join(out, "phone.html"),

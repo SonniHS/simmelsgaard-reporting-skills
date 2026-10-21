@@ -68,6 +68,8 @@ Rules:
   the largest |Δ%| fills about 90 %; the months and their Total share one scale via `pinScale`),
   6 px heads at the stem end, clipped at ±100 % with an outlier triangle, a baseline marker for a
   Δ% that rounds to zero, labels with one decimal. Check: the largest stem is ≥ 40 % of its tier.
+  A pin over 3 × the next-largest |Δ%| of its tier is clipped as an outlier and the tier is scaled
+  from the others (`pinClip`, OURS), so one −100 % member does not flatten the rest.
   **Differing % scales are marked (OURS).** Pin tiers share one % scale wherever charts are read
   together (the months and their Total, small multiples); every other pin tier keeps its own
   scale, because one large relative variance (e.g. −55 % in a structure chart) on a page-wide
@@ -124,6 +126,9 @@ Rules:
   (`{}` when there are no overrides yet), because the explicit `--overrides` path must exist. Clamp
   token ratios that turn into pixels (pin stems and heads, triangles) to the px limits stated in
   the token file, so wide categories do not produce absurd marks.
+- **Bridges fit their card**: at phone width `layoutVarianceWaterfall` shrinks its scale to the
+  width; two bridges on one page share the fitted scale (`fitWaterfalls`), the magnifier moves
+  below, names wrap. Never let a bridge overflow its card.
 - Return `warnings` (label collisions, outliers drawn at the edge) from layout and surface them in
   tests and the diagnostics toggle, not in the page.
 - **Text in an impact colour uses the text tokens** (`goodText`, `badText`), never the graphic
@@ -175,7 +180,7 @@ behaviour. Without `onSelect` the hit marks render nothing, so static charts sta
   inside the chart width (not at the far left of a wide box).
 - **Label collisions** (the algorithm, `ibcs-web-charts` behaviour contract §2, implemented in
   `layoutColumnTiers`): label boxes 1.2 em high and of measured width; labels placed in priority
-  order (Total, cited, selected, first/last, extremes, rest), each tested against every mark of
+  order (Total, extremes, cited, selected, last AC, first/last, rest), each tested against every mark of
   its tier — columns, the reference behind, triangles including the category's own PY triangle,
   variance bars, pins and heads — and the labels already placed; a hit moves the label once past
   the mark on its own side, otherwise it is left out (the value stays in the hidden table and the

@@ -273,9 +273,10 @@ ORDER BY 'Date'[YearMonth]
 
 - Prefix query measures (`q …`) so they never collide with model names; the table named in
   `DEFINE MEASURE` must exist in the model (any table works, the measure lives only in the query).
-- Put each such query on the model's change list and flag it in the page footnote ("AC&FC
-  computed in the app query; model change requested"). Once the model has the measure, delete the
-  `DEFINE` block.
+- Put each such query on the model's change list and in the build notes (or the spec's
+  `deviations`), never in page text: a reader does not care where a number is computed. A footnote
+  states only the definition ("AC&FC: actuals up to the last closed month, forecast after it").
+  Once the model has the measure, delete the `DEFINE` block.
 - The full patterns (per-month SUMX for AC&FC, full-period PY for forecast months) are in the
   `semantic-model-ibcs` skill, `visual-data-contract.md`, explicit-measure models.
 - Power BI reports use report-level measures for the same purpose (the `ibcs-power-bi` plugin).
