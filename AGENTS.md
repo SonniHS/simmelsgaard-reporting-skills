@@ -1,4 +1,4 @@
-# simmelsgaard-skills — agent instructions
+# simmelsgaard-reporting-skills — agent instructions
 
 A PUBLIC repo: a Claude Code plugin marketplace with the owner's skills and agents. `CLAUDE.md` is a symlink; edit this.
 

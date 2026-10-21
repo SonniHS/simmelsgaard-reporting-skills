@@ -13,8 +13,8 @@ pages and apps.
 ## Install
 
 ```
-/plugin marketplace add SonniHS/simmelsgaard-skills
-/plugin install ibcs@simmelsgaard-skills
+/plugin marketplace add SonniHS/simmelsgaard-reporting-skills
+/plugin install ibcs@simmelsgaard-reporting-skills
 ```
 
 ## Skills and agents

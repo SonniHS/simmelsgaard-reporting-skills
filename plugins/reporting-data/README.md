@@ -17,8 +17,8 @@ and locale are settings you choose; examples use EUR and en-US. Product facts ar
 ## Install
 
 ```
-/plugin marketplace add SonniHS/simmelsgaard-skills
-/plugin install reporting-data@simmelsgaard-skills
+/plugin marketplace add SonniHS/simmelsgaard-reporting-skills
+/plugin install reporting-data@simmelsgaard-reporting-skills
 ```
 
 ## Skills and agents

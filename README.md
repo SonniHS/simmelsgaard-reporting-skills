@@ -1,4 +1,4 @@
-# simmelsgaard-skills
+# simmelsgaard-reporting-skills
 
 A public Claude Code plugin marketplace with skills and agents for business reporting: IBCS®-style notation,
 report and dashboard design, Power BI, Microsoft Fabric Apps, semantic models and the SQL behind them.
@@ -10,22 +10,22 @@ Status: early release (0.1). Tested against a Power BI report and a Fabric App; 
 In Claude Code, add the marketplace once, then install the plugins you want:
 
 ```
-/plugin marketplace add SonniHS/simmelsgaard-skills
-/plugin install ibcs@simmelsgaard-skills
-/plugin install ibcs-power-bi@simmelsgaard-skills
-/plugin install fabric-apps@simmelsgaard-skills
-/plugin install reporting-data@simmelsgaard-skills
+/plugin marketplace add SonniHS/simmelsgaard-reporting-skills
+/plugin install ibcs@simmelsgaard-reporting-skills
+/plugin install ibcs-power-bi@simmelsgaard-reporting-skills
+/plugin install fabric-apps@simmelsgaard-reporting-skills
+/plugin install reporting-data@simmelsgaard-reporting-skills
 ```
 
 Or from a shell:
 
 ```
-claude plugin marketplace add SonniHS/simmelsgaard-skills
-claude plugin install ibcs@simmelsgaard-skills
+claude plugin marketplace add SonniHS/simmelsgaard-reporting-skills
+claude plugin install ibcs@simmelsgaard-reporting-skills
 ```
 
 `ibcs-power-bi` and `fabric-apps` depend on `ibcs`, which is installed with them.
-`/plugin marketplace update simmelsgaard-skills` fetches new versions. If new skills or agents do not show up,
+`/plugin marketplace update simmelsgaard-reporting-skills` fetches new versions. If new skills or agents do not show up,
 restart Claude Code.
 
 ## Plugins

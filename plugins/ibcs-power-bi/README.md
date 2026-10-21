@@ -15,8 +15,8 @@ in an end-to-end test in the Power BI service; not yet verified in Power BI Desk
 ## Install
 
 ```
-/plugin marketplace add SonniHS/simmelsgaard-skills
-/plugin install ibcs-power-bi@simmelsgaard-skills
+/plugin marketplace add SonniHS/simmelsgaard-reporting-skills
+/plugin install ibcs-power-bi@simmelsgaard-reporting-skills
 ```
 
 This also installs the `ibcs` plugin, a declared dependency (its notation, composition and review

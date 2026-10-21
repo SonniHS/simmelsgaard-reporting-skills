@@ -13,8 +13,8 @@ operational decisions. Product facts are dated (as of 2026-10); Fabric Apps were
 ## Install
 
 ```
-/plugin marketplace add SonniHS/simmelsgaard-skills
-/plugin install fabric-apps@simmelsgaard-skills
+/plugin marketplace add SonniHS/simmelsgaard-reporting-skills
+/plugin install fabric-apps@simmelsgaard-reporting-skills
 ```
 
 This also installs the `ibcs` plugin, a declared dependency (its notation, composition and review
