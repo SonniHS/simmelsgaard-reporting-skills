@@ -1,0 +1,25 @@
+/// Disconnected forecast-version picker (a copy of the FC rows of Scenario). No selection = the latest forecast.
+table 'FC Version'
+
+	column ScenarioKey
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [ScenarioKey]
+
+	column VersionLabel
+		dataType: string
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [VersionLabel]
+
+	partition 'FC Version' = calculated
+		mode: import
+		source =
+				SELECTCOLUMNS (
+					FILTER ( Scenario, Scenario[ScenarioType] = "FC" ),
+					"ScenarioKey", Scenario[ScenarioKey],
+					"VersionLabel", Scenario[VersionLabel]
+				)

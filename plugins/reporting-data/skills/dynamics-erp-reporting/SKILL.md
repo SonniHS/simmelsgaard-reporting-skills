@@ -32,7 +32,7 @@ Central and Power Apps / Dataverse documentation). Use other tools for:
 |---|---|
 | Interactive Dataverse access: connect, query records, inspect tables/columns, security roles | Microsoft's Dataverse skills/MCP server, if installed; Web API / TDS endpoint |
 | F&O X++: custom tables, data entities, change tracking, deployable packages | an X++ skill, if installed; Learn F&O developer docs |
-| Lakehouse notebooks, materialized lake views, medallion layout | Microsoft's Fabric skills or the Fabric CLI (https://github.com/microsoft/fabric-cli) |
+| Lakehouse notebooks, materialized lake views, medallion layout | Microsoft's Fabric skills (`fabric-skills@fabric-collection`, https://github.com/microsoft/skills-for-fabric) or the Fabric CLI |
 | Gold DDL, SCD2, FX, hierarchy SQL, load checks | [sql-reporting-backend](../sql-reporting-backend/SKILL.md) |
 | Semantic model on top | [semantic-model-ibcs](../semantic-model-ibcs/SKILL.md) |
 

@@ -1,0 +1,86 @@
+/// IBCS absolute variance (actual - reference). BLANK when either side is blank: no variance against nothing.
+function 'Ibcs.Delta' =
+		( actual, reference ) =>
+		IF ( NOT ISBLANK ( actual ) && NOT ISBLANK ( reference ), actual - reference )
+
+/// IBCS variance for structure and bridge rows: a member with a reference but no actual keeps 0 - reference, a new member keeps actual - 0, so the rows add up to the total variance.
+function 'Ibcs.DeltaMember' =
+		( actual, reference, referenceExists : BOOLEAN ) =>
+		IF (
+			referenceExists && NOT ( ISBLANK ( actual ) && ISBLANK ( reference ) ),
+			COALESCE ( actual, 0 ) - COALESCE ( reference, 0 )
+		)
+
+/// IBCS relative variance (actual - reference) / reference with the signed reference, no ABS. BLANK (shown as N/A) when the reference is blank, 0 or negative.
+function 'Ibcs.DeltaPct' =
+		( actual, reference ) =>
+		IF (
+			NOT ISBLANK ( actual ) && NOT ISBLANK ( reference ) && reference > 0,
+			DIVIDE ( actual - reference, reference )
+		)
+
+/// Impact of a variance, for colour only: 1 good, -1 bad, 0 neutral (direction 0), BLANK for no or zero variance. direction: +1 more is better, -1 less is better, 0 neutral.
+function 'Ibcs.Impact' =
+		( delta, direction ) =>
+		IF ( NOT ISBLANK ( delta ) && delta <> 0, SIGN ( delta * direction ) )
+
+/// Impact colour (default ibcs-notation tokens): good green, bad red, neutral blue; BLANK stays BLANK.
+function 'Ibcs.ImpactColour' =
+		( impact ) =>
+		SWITCH (
+			TRUE (),
+			ISBLANK ( impact ), BLANK (),
+			impact > 0, "#8CB400",
+			impact < 0, "#FF0000",
+			"#0064FF"
+		)
+
+/// TRUE for helper measures (name starts with "fx ") that calculation items pass through unchanged.
+function 'Ibcs.IsHelper' =
+		( measureName : STRING ) =>
+		LEFT ( measureName, 3 ) = "fx "
+
+/// TRUE when a format string is a percentage format: the measure is a ratio, so its absolute variance is in percentage points.
+function 'Ibcs.IsRatioFormat' =
+		( measureFormat : STRING ) =>
+		CONTAINSSTRING ( measureFormat, "%" )
+
+/// Converts a variance of a ratio measure (0.021) to percentage points (2.1); other values pass unchanged.
+function 'Ibcs.PointsIfRatio' =
+		( amount, measureFormat : STRING ) =>
+		IF ( Ibcs.IsRatioFormat ( measureFormat ), amount * 100, amount )
+
+/// Format string for one unit scale ("1", "k", "m", "bn"); signed = TRUE for variances.
+function 'Ibcs.ScaleFormat' =
+		( scale : STRING, signed : BOOLEAN ) =>
+		SWITCH (
+			scale,
+			"bn", IF ( signed, "+#,0.0,,,;-#,0.0,,,;0.0", "#,0.0,,," ),
+			"m", IF ( signed, "+#,0.0,,;-#,0.0,,;0.0", "#,0.0,," ),
+			"k", IF ( signed, "+#,0,;-#,0,;0", "#,0," ),
+			IF ( signed, "+#,0;-#,0;0", "#,0" )
+		)
+
+/// Format string for scenario values (PY, BU, FC, AC, AC+FC): scaled and unsigned; ratios and helpers keep their own format.
+function 'Ibcs.ValueFormat' =
+		( measureName : STRING, measureFormat : STRING, scale : STRING ) =>
+		IF (
+			Ibcs.IsHelper ( measureName ) || Ibcs.IsRatioFormat ( measureFormat ),
+			measureFormat,
+			Ibcs.ScaleFormat ( scale, FALSE )
+		)
+
+/// Format string for absolute variances: signed and scaled, or signed percentage points for ratio measures.
+function 'Ibcs.DeltaFormat' =
+		( measureName : STRING, measureFormat : STRING, scale : STRING ) =>
+		SWITCH (
+			TRUE (),
+			Ibcs.IsHelper ( measureName ), measureFormat,
+			Ibcs.IsRatioFormat ( measureFormat ), "+0.0"" pp"";-0.0"" pp"";0.0"" pp""",
+			Ibcs.ScaleFormat ( scale, TRUE )
+		)
+
+/// Format string for relative variances.
+function 'Ibcs.DeltaPctFormat' =
+		( measureName : STRING, measureFormat : STRING ) =>
+		IF ( Ibcs.IsHelper ( measureName ), measureFormat, "+0.0%;-0.0%;0.0%" )

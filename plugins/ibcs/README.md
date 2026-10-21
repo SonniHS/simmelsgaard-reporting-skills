@@ -49,8 +49,8 @@ ships tested React + SVG reference components to copy and extend.
 - `reporting-data` — the `semantic-model-ibcs` skill provides the scenarios, variances and
   polarity the visuals need.
 - Upstream tools that are only described, not bundled: Microsoft Power BI, Deneb, Vega-Lite,
-  React. For the Microsoft Fabric CLI use Microsoft's skills at
-  https://github.com/microsoft/fabric-cli.
+  React. For Microsoft Fabric use Microsoft's Fabric skills
+  (`fabric-skills@fabric-collection` from https://github.com/microsoft/skills-for-fabric).
 
 ## Licence
 

@@ -1,0 +1,202 @@
+# Sample visual spec: the Key figures page on the Sample Sales model (format: ibcs-composition
+# visual-spec-format.md). It is what the getting-started design prompt should produce, close
+# enough to build from. Numbers in `message.text` and `notes` are from expected_results.csv.
+ibcsVisualSpec: "1.0"
+page:
+  id: key-figures
+  name: Key figures
+  kind: message
+  media: [powerbi-report, fabric-app]
+  canvas: {width: 1280, height: 1120, scroll: vertical}
+  objective:
+    goal: inform
+    audience: Management team (monthly review)
+    question: "How does revenue develop against budget and prior year this year, and which regions drive the gap?"
+  model:
+    semanticModel: Sample Sales
+    dateTable: "'Date'"
+    scenarioSource: "calc group 'Scenario Analysis' (PY, BU, FC, AC, AC+FC)"
+    varianceSource: "calc group 'Scenario Analysis' (ΔPY, ΔPY%, ΔBU, ΔBU%)"
+  context:
+    reportingUnit: Sample Sales
+    slicers:
+      - {id: region, field: "'Region'[Region]", default: all, multi: true, titleLine: 1}
+      - {id: month, field: "'Date'[MonthLabel]", default: latest-closed, multi: false, titleLine: 3, label: ytd}
+    period: {type: month, default: latest-closed, asOf: "'Date'[IsClosedPeriod]"}
+  message:
+    type: detection
+    source: template
+    text: "Revenue Jan..Sep 2026 is 30.8 mEUR, -0.8 mEUR (-2.7%) below budget; West has the largest gap (-0.7 mEUR)."
+    template: "Revenue {ytd} is {rev.AC} mEUR, {dbu} mEUR ({dbup}) {verdict}; {topRegion} has the largest gap ({topRegionDbu} mEUR)."
+    bindings:
+      ytd: {ref: "span of the month slicer from January"}
+      rev.AC: {ref: k1.rev.AC, format: number.format.absolute}
+      dbu: {ref: k1.dbu, measure: rev, format: number.format.variance}
+      dbup: {ref: k1.dbup, measure: rev, format: number.format.relativeVariance1}
+      verdict: {rule: "|dbup| < 0.5 %", then: "in line with budget", else: "{above|below} budget"}
+      topRegion: {ref: "BOTTOMN(1, regions excluding Other, v2.dbu).Region"}
+      topRegionDbu: {ref: "BOTTOMN(1, regions excluding Other, v2.dbu).dbu", format: number.format.variance}
+    scope: "follows the region and month slicers"
+    highlights:
+      - {kind: ellipse, target: {visual: k1, row: Revenue, variance: dbu}}
+      - {kind: ellipse, target: {visual: v2, tier: dbu, category: "{topRegion}", value: dbu}}
+  title:
+    who: "Sample Sales{region}"
+    what: [{set: "Key figures", unit: "mEUR, %, k#"}]
+    when: "_{month} AC and BU and PY, ΔBU and ΔPY"
+  footer:
+    sources: ["Sample Sales semantic model (sample data)"]
+    asOf: "[fx Last Closed Month]"
+    footnotes:
+      - {marker: "1", text: "AC&FC: actuals up to the last closed month, forecast (9+3) after it."}
+      - {marker: "2", text: "The full year has its own scale; the scale band is 5 mEUR in both charts."}
+      - {marker: "3", text: "In line with budget: |ΔBU%| below 0.5 %."}
+  layout:
+    grid: {columns: 12, rows: 12, margin: 16, gutter: 16}
+    header: {messagePosition: above-title}
+    responsive: "Phone: KPI cards two per row; the full year moves under the months as its own chart; region tiers stack under the bars."
+
+scaleGroups:
+  - {id: meur-month, unit: mEUR, kind: absolute, members: [v1.base, v1.dbu], domain: shared, sizing: scale-band,
+     scaleBand: {value: 5, label: "5"}}
+  - {id: meur-fy, unit: mEUR, kind: absolute, members: [v1.extension], domain: shared, sizing: scale-band,
+     scaleBand: {value: 5, label: "5"}}
+  - {id: meur-ytd, unit: mEUR, kind: absolute, members: [v2.base, v2.dbu], domain: shared, sizing: identical}
+  - {id: pct-bu, unit: "%", kind: relative, members: [v1.dbup, v2.dbup], domain: shared, sizing: identical}
+
+visuals:
+  - id: k1
+    type: kpi-cards
+    card: B-T-KPI + B-R-MEAS
+    question: "Where do the key figures stand year to date against budget and prior year?"
+    subtitle: null
+    grid: {col: 1, row: 1, colSpan: 12, rowSpan: 2}
+    cards: {perRow: 5, phonePerRow: 2, sparkline: none, deltaOrder: absolute-first}
+    data:
+      grain: [measure]
+      rows:
+        - {line: Revenue, type: measure, measure: rev, unit: mEUR, variances: [dbu, dbup, dpy, dpyp]}
+        - {line: Gross profit, type: measure, measure: gp, unit: mEUR, variances: [dbu, dbup, dpy, dpyp]}
+        - {line: Gross margin, type: measure, measure: gm, unit: "%", variances: [dbu-pp, dpy-pp]}
+        - {line: Operating costs, type: measure, measure: opex, unit: mEUR, variances: [dbu, dbup, dpy, dpyp]}
+        - {line: Orders, type: measure, measure: ord, unit: "k#", variances: [dbu, dbup, dpy, dpyp]}
+      columns:
+        - {type: scenario, code: AC}
+      measures:
+        - {id: rev, name: Revenue, field: "[Revenue]", kind: absolute, unit: EUR, display: {prefix: m, decimals: 1}, polarity: 1}
+        - {id: gp, name: Gross profit, field: "[Gross Profit]", kind: absolute, unit: EUR, display: {prefix: m, decimals: 1}, polarity: 1}
+        - {id: gm, name: Gross margin, field: "[Gross Margin %]", kind: relative, unit: "%", display: {decimals: 1, format: number.format.ratio}, polarity: 1}
+        - {id: opex, name: Operating costs, field: "[Operating Costs]", kind: absolute, unit: EUR, display: {prefix: m, decimals: 1}, polarity: -1}
+        - {id: ord, name: Orders, field: "[Orders]", kind: absolute, unit: "#", display: {prefix: k, decimals: 1}, polarity: 1}
+      scenarios:
+        - {code: AC, period: "YTD to the month slicer ('Time Calc' YTD)"}
+        - {code: BU}
+        - {code: PY}
+      variances:
+        - {id: dbu, code: ΔBU, measure: [rev, gp, opex, ord], minuend: AC, subtrahend: BU, kind: absolute}
+        - {id: dbup, code: ΔBU%, measure: [rev, gp, opex, ord], minuend: AC, subtrahend: BU, kind: relative, display: {format: number.format.relativeVariance1}}
+        - {id: dpy, code: ΔPY, measure: [rev, gp, opex, ord], minuend: AC, subtrahend: PY, kind: absolute}
+        - {id: dpyp, code: ΔPY%, measure: [rev, gp, opex, ord], minuend: AC, subtrahend: PY, kind: relative, display: {format: number.format.relativeVariance1}}
+        - {id: dbu-pp, code: ΔBU, measure: gm, minuend: AC, subtrahend: BU, kind: pp}
+        - {id: dpy-pp, code: ΔPY, measure: gm, minuend: AC, subtrahend: PY, kind: pp}
+      shape: [Measure, MeasureSort, Unit, AC, BU, PY, ΔBU, ΔBU%, ΔPY, ΔPY%, ImpactΔBU, ImpactΔPY]
+    labels: {data: all, legend: none}
+    markers:
+      - {kind: ellipse, target: {visual: k1, row: Revenue, variance: dbu}, reason: message}
+    notes: >
+      Expected for 2026-09 YTD (expected_results.csv): Revenue 30.8 | ΔBU -0.8 -2.7% | ΔPY +0.8 +2.5%;
+      Gross profit 12.3 | ΔBU -0.3 -2.4% | ΔPY +0.4 +3.0%; Gross margin 40.1% | ΔBU +0.1pp | ΔPY +0.2pp;
+      Operating costs 7.8 | ΔBU +0.1 +1.9% (bad, polarity -1) | ΔPY +0.3 +4.5% (bad);
+      Orders 37.5 | ΔBU -1.0 -2.7% | ΔPY +0.9 +2.6%.
+
+  - id: v1
+    type: grouped-column
+    card: A-5 + A-6 + A-7 + A-8 + CO 4.2 + CO 4.3
+    question: "How does revenue develop by month against budget, and where will the year end?"
+    subtitle: "**Revenue** by month | {month.year} AC&FC¹ and BU and PY, ΔBU and ΔBU%"
+    grid: {col: 1, row: 3, colSpan: 12, rowSpan: 5}
+    data:
+      grain: [month]
+      category:
+        field: "'Date'[MonthLabel]"
+        kind: time
+        periodType: month
+        labelField: "'Date'[MonthShort]"
+        sort: {by: "'Date'[YearMonth]", order: asc}
+        scope: "all months of the year of the month slicer; keeps the region slicer"
+        extension: {label: "{month.year}", period: "year of the month slicer ('Time Calc' FY)", gap: true,
+                    values: [rev.AC&FC, rev.BU, rev.PY], tiers: {dbu: [dbu-fc], dbup: [dbup-fc]}, scaleGroup: meur-fy}
+      measures:
+        - {id: rev, name: Revenue, field: "[Revenue]", kind: absolute, unit: EUR, display: {prefix: m, decimals: 1}, polarity: 1}
+      scenarios:
+        - {code: PY}
+        - {code: BU}
+        - {code: AC&FC, source: "'Scenario Analysis' item AC+FC"}
+      variances:
+        - {id: dbu-fc, code: ΔBU, measure: rev, minuend: AC&FC, subtrahend: BU, kind: absolute}
+        - {id: dbup-fc, code: ΔBU%, measure: rev, minuend: AC&FC, subtrahend: BU, kind: relative}
+      shape: [YearMonth, MonthShort, IsClosedPeriod, AC&FC, BU, PY, ΔBU, ΔBU%, ImpactΔBU]
+    tiers:
+      - {id: base, type: grouped-column, values: [rev.BU, rev.AC&FC, rev.PY], scaleGroup: meur-month, position: base,
+         draw: {rev.BU: overlap, rev.AC&FC: primary, rev.PY: triangle}}
+      - {id: dbu, type: variance-column, values: [dbu-fc], scaleGroup: meur-month, position: above}
+      - {id: dbup, type: pin-time, values: [dbup-fc], scaleGroup: pct-bu, position: above}
+    labels: {data: primary-only, legend: integrated}
+    markers:
+      - {kind: separator, at: asOf}
+      - {kind: scale-band, scaleGroup: meur-month, value: 5}
+      - {kind: scale-band, scaleGroup: meur-fy, value: 5}
+      - {kind: assisting-area, target: {visual: v1, category: "{month}"}, reason: selection}
+    notes: "Full year 2026: AC&FC 42.5, BU 43.7, PY 41.4 mEUR; ΔBU -1.3 (-2.9%). Months: see expected_results.csv (View = Month)."
+
+  - id: v2
+    type: grouped-bar
+    card: A-24 + A-25 + A-26 + A-30 + CO 4.2
+    question: "Which regions drive the gap to budget year to date?"
+    subtitle: "**Revenue** by region | _{month} AC and BU, ΔBU and ΔBU%"
+    grid: {col: 1, row: 8, colSpan: 12, rowSpan: 4}
+    data:
+      grain: [region]
+      category:
+        field: "'Region'[Region]"
+        kind: structure
+        sort: {by: rev.AC, order: desc}
+        topN: {n: 4, by: rev.AC, remainder: {label: Other, position: last, excludeFromRank: true}}
+      measures:
+        - {id: rev, name: Revenue, field: "[Revenue]", kind: absolute, unit: EUR, display: {prefix: m, decimals: 1}, polarity: 1}
+      scenarios:
+        - {code: BU}
+        - {code: AC, period: "YTD to the month slicer"}
+      variances:
+        - {id: dbu, code: ΔBU, measure: rev, minuend: AC, subtrahend: BU, kind: absolute}
+        - {id: dbup, code: ΔBU%, measure: rev, minuend: AC, subtrahend: BU, kind: relative}
+      shape: [Region, SortOrder, IsRemainder, AC, BU, ΔBU, ΔBU%, ImpactΔBU]
+    tiers:
+      - {id: base, type: bar-triangles, values: [rev.AC, rev.BU], scaleGroup: meur-ytd, position: base,
+         draw: {rev.AC: primary, rev.BU: triangle}}
+      - {id: dbu, type: variance-bar, values: [dbu], scaleGroup: meur-ytd, position: right}
+      - {id: dbup, type: pin-structure, values: [dbup], scaleGroup: pct-bu, position: right}
+    labels: {data: primary-only, legend: integrated}
+    markers:
+      - {kind: ellipse, target: {visual: v2, tier: dbu, category: "{topRegion}", value: dbu}, reason: message}
+    notes: >
+      Expected 2026-09 YTD: North 11.6 (ΔBU +0.1, +0.9%), West 7.9 (-0.7, -7.7%), South 7.1 (0.0, 0%:
+      +246 EUR rounds to zero, unsigned and uncoloured), East 3.8 (-0.2, -4.6%), Other 0.4 (-0.1, -19.9%).
+
+interactions:
+  crossFilter: filter
+  slicerPlacement: collapsed-pane
+  scaleRecompute: per-filter-context
+  messageOnFilter: re-scope
+  emptyState: "No values for {who}, {when}."
+
+deviations:
+  - rule: "CH 4.1"
+    visual: v1
+    what: "The full-year extension of v1 is drawn on its own scale meur-fy, not on the months' scale."
+    reason: "The year (about 42 mEUR) is about 12 times a month; on one scale the months would flatten."
+    mitigation: "5 mEUR scale band in both groups; footnote 2 names the two scales; the year's ΔBU tiers line up with the months' tiers."
+    acceptedBy: TBD (report owner)
+
+openQuestions:
+  - "Deviation CH 4.1 (own scale for the full-year extension of v1): accepted by the report owner?"

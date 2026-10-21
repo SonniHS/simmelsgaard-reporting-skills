@@ -18,8 +18,8 @@ description: >
 Facts as of 2026-10: org apps are GA, audiences GA since July 2026; several adjacent pieces (Git
 integration of org apps, Fabric Apps) are preview. Re-check Microsoft Learn before promising
 behaviour. Companion: [ibcs-fabric-app](../ibcs-fabric-app/SKILL.md) (building the Fabric App).
-For Fabric CLI mechanics (`fab`, Git integration, deployment pipelines) use Microsoft's own skills
-from <https://github.com/microsoft/fabric-cli>.
+For Fabric CLI mechanics (`fab`, Git integration, deployment pipelines) use Microsoft's Fabric skills
+(`fabric-skills@fabric-collection` from <https://github.com/microsoft/skills-for-fabric>).
 
 ## 1. When an org app, and when not
 

@@ -1,0 +1,73 @@
+/// All measures. Scenarios and variances come from the Scenario Analysis calculation group, period views from Time Calc. Polarity for colour: Operating Costs -1, all others +1.
+table _Measures
+
+	/// Net revenue in EUR. Defaults to AC when no scenario is selected, so a bare card never sums scenarios.
+	measure Revenue =
+			IF (
+				ISFILTERED ( Scenario ),
+				SUM ( Sales[Revenue] ),
+				CALCULATE ( SUM ( Sales[Revenue] ), Scenario[ScenarioType] = "AC" )
+			)
+		formatString: #,0
+		displayFolder: 1 KPIs
+
+	/// Cost of sales in EUR, shown positive. Defaults to AC.
+	measure 'Cost of Sales' =
+			IF (
+				ISFILTERED ( Scenario ),
+				SUM ( Sales[CostOfSales] ),
+				CALCULATE ( SUM ( Sales[CostOfSales] ), Scenario[ScenarioType] = "AC" )
+			)
+		formatString: #,0
+		displayFolder: 1 KPIs
+
+	/// Revenue minus cost of sales.
+	measure 'Gross Profit' = [Revenue] - [Cost of Sales]
+		formatString: #,0
+		displayFolder: 1 KPIs
+
+	/// Gross profit as a share of revenue; its variances are in percentage points.
+	measure 'Gross Margin %' = DIVIDE ( [Gross Profit], [Revenue] )
+		formatString: 0.0%
+		displayFolder: 1 KPIs
+
+	/// Operating costs in EUR, shown positive; polarity -1 (an increase is bad). Defaults to AC.
+	measure 'Operating Costs' =
+			IF (
+				ISFILTERED ( Scenario ),
+				SUM ( Sales[OperatingCosts] ),
+				CALCULATE ( SUM ( Sales[OperatingCosts] ), Scenario[ScenarioType] = "AC" )
+			)
+		formatString: #,0
+		displayFolder: 1 KPIs
+
+	/// Gross profit minus operating costs.
+	measure 'Operating Result' = [Gross Profit] - [Operating Costs]
+		formatString: #,0
+		displayFolder: 1 KPIs
+
+	/// Number of orders. Defaults to AC.
+	measure Orders =
+			IF (
+				ISFILTERED ( Scenario ),
+				SUM ( Sales[Orders] ),
+				CALCULATE ( SUM ( Sales[Orders] ), Scenario[ScenarioType] = "AC" )
+			)
+		formatString: #,0
+		displayFolder: 1 KPIs
+
+	/// The last closed month as an ISO label (2026-09): the default reporting month.
+	measure 'fx Last Closed Month' = FORMAT ( CALCULATE ( MAX ( 'Date'[Date] ), REMOVEFILTERS ( 'Date' ), 'Date'[IsClosedPeriod] = TRUE () ), "yyyy-mm" )
+		displayFolder: 9 Helpers
+
+	column Value
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Value]
+
+	partition _Measures = calculated
+		mode: import
+		source = {1}

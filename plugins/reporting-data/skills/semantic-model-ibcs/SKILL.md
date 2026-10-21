@@ -25,7 +25,7 @@ installed; these are good companions:
 | DAX language, optimisation | a DAX skill (e.g. `semantic-models:dax`), Learn DAX reference |
 | Review / audit a model | Tabular Editor Best Practice Analyzer rules, a model-audit skill or agent |
 | Bulk changes (generate explicit measures, folders) | Tabular Editor C# scripts |
-| Create/deploy/refresh a model in Fabric | Microsoft's Fabric skills or the Fabric CLI (https://github.com/microsoft/fabric-cli) |
+| Create/deploy/refresh a model in Fabric | Microsoft's Fabric skills (`fabric-skills@fabric-collection`, https://github.com/microsoft/skills-for-fabric) or the Fabric CLI |
 | Fabric App queries and visuals | the `ibcs-fabric-app` skill (plugin `fabric-apps`) |
 | IBCS notation (colours, scenario fills, titles) | the `ibcs-notation` skill (plugin `ibcs`); page layout: `ibcs-composition` (plugin `ibcs`) |
 | Power BI visuals with IBCS notation | the `ibcs-deneb` skill (plugin `ibcs-power-bi`) |

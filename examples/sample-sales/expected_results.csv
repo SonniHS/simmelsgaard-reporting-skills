@@ -1,0 +1,156 @@
+View,Measure,Member,Scenario,Value
+Period,Revenue,,AC,3557436.48
+Period,Revenue,,PY,3622008.00
+Period,Revenue,,BU,3791424.00
+Period,Revenue,,ΔPY,-64571.52
+Period,Revenue,,ΔPY%,-0.017828
+Period,Revenue,,ΔBU,-233987.52
+Period,Revenue,,ΔBU%,-0.061715
+Period,Gross Profit,,AC,1393291.35
+Period,Gross Profit,,PY,1457831.44
+Period,Gross Profit,,BU,1515958.08
+Period,Gross Profit,,ΔPY,-64540.09
+Period,Gross Profit,,ΔPY%,-0.044271
+Period,Gross Profit,,ΔBU,-122666.73
+Period,Gross Profit,,ΔBU%,-0.080917
+Period,Gross Margin %,,AC,0.391656
+Period,Gross Margin %,,PY,0.402493
+Period,Gross Margin %,,BU,0.399839
+Period,Gross Margin %,,ΔPY,-1.083660
+Period,Gross Margin %,,ΔBU,-0.818271
+Period,Operating Costs,,AC,878169.60
+Period,Operating Costs,,PY,839856.00
+Period,Operating Costs,,BU,855312.00
+Period,Operating Costs,,ΔPY,38313.60
+Period,Operating Costs,,ΔPY%,0.045619
+Period,Operating Costs,,ΔBU,22857.60
+Period,Operating Costs,,ΔBU%,0.026724
+Period,Orders,,AC,4338.00
+Period,Orders,,PY,4417.00
+Period,Orders,,BU,4623.00
+Period,Orders,,ΔPY,-79.000000
+Period,Orders,,ΔPY%,-0.017885
+Period,Orders,,ΔBU,-285.00
+Period,Orders,,ΔBU%,-0.061648
+YTD,Revenue,,AC,30763348.68
+YTD,Revenue,,PY,29999955.00
+YTD,Revenue,,BU,31607352.00
+YTD,Revenue,,ΔPY,763393.68
+YTD,Revenue,,ΔPY%,0.025446
+YTD,Revenue,,ΔBU,-844003.32
+YTD,Revenue,,ΔBU%,-0.026703
+YTD,Gross Profit,,AC,12331958.85
+YTD,Gross Profit,,PY,11975855.35
+YTD,Gross Profit,,BU,12637842.84
+YTD,Gross Profit,,ΔPY,356103.50
+YTD,Gross Profit,,ΔPY%,0.029735
+YTD,Gross Profit,,ΔBU,-305883.99
+YTD,Gross Profit,,ΔBU%,-0.024204
+YTD,Gross Margin %,,AC,0.400865
+YTD,Gross Margin %,,PY,0.399196
+YTD,Gross Margin %,,BU,0.399839
+YTD,Gross Margin %,,ΔPY,0.166952
+YTD,Gross Margin %,,ΔBU,0.102659
+YTD,Operating Costs,,AC,7841509.20
+YTD,Operating Costs,,PY,7504032.00
+YTD,Operating Costs,,BU,7697808.00
+YTD,Operating Costs,,ΔPY,337477.20
+YTD,Operating Costs,,ΔPY%,0.044973
+YTD,Operating Costs,,ΔBU,143701.20
+YTD,Operating Costs,,ΔBU%,0.018668
+YTD,Orders,,AC,37517.00
+YTD,Orders,,PY,36584.00
+YTD,Orders,,BU,38547.00
+YTD,Orders,,ΔPY,933.00
+YTD,Orders,,ΔPY%,0.025503
+YTD,Orders,,ΔBU,-1030.00
+YTD,Orders,,ΔBU%,-0.026721
+FY,Revenue,,AC+FC,42463666.65
+FY,Revenue,,PY,41351107.00
+FY,Revenue,,BU,43747200.00
+FY,Revenue,,ΔPY,1112559.65
+FY,Revenue,,ΔPY%,0.026905
+FY,Revenue,,ΔBU,-1283533.35
+FY,Revenue,,ΔBU%,-0.029340
+FY,Gross Profit,,AC+FC,17017927.78
+FY,Gross Profit,,PY,16526609.56
+FY,Gross Profit,,BU,17491824.00
+FY,Gross Profit,,ΔPY,491318.22
+FY,Gross Profit,,ΔPY%,0.029729
+FY,Gross Profit,,ΔBU,-473896.22
+FY,Gross Profit,,ΔBU%,-0.027092
+FY,Gross Margin %,,AC+FC,0.400764
+FY,Gross Margin %,,PY,0.399665
+FY,Gross Margin %,,BU,0.399839
+FY,Gross Margin %,,ΔPY,0.109898
+FY,Gross Margin %,,ΔBU,0.092573
+FY,Operating Costs,,AC+FC,10457269.20
+FY,Operating Costs,,PY,9992940.00
+FY,Operating Costs,,BU,10263744.00
+FY,Operating Costs,,ΔPY,464329.20
+FY,Operating Costs,,ΔPY%,0.046466
+FY,Operating Costs,,ΔBU,193525.20
+FY,Operating Costs,,ΔBU%,0.018855
+FY,Orders,,AC+FC,51787.00
+FY,Orders,,PY,50426.00
+FY,Orders,,BU,53352.00
+FY,Orders,,ΔPY,1361.00
+FY,Orders,,ΔPY%,0.026990
+FY,Orders,,ΔBU,-1565.00
+FY,Orders,,ΔBU%,-0.029333
+Month,Revenue,2026-01,AC+FC,3300569.92
+Month,Revenue,2026-01,BU,3353952.00
+Month,Revenue,2026-01,PY,3172252.00
+Month,Revenue,2026-02,AC+FC,3224961.52
+Month,Revenue,2026-02,BU,3208128.00
+Month,Revenue,2026-02,PY,3003880.00
+Month,Revenue,2026-03,AC+FC,3633558.00
+Month,Revenue,2026-03,BU,3645600.00
+Month,Revenue,2026-03,PY,3378900.00
+Month,Revenue,2026-04,AC+FC,3490124.99
+Month,Revenue,2026-04,BU,3536232.00
+Month,Revenue,2026-04,PY,3243971.00
+Month,Revenue,2026-05,AC+FC,3633827.52
+Month,Revenue,2026-05,BU,3718512.00
+Month,Revenue,2026-05,PY,3490644.00
+Month,Revenue,2026-06,AC+FC,3703439.25
+Month,Revenue,2026-06,BU,3827880.00
+Month,Revenue,2026-06,PY,3760155.00
+Month,Revenue,2026-07,AC+FC,3247182.42
+Month,Revenue,2026-07,BU,3390408.00
+Month,Revenue,2026-07,PY,3303267.00
+Month,Revenue,2026-08,AC+FC,2972248.58
+Month,Revenue,2026-08,BU,3135216.00
+Month,Revenue,2026-08,PY,3024878.00
+Month,Revenue,2026-09,AC+FC,3557436.48
+Month,Revenue,2026-09,BU,3791424.00
+Month,Revenue,2026-09,PY,3622008.00
+Month,Revenue,2026-10,AC+FC,3724425.54
+Month,Revenue,2026-10,BU,3864336.00
+Month,Revenue,2026-10,PY,3654986.00
+Month,Revenue,2026-11,AC+FC,3794697.72
+Month,Revenue,2026-11,BU,3937248.00
+Month,Revenue,2026-11,PY,3686580.00
+Month,Revenue,2026-12,AC+FC,4181194.71
+Month,Revenue,2026-12,BU,4338264.00
+Month,Revenue,2026-12,PY,4009586.00
+YTD by region,Revenue,North,AC,11591310.00
+YTD by region,Revenue,North,BU,11487750.00
+YTD by region,Revenue,North,ΔBU,103560.00
+YTD by region,Revenue,North,ΔBU%,0.009015
+YTD by region,Revenue,West,AC,7903756.80
+YTD by region,Revenue,West,BU,8565960.00
+YTD by region,Revenue,West,ΔBU,-662203.20
+YTD by region,Revenue,West,ΔBU%,-0.077306
+YTD by region,Revenue,South,AC,7100975.70
+YTD by region,Revenue,South,BU,7100730.00
+YTD by region,Revenue,South,ΔBU,245.70
+YTD by region,Revenue,South,ΔBU%,0.000035
+YTD by region,Revenue,East,AC,3750771.78
+YTD by region,Revenue,East,BU,3932712.00
+YTD by region,Revenue,East,ΔBU,-181940.22
+YTD by region,Revenue,East,ΔBU%,-0.046263
+YTD by region,Revenue,Other,AC,416534.40
+YTD by region,Revenue,Other,BU,520200.00
+YTD by region,Revenue,Other,ΔBU,-103665.60
+YTD by region,Revenue,Other,ΔBU%,-0.199280

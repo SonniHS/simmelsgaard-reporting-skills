@@ -12,6 +12,10 @@ All notable changes to this marketplace and its plugins. The format follows
   redirects the old repository URL.
 
 ### Added
+- Docs: [getting started](docs/getting-started.md) (model → visual spec → Power BI report or Fabric App
+  → review → deploy, with the prompts), a [gallery](docs/gallery.md) and [troubleshooting](docs/troubleshooting.md).
+- `examples/sample-sales`: a generic, IBCS-ready TMDL semantic model with calculated tables (AC, BU,
+  FC stored; PY derived), its generator, CSVs, `expected_results.csv` and the Key figures visual spec.
 - `ibcs-web-charts` ships lean React + TypeScript + SVG reference components (MIT) in
   `assets/react-reference/`: column chart with variance tiers, pins and Total alignment, structure
   bars, variance waterfall, KPI card on a Fluent card, number formatting with the rounded-zero rule,

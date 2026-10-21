@@ -38,7 +38,7 @@ restart Claude Code.
 | [`reporting-data`](plugins/reporting-data/README.md) | Semantic model for IBCS visuals, SQL gold layer, Dynamics 365 ERP source mappings | `ibcs` (optional) |
 
 Start with `ibcs`; the others refer to its notation and composition skills.
-For the Microsoft Fabric CLI, use Microsoft's own skills from [microsoft/fabric-cli](https://github.com/microsoft/fabric-cli).
+For Fabric itself (warehouse, semantic model deployment, Git integration, pipelines) install Microsoft's Fabric skills: `/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install fabric-skills@fabric-collection` ([why this one](docs/prerequisites.md#microsofts-fabric-skills)).
 
 ## Licence
 
@@ -57,5 +57,7 @@ claude plugin validate --strict plugins/<plugin>
 
 ## Documentation
 
+- [Getting started](docs/getting-started.md): from a semantic model to a reviewed page, with the sample in [examples/sample-sales](examples/sample-sales/README.md)
+- [Gallery](docs/gallery.md), [Troubleshooting](docs/troubleshooting.md)
 - [Prerequisites](docs/prerequisites.md): what each plugin needs, and which Microsoft Fabric skills to install alongside
 - [Contributing](CONTRIBUTING.md), [Security policy](SECURITY.md), [Changelog](CHANGELOG.md)

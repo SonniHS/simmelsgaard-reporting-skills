@@ -1,0 +1,11 @@
+relationship Sales_PeriodDate_Date
+	fromColumn: Sales.PeriodDate
+	toColumn: Date.Date
+
+relationship Sales_RegionKey_Region
+	fromColumn: Sales.RegionKey
+	toColumn: Region.RegionKey
+
+relationship Sales_ScenarioKey_Scenario
+	fromColumn: Sales.ScenarioKey
+	toColumn: Scenario.ScenarioKey

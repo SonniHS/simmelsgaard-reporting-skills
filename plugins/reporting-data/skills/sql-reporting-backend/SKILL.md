@@ -21,7 +21,7 @@ skill covers *what* gold must contain and the T-SQL to build it. For operating t
 
 | Need | Where |
 |---|---|
-| Run T-SQL, COPY INTO, query diagnostics on Fabric Warehouse / SQL endpoint / mirrors | Microsoft's Fabric skills or the Fabric CLI (https://github.com/microsoft/fabric-cli), `sqlcmd` |
+| Run T-SQL, COPY INTO, query diagnostics on Fabric Warehouse / SQL endpoint / mirrors | Microsoft's Fabric skills (`fabric-skills@fabric-collection`, https://github.com/microsoft/skills-for-fabric) or the Fabric CLI, `sqlcmd` |
 | Bronze/silver/gold layout, notebooks vs materialized lake views | Microsoft Learn (Fabric medallion architecture), Microsoft's Fabric skills |
 | Semantic model on top | [semantic-model-ibcs](../semantic-model-ibcs/SKILL.md) |
 | ERP extraction and decoding (F&O, BC, Dataverse) | [dynamics-erp-reporting](../dynamics-erp-reporting/SKILL.md) |

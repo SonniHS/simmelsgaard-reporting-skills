@@ -1,0 +1,33 @@
+/// Disconnected unit-scale picker (one scale per object, stated in the title). No selection = k (counts such as Orders stay readable); pick m for amounts.
+table Scale
+
+	column Scale
+		dataType: string
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Scale]
+		sortByColumn: Sort
+
+	column Label
+		dataType: string
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Label]
+
+	column Sort
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Sort]
+
+	partition Scale = calculated
+		mode: import
+		source =
+				DATATABLE (
+					"Scale", STRING,
+					"Label", STRING,
+					"Sort", INTEGER,
+					{ { "1", "", 1 }, { "k", "k", 2 }, { "m", "m", 3 }, { "bn", "b", 4 } }
+				)

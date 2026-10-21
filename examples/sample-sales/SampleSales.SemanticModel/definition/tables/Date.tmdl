@@ -1,0 +1,100 @@
+/// Calendar 2025-2026, marked as date table. The last closed month is 2026-09: change it in this expression when a month closes.
+table Date
+	dataCategory: Time
+
+	column Date
+		dataType: dateTime
+		isKey
+		formatString: yyyy-mm-dd
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Date]
+
+	column Year
+		dataType: int64
+		formatString: 0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [Year]
+
+	column MonthNo
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [MonthNo]
+
+	column YearMonth
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [YearMonth]
+
+	column MonthShort
+		dataType: string
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [MonthShort]
+		sortByColumn: MonthNo
+
+	/// ISO 8601 month label (2026-09), the IBCS period label.
+	column MonthLabel
+		dataType: string
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [MonthLabel]
+		sortByColumn: YearMonth
+
+	column FiscalYearNo
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [FiscalYearNo]
+
+	column FiscalQuarterNo
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [FiscalQuarterNo]
+
+	/// Running period number (year * 12 + month): PY = Seq - 12.
+	column FiscalPeriodSeq
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [FiscalPeriodSeq]
+
+	/// TRUE up to the last closed month, so AC is final. Drives AC+FC and the default reporting month.
+	column IsClosedPeriod
+		dataType: boolean
+		formatString: """TRUE"";""TRUE"";""FALSE"""
+		summarizeBy: none
+		isNameInferred
+		sourceColumn: [IsClosedPeriod]
+
+	partition Date = calculated
+		mode: import
+		source =
+				VAR LastClosed = DATE ( 2026, 9, 30 )
+				RETURN
+					ADDCOLUMNS (
+						CALENDAR ( DATE ( 2025, 1, 1 ), DATE ( 2026, 12, 31 ) ),
+						"Year", YEAR ( [Date] ),
+						"MonthNo", MONTH ( [Date] ),
+						"YearMonth", YEAR ( [Date] ) * 100 + MONTH ( [Date] ),
+						"MonthShort", FORMAT ( [Date], "mmm" ),
+						"MonthLabel", FORMAT ( [Date], "yyyy-mm" ),
+						"FiscalYearNo", YEAR ( [Date] ),
+						"FiscalQuarterNo", QUARTER ( [Date] ),
+						"FiscalPeriodSeq", YEAR ( [Date] ) * 12 + MONTH ( [Date] ),
+						"IsClosedPeriod", [Date] <= LastClosed
+					)

@@ -47,7 +47,7 @@ Recommended alongside it:
 - `reporting-data`: the `semantic-model-ibcs` skill (IBCS-ready model and per-card DAX).
 - `ibcs-power-bi`: for Power BI reports in the same org app.
 - Microsoft's `rayfin` plugin (<https://github.com/microsoft/rayfin>) and the in-project skills its scaffold installs: authoritative for Fabric Apps SDK/CLI mechanics.
-- Fabric CLI (`fab`): install Microsoft's own skills from <https://github.com/microsoft/fabric-cli>; this marketplace does not ship Fabric CLI skills.
+- Fabric mechanics (`fab`, deployment, Git integration): Microsoft's Fabric skills (`fabric-skills@fabric-collection` from <https://github.com/microsoft/skills-for-fabric>); this marketplace does not ship Fabric skills. The Fabric CLI itself: <https://github.com/microsoft/fabric-cli>.
 
 ## Licence
 

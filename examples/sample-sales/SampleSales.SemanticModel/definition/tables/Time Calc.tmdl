@@ -1,0 +1,82 @@
+/// Period views relative to the last month in context (select one reporting month; with no Date filter the last closed month is the anchor): Period, YTD, QTD, R12, FY, YTG.
+/// Lower precedence than Scenario Analysis, so ΔPY% x YTD = (AC YTD - PY YTD) / PY YTD.
+table 'Time Calc'
+
+	calculationGroup
+		precedence: 10
+
+		calculationItem Period =
+				SELECTEDMEASURE ()
+			ordinal: 0
+
+		calculationItem YTD =
+				VAR fy = IF ( ISFILTERED ( 'Date' ), MAX ( 'Date'[FiscalYearNo] ), CALCULATE ( MAX ( 'Date'[FiscalYearNo] ), REMOVEFILTERS ( 'Date' ), 'Date'[IsClosedPeriod] = TRUE () ) )
+				VAR lastSeq = IF ( ISFILTERED ( 'Date' ), MAX ( 'Date'[FiscalPeriodSeq] ), CALCULATE ( MAX ( 'Date'[FiscalPeriodSeq] ), REMOVEFILTERS ( 'Date' ), 'Date'[IsClosedPeriod] = TRUE () ) )
+				RETURN
+					CALCULATE (
+						SELECTEDMEASURE (),
+						REMOVEFILTERS ( 'Date' ),
+						'Date'[FiscalYearNo] = fy,
+						'Date'[FiscalPeriodSeq] <= lastSeq
+					)
+			ordinal: 1
+
+		calculationItem QTD =
+				VAR fy = IF ( ISFILTERED ( 'Date' ), MAX ( 'Date'[FiscalYearNo] ), CALCULATE ( MAX ( 'Date'[FiscalYearNo] ), REMOVEFILTERS ( 'Date' ), 'Date'[IsClosedPeriod] = TRUE () ) )
+				VAR lastSeq = IF ( ISFILTERED ( 'Date' ), MAX ( 'Date'[FiscalPeriodSeq] ), CALCULATE ( MAX ( 'Date'[FiscalPeriodSeq] ), REMOVEFILTERS ( 'Date' ), 'Date'[IsClosedPeriod] = TRUE () ) )
+				VAR q = IF ( ISFILTERED ( 'Date' ), MAX ( 'Date'[FiscalQuarterNo] ), CALCULATE ( MAX ( 'Date'[FiscalQuarterNo] ), REMOVEFILTERS ( 'Date' ), 'Date'[Date] = CALCULATE ( MAX ( 'Date'[Date] ), REMOVEFILTERS ( 'Date' ), 'Date'[IsClosedPeriod] = TRUE () ) ) )
+				RETURN
+					CALCULATE (
+						SELECTEDMEASURE (),
+						REMOVEFILTERS ( 'Date' ),
+						'Date'[FiscalYearNo] = fy,
+						'Date'[FiscalQuarterNo] = q,
+						'Date'[FiscalPeriodSeq] <= lastSeq
+					)
+			ordinal: 2
+
+		calculationItem R12 =
+				VAR lastSeq = IF ( ISFILTERED ( 'Date' ), MAX ( 'Date'[FiscalPeriodSeq] ), CALCULATE ( MAX ( 'Date'[FiscalPeriodSeq] ), REMOVEFILTERS ( 'Date' ), 'Date'[IsClosedPeriod] = TRUE () ) )
+				RETURN
+					CALCULATE (
+						SELECTEDMEASURE (),
+						REMOVEFILTERS ( 'Date' ),
+						'Date'[FiscalPeriodSeq] > lastSeq - 12,
+						'Date'[FiscalPeriodSeq] <= lastSeq
+					)
+			ordinal: 3
+
+		calculationItem FY =
+				VAR fy = IF ( ISFILTERED ( 'Date' ), MAX ( 'Date'[FiscalYearNo] ), CALCULATE ( MAX ( 'Date'[FiscalYearNo] ), REMOVEFILTERS ( 'Date' ), 'Date'[IsClosedPeriod] = TRUE () ) )
+				RETURN
+					CALCULATE (
+						SELECTEDMEASURE (),
+						REMOVEFILTERS ( 'Date' ),
+						'Date'[FiscalYearNo] = fy
+					)
+			ordinal: 4
+
+		calculationItem YTG =
+				VAR fy = IF ( ISFILTERED ( 'Date' ), MAX ( 'Date'[FiscalYearNo] ), CALCULATE ( MAX ( 'Date'[FiscalYearNo] ), REMOVEFILTERS ( 'Date' ), 'Date'[IsClosedPeriod] = TRUE () ) )
+				VAR lastSeq = IF ( ISFILTERED ( 'Date' ), MAX ( 'Date'[FiscalPeriodSeq] ), CALCULATE ( MAX ( 'Date'[FiscalPeriodSeq] ), REMOVEFILTERS ( 'Date' ), 'Date'[IsClosedPeriod] = TRUE () ) )
+				RETURN
+					CALCULATE (
+						SELECTEDMEASURE (),
+						REMOVEFILTERS ( 'Date' ),
+						'Date'[FiscalYearNo] = fy,
+						'Date'[FiscalPeriodSeq] > lastSeq
+					)
+			ordinal: 5
+
+	column Period
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Name
+		sortByColumn: Ordinal
+
+	column Ordinal
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: sum
+		sourceColumn: Ordinal

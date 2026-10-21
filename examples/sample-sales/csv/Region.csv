@@ -1,0 +1,6 @@
+RegionKey,Region,SortOrder,IsRemainder
+1,North,1,FALSE
+2,West,2,FALSE
+3,South,3,FALSE
+4,East,4,FALSE
+5,Other,5,TRUE

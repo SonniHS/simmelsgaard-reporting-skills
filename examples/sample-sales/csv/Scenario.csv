@@ -1,0 +1,5 @@
+ScenarioKey,ScenarioType,VersionCode,VersionLabel,IsLatestFC,FcActualMonths,SortOrder,IbcsNotation
+1,AC,AC,Actual,FALSE,0,1,solid
+2,BU,BU2025,Budget 2025,FALSE,0,2,outlined
+3,BU,BU2026,Budget 2026,FALSE,0,3,outlined
+4,FC,FC2026-9+3,Forecast 2026 (9+3),TRUE,9,4,hatched

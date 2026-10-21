@@ -46,7 +46,7 @@ and locale are settings you choose; examples use EUR and en-US. Product facts ar
 - `ibcs-power-bi` — the `ibcs-deneb` skill for Power BI visuals bound to this model.
 - `fabric-apps` — the `ibcs-fabric-app` skill for Fabric Apps that query this model.
 - Upstream tools: Microsoft Learn (authority for Power BI, Fabric and Dynamics 365 behaviour and
-  schema); Microsoft's Fabric skills and the Fabric CLI (<https://github.com/microsoft/fabric-cli>);
+  schema); Microsoft's Fabric skills (`fabric-skills@fabric-collection` from <https://github.com/microsoft/skills-for-fabric>) and the Fabric CLI;
   Tabular Editor and TMDL/PBIP tooling for model files; Microsoft's Dataverse tooling for live
   environment inspection.
 

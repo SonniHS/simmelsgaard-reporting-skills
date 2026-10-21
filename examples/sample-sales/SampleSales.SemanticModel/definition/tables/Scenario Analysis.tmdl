@@ -1,0 +1,185 @@
+/// IBCS scenarios and variances for any measure. Ordinal = IBCS order (PY, BU, FC, AC, then variances).
+/// The minuend of ΔPY and ΔBU is AC+FC: AC for every closed month, FC after it. It is a constant on purpose: reading the Time Calc selection inside these items exhausted query memory in the Fabric engine (tested 2026-10). ΔFC keeps AC. Δ% is BLANK (N/A) when the reference is <= 0; Δ of a ratio is in pp. Several items selected without an axis return BLANK.
+table 'Scenario Analysis'
+
+	calculationGroup
+		precedence: 20
+		multipleOrEmptySelectionExpression = BLANK ()
+
+		calculationItem PY =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					CALCULATE (
+						SELECTEDMEASURE (),
+						REMOVEFILTERS ( Scenario ),
+						Scenario[ScenarioType] = "AC",
+						SAMEPERIODLASTYEAR ( 'Date'[Date] )
+					)
+				)
+			ordinal: 0
+
+			formatStringDefinition = Ibcs.ValueFormat ( SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING (), SELECTEDVALUE ( Scale[Scale], "k" ) )
+
+		calculationItem BU =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					CALCULATE ( SELECTEDMEASURE (), REMOVEFILTERS ( Scenario ), Scenario[ScenarioType] = "BU" )
+				)
+			ordinal: 2
+
+			formatStringDefinition = Ibcs.ValueFormat ( SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING (), SELECTEDVALUE ( Scale[Scale], "k" ) )
+
+		calculationItem FC =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					VAR latestFc =
+						CALCULATE ( MAX ( Scenario[ScenarioKey] ), REMOVEFILTERS ( Scenario ), Scenario[ScenarioType] = "FC", Scenario[IsLatestFC] = TRUE () )
+					VAR fcKey = SELECTEDVALUE ( 'FC Version'[ScenarioKey], latestFc )
+					RETURN
+						CALCULATE ( SELECTEDMEASURE (), REMOVEFILTERS ( Scenario ), Scenario[ScenarioKey] = fcKey )
+				)
+			ordinal: 3
+
+			formatStringDefinition = Ibcs.ValueFormat ( SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING (), SELECTEDVALUE ( Scale[Scale], "k" ) )
+
+		calculationItem AC =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					CALCULATE ( SELECTEDMEASURE (), REMOVEFILTERS ( Scenario ), Scenario[ScenarioType] = "AC" )
+				)
+			ordinal: 4
+
+			formatStringDefinition = Ibcs.ValueFormat ( SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING (), SELECTEDVALUE ( Scale[Scale], "k" ) )
+
+		calculationItem 'AC+FC' =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					VAR acKey =
+						CALCULATE ( MAX ( Scenario[ScenarioKey] ), REMOVEFILTERS ( Scenario ), Scenario[ScenarioType] = "AC" )
+					VAR latestFc =
+						CALCULATE ( MAX ( Scenario[ScenarioKey] ), REMOVEFILTERS ( Scenario ), Scenario[ScenarioType] = "FC", Scenario[IsLatestFC] = TRUE () )
+					VAR fcKey = SELECTEDVALUE ( 'FC Version'[ScenarioKey], latestFc )
+					VAR lastClosed =
+						CALCULATE ( MAX ( 'Date'[Date] ), REMOVEFILTERS ( 'Date' ), 'Date'[IsClosedPeriod] = TRUE () )
+					RETURN
+						CALCULATE (
+							SELECTEDMEASURE (),
+							REMOVEFILTERS ( Scenario ),
+							Scenario[ScenarioKey] IN { acKey, fcKey },
+							KEEPFILTERS (
+								FILTER (
+									ALL ( Sales[ScenarioKey], Sales[PeriodDate] ),
+									( Sales[ScenarioKey] = acKey && Sales[PeriodDate] <= lastClosed )
+										|| ( Sales[ScenarioKey] = fcKey && Sales[PeriodDate] > lastClosed )
+								)
+							)
+						)
+				)
+			ordinal: 5
+
+			formatStringDefinition = Ibcs.ValueFormat ( SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING (), SELECTEDVALUE ( Scale[Scale], "k" ) )
+
+		calculationItem ΔPY =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					Ibcs.PointsIfRatio (
+						Ibcs.Delta (
+							CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC+FC" ),
+							CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "PY" )
+						),
+						SELECTEDMEASUREFORMATSTRING ()
+					)
+				)
+			ordinal: 6
+
+			formatStringDefinition = Ibcs.DeltaFormat ( SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING (), SELECTEDVALUE ( Scale[Scale], "k" ) )
+
+		calculationItem 'ΔPY%' =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					Ibcs.DeltaPct (
+						CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC+FC" ),
+						CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "PY" )
+					)
+				)
+			ordinal: 7
+
+			formatStringDefinition = Ibcs.DeltaPctFormat ( SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING () )
+
+		calculationItem ΔBU =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					Ibcs.PointsIfRatio (
+						Ibcs.Delta (
+							CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC+FC" ),
+							CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "BU" )
+						),
+						SELECTEDMEASUREFORMATSTRING ()
+					)
+				)
+			ordinal: 10
+
+			formatStringDefinition = Ibcs.DeltaFormat ( SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING (), SELECTEDVALUE ( Scale[Scale], "k" ) )
+
+		calculationItem 'ΔBU%' =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					Ibcs.DeltaPct (
+						CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC+FC" ),
+						CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "BU" )
+					)
+				)
+			ordinal: 11
+
+			formatStringDefinition = Ibcs.DeltaPctFormat ( SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING () )
+
+		calculationItem ΔFC =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					Ibcs.PointsIfRatio (
+						Ibcs.Delta (
+							CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC" ),
+							CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "FC" )
+						),
+						SELECTEDMEASUREFORMATSTRING ()
+					)
+				)
+			ordinal: 12
+
+			formatStringDefinition = Ibcs.DeltaFormat ( SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING (), SELECTEDVALUE ( Scale[Scale], "k" ) )
+
+		calculationItem 'ΔFC%' =
+				IF (
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					Ibcs.DeltaPct (
+						CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC" ),
+						CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "FC" )
+					)
+				)
+			ordinal: 13
+
+			formatStringDefinition = Ibcs.DeltaPctFormat ( SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING () )
+
+	column Scenario
+		dataType: string
+		summarizeBy: none
+		sourceColumn: Name
+		sortByColumn: Ordinal
+
+	column Ordinal
+		dataType: int64
+		isHidden
+		formatString: 0
+		summarizeBy: sum
+		sourceColumn: Ordinal
