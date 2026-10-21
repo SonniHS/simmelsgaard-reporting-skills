@@ -133,8 +133,13 @@ The most common IBCS breach in web apps is each chart auto-scaling on its own (I
   domain: each chart sizes its own plot = its own range × px per unit, so a chart with smaller
   values becomes **shorter**; it never takes another chart's max or stretches its axis to fill a
   fixed box.
-- Absolute variance tiers join the **same** unit as their base chart. Relative variances (pins),
-  pp tiers and %-measures share one `"%"` group. Tables with in-cell bars join too.
+- Absolute variance tiers join the **same** unit as their base chart. pp tiers and %-measures share
+  one `"%"` group; tables with in-cell bars join too. Relative-variance **pins** are the exception
+  (OURS): each pin tier is sized to its tier, charts read together share one pin scale, and every
+  pin tier whose scale differs from the page's other pin tiers carries a **scaling marker** (UN 5.2,
+  CH 4.3) — a band of a round value (1/2/5 × 10ⁿ %, 25–60 % of the tier) with its value — plus a
+  page footnote; an unmarked differing % scale fails the review. Why: one −55 % structure variance
+  on a page-wide % scale squashes every other pin below readability. Details: behaviour contract §3.
 - Small multiples join the page's registry (a panel's 100 EUR is as tall as anywhere else). A
   deliberate own scale needs a visible **scale band** (UN 5.2) at a round value drawn on every
   chart of that unit, and a footnote.

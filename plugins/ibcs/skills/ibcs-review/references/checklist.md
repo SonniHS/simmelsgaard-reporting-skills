@@ -122,7 +122,7 @@
 | F3 | trend arrows first → last period, impact-coloured | UN 5.1 | S | img |
 | F4 | reference arrowheads black, label next to them | UN 5.1 | S | img |
 | F5 | marker designs identical across pages, documented | UN 5.1 | M | human |
-| F6 | same-unit charts with different scales carry scale bands | UN 5.2, CH 4.3 | M | img |
+| F6 | same-unit charts with different scales carry scale bands; pin tiers on different % scales (each sized to its tier, OURS: only charts read together share one) each carry a scaling marker (a round value, 1/2/5 × 10ⁿ %, with its label) and a footnote | UN 5.2, CH 4.3 | M | img, pbir, dom | LINT: pbir — two or more pin tiers whose px per point differs (or is the template's own) without `pinScaleBand`; dom — pin marks (`data-ppu`) of different SVGs at different px per unit without a `data-role="scale-band" data-tier="pct"` mark in each |
 | F7 | outliers that exceed the scale are only business-irrelevant relative values, consistently marked and clearly shown as exceeding the visible scale (M); recommended design: pin without head + triangle in growth direction, full value labelled (S, "a good choice", p. 67) | UN 5.3, CH 4.4 | M/S | img, human |
 
 ## G. Visual integrity (CHECK)

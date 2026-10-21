@@ -156,7 +156,20 @@ absolute variances and a fraction for relative ones; `null` = N/A.
   charts) — so the largest clipped |Δ%| fills about 90 % of it. Charts read together (the months
   and their Total, small multiples) share one pin scale: the smallest px per unit of their tiers
   (`pinScale` in the reference components). Check: the stem of the largest |Δ%| is at least 40 %
-  of its tier. The domain is the clipped range (± the outlier limit). A pin that does not round
+  of its tier. **Differing % scales are marked (OURS).** Pin tiers share one % scale wherever
+  charts are read together (the months and their Total, small multiples); every other pin tier
+  keeps its own scale, because one large relative variance (e.g. −55 % in a structure chart) on a
+  page-wide scale would squash every other pin below readability. That is a deviation from "same
+  unit, same scale" (CH 4.1), so it must be visible: each pin tier whose scale differs from the
+  page's other pin tiers carries a **scaling marker** in the scale-band style (UN 5.2, CH 4.3;
+  tokens `color.marker.scaleBandFill` / `scaleBandLine`, label in `color.text.secondary`): a band
+  of a round value (1/2/5 × 10ⁿ %, 25–60 % of the tier) at the tier's start with its value
+  (`10%`), clear of the tier name, pins and labels, the same value for charts read together; the
+  page footnote says the % tiers are on different scales. An unmarked differing % scale fails the
+  review (ibcs-review linter F6: `pbir --layout` and `dom`). Reference components: `pagePinScales`
+  says per tier whether scales differ and which marker value to use; `pctScaleBand` draws it; pin
+  marks carry `data-ppu`, the marker `data-tier="pct"`. The domain is the clipped range (± the
+  outlier limit). A pin that does not round
   to zero is at least head/2 + 2 px long; a Δ% that **rounds to zero keeps a baseline marker**
   (the head on the axis, minuend notation, uncoloured) next to its unsigned label. Pin labels
   have **one decimal** (`+5.6%`) by default, the same in every route and on the KPI cards. FC

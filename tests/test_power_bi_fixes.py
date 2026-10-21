@@ -227,6 +227,30 @@ class ProofRun1(unittest.TestCase):
         self.assertAlmostEqual(pins["c"], 0.9 * 90 / 64.3, places=1)   # the -55.6 % chart does not shrink the months
         self.assertNotIn("warning", err)
 
+    def test_differing_pin_scales_get_a_scaling_marker(self):
+        out, _ = self.layout({"pxPerUnit": 4, "alignTiers": [["m", "t"]], "members": [
+            {"id": "m", "template": "column-two-tier-variance", "params": {"pinTier": True},
+             "tiers": {"base": [0, 23], "variance": [-2, 3], "pins": [-7.7, 5.6]}},
+            {"id": "t", "template": "column-two-tier-variance", "own": True, "basePxPerUnit": 0.4,
+             "params": {"pinTier": True}, "tiers": {"base": [0, 216], "variance": [0, 2.5], "pins": [0, 1.3]}},
+            {"id": "c", "template": "pin-relative-variance", "pinTierPx": 90, "tiers": {"pins": [-55.6, 8.7]}}]})
+        marks = {r["id"]: (r.get("setParams") or {}).get("pinScaleBand") for r in out["members"]}
+        self.assertEqual(marks, {"m": -1, "t": -1, "c": -1})
+        alone, _ = self.layout({"pxPerUnit": 4, "members": [
+            {"id": "m", "template": "column-two-tier-variance", "params": {"pinTier": True},
+             "tiers": {"base": [0, 23], "variance": [-2, 3], "pins": [-7.7, 5.6]}}]})
+        self.assertNotIn("pinScaleBand", alone["members"][0].get("setParams") or {})
+
+    def test_pin_templates_draw_the_scaling_marker(self):
+        for name in ("column-two-tier-variance", "pin-relative-variance"):
+            s = self.spec(name)
+            params = {p["name"]: p for p in s["params"]}
+            self.assertEqual(params["pinScaleBand"]["value"], 0)
+            self.assertIn("pinScaleBand", s["usermeta"]["ibcs"]["knobs"])
+            band = [l for l in s["layer"] if l.get("description", "").startswith(("pin tier scaling marker", "scaling marker"))]
+            self.assertEqual(len(band), 3, name)   # band, its line at the round value, its label
+            self.assertTrue(any(l["mark"]["type"] == "text" and "ibcsTextSecondary" in json.dumps(l["mark"]) for l in band))
+
     def test_a_fixed_stub_pin_scale_warns(self):
         _, err = self.layout({"pxPerUnit": 4, "members": [
             {"id": "m", "template": "column-two-tier-variance", "params": {"pinTier": True, "pinPxPerUnit": 0.5},

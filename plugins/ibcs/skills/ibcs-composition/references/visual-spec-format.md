@@ -153,8 +153,14 @@ its grid cell allows ((extent − fixed overhead) ÷ range), then gives every me
 and sizes each one to its own range. A fixed `domain: {min, max}` is for one member's own range
 (e.g. an indexed zoom), not for aligning members.
 
-Rules: `includeZero` is implied (CH 1.1). Relative variances (ΔPY%, ΔPL%) get their own group
-per page (e.g. `pct-pl`). Indexed zoom (domain not including 0) is allowed only for
+Rules: `includeZero` is implied (CH 1.1). Relative variances (ΔPY%, ΔPL%) as pins get a `"%"` group
+per set of charts read together (e.g. `pct-bu` for the months and their Total), each sized to its
+pin tier (OURS: the largest |Δ%| fills about 90 % of a 48 px column tier or a 90 px bar tier). When
+a page has more than one such group, their scales differ: declare each with `sizing: scale-band`
+and a `scaleBand: {value: 0.1, label: "10%"}` (a round value 25–60 % of the tier, the same within
+the group), add the marker to every member and a footnote; no `deviations` entry is needed, the
+marker is the documented rule (OURS, UN 5.2 / CH 4.3). Why: one −55 % structure variance on one
+page-wide % scale would squash every other pin below readability. Indexed zoom (domain not including 0) is allowed only for
 `kind: relative` index data near 100 % and must be declared with `domain: {min, max}` and
 `deviations` note. A full-year total next to months (an extension, §7) stays in the months'
 group if it fits; otherwise follow ibcs-notation §8 (full-year total next to months): own group

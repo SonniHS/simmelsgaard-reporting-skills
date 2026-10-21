@@ -992,6 +992,31 @@ def lint_scale_groups(infos: dict, ploc: str, layout_rows: dict):
             add("F6", "UN 5.2, CH 4.3", "S", "check", f"{ploc} / {n}",
                 "Total/year visual on its own scale without a scale band",
                 "Mark the different scale: the same scaleBand value here and in the months, or a footnote.")
+    # 3b. pin tiers on different % scales are marked (OURS: each pin tier is sized to its own tier and
+    #     only charts read together share one pin scale, so differing scales must be visible, UN 5.2)
+    pins = []
+    for n, i in infos.items():
+        prm = i["params"]
+        if i["template"] == "column-two-tier-variance" and prm.get("pinTier") is True:
+            knob = prm.get("pinPxPerUnit")
+        elif i["template"] == "pin-relative-variance":
+            knob = prm.get("pxPerUnit")
+        else:
+            continue
+        knob = (layout_rows.get(n, {}).get("setParams") or {}).get(
+            "pinPxPerUnit" if i["template"] == "column-two-tier-variance" else "pxPerUnit", knob)
+        pins.append((n, float(knob) if is_number(knob) and float(knob) > 0 else None, prm))
+    if len(pins) > 1:
+        for n, k, prm in pins:
+            others = [q for m, q, _ in pins if m != n]
+            differs = k is None or any(q is None or abs(q - k) > 1e-6 * max(q, k) for q in others)
+            band = prm.get("pinScaleBand")
+            if differs and not (is_number(band) and float(band) != 0):
+                add("F6", "UN 5.2, CH 4.3", "M", "fail", f"{ploc} / {n}",
+                    "pin tier on its own % scale (its px per point differs from the page's other pin tiers, or is the "
+                    "template's own) without a scaling marker",
+                    "Set pinScaleBand -1 (scale_layout.py prints it in setParams when the page's pin scales differ) and "
+                    "footnote that the % tiers are on different scales; charts read together share one pinPxPerUnit.")
     # 4. sizes computed by scale_layout.py (--layout)
     for n, row in layout_rows.items():
         if n not in infos:
@@ -1596,6 +1621,7 @@ class _MarkCollector(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.stack, self.marks, self.patterns = [], [], set()
+        self.svg_count, self.svg_open = 0, []   # top-level <svg> index of each mark (one chart each)
         self.open_text = []   # (stack depth, mark index) of text marks still open, for their content
 
     def _paint(self, attrs):
@@ -1609,6 +1635,10 @@ class _MarkCollector(HTMLParser):
         d, paint = self._paint(attrs)
         if tag == "pattern" and d.get("id"):
             self.patterns.add(d["id"])
+        if tag == "svg" and not closed:
+            if not self.svg_open:
+                self.svg_count += 1
+            self.svg_open.append(len(self.stack))
         inherited = {}
         for _, p in self.stack:
             inherited.update(p)
@@ -1621,7 +1651,9 @@ class _MarkCollector(HTMLParser):
                                "fill": (eff.get("color") or eff.get("fill")) if text and tag not in ("text", "tspan")
                                else eff.get("fill"),
                                "stroke": eff.get("stroke"),
-                               "transform": d.get("transform") or "", "id": d.get("id"), "content": ""})
+                               "transform": d.get("transform") or "", "id": d.get("id"), "content": "",
+                               "ppu": d.get("data-ppu"), "tier": d.get("data-tier"),
+                               "svg": self.svg_count if self.svg_open else 0})
             if text and not closed and tag not in self.VOID:
                 self.open_text.append((len(self.stack), len(self.marks) - 1))
         if not closed and tag not in self.VOID:
@@ -1638,8 +1670,31 @@ class _MarkCollector(HTMLParser):
         for i in range(len(self.stack) - 1, -1, -1):
             if self.stack[i][0] == tag:
                 del self.stack[i:]
+                self.svg_open = [k for k in self.svg_open if k < i]
                 self.open_text = [(d, k) for d, k in self.open_text if d < i]
                 break
+
+
+def lint_dom_pin_scales(marks: list, loc) -> None:
+    """F6 (OURS): pin tiers of different charts (SVGs) on different % scales (data-ppu on pin marks) each
+    need a scaling marker (data-role="scale-band" data-tier="pct"); charts read together share one scale."""
+    ppu_by_svg: dict[int, set] = {}
+    for m in marks:
+        if m["role"] in ("pin", "pin-head", "outlier") and m.get("ppu"):
+            try:
+                ppu_by_svg.setdefault(m["svg"], set()).add(round(float(m["ppu"]), 3))
+            except ValueError:
+                pass
+    if len(ppu_by_svg) < 2:
+        return
+    banded = {m["svg"] for m in marks if m["role"] == "scale-band" and m.get("tier") == "pct"}
+    values = {svg: max(v) for svg, v in ppu_by_svg.items()}
+    for svg, v in sorted(values.items()):
+        if any(abs(v - w) > 1e-3 * max(v, w) for o, w in values.items() if o != svg) and svg not in banded:
+            add("F6", "UN 5.2, CH 4.3", "M", "fail", f"{loc}: chart {svg}",
+                f"pin tier at {v:g} px per 100 % differs from the page's other pin tiers, no scaling marker",
+                "Pin tiers on different % scales each carry a scaling marker (pctScaleBand, data-tier=\"pct\") "
+                "and the page footnote says so; charts read together share one pin scale (pagePinScales).")
 
 
 def lint_dom(text: str, loc, tokens):
@@ -1650,6 +1705,7 @@ def lint_dom(text: str, loc, tokens):
         add("LINT", "-", "I", "check", loc, "no element with data-role found",
             "Render every mark with data-role (and data-impact on variances), see ibcs-web-charts §8.")
         return
+    lint_dom_pin_scales(p.marks, loc)
     flat = {}
     def walk(node, path):
         if isinstance(node, dict):

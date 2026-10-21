@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 import {
   KpiCard, MarksSvg, alignTiers, cardSurface, columnTiersExtents, layoutColumnTiers, layoutStructureBars,
-  layoutTimeWaterfall, layoutVarianceWaterfall, pickScale, pinScale, pxPerUnit, structureExtents, tokens, type Layout, type PeriodRow,
+  layoutTimeWaterfall, layoutVarianceWaterfall, pagePinScales, pickScale, pxPerUnit, structureExtents, tokens, type Layout, type PeriodRow,
 } from "../src/ibcs";
 
 const out = join(fileURLToPath(new URL(".", import.meta.url)), "../previews");
@@ -70,14 +70,23 @@ const scale = pickScale(months.flatMap((r) => [r.AC, r.FC, r.BU]));
 const ytdScale = pickScale([regionTotal.AC]);
 // pin tiers have their own scale, sized to the tier; charts read together (months and their Total)
 // share one, so their pins compare; the structure chart sizes its own pins (pctTierPx 90)
-const pct = pinScale([{ ...mExt.pct, tierPx: 48 }, { ...tExt.pct, tierPx: 48 }]);
-const base = { reference: "BU" as const, triangle: "PY" as const, pctPpu: pct, scale, polarity: 1 };
+// pagePinScales: the months and their Total are read together (one group); the structure chart has its
+// own pin scale, so the scales differ and every pin tier gets a scaling marker (OURS, UN 5.2 / CH 4.3)
+const pins = pagePinScales([
+  { id: "months", ...mExt.pct, tierPx: 48, group: "months" },
+  { id: "total", ...tExt.pct, tierPx: 48, group: "months" },
+  { id: "regions", ...structureExtents(structure, { reference: "BU" }).pct, tierPx: 90 },
+]);
+const pct = pins.get("months")!.ppu;
+const pctBand = pins.get("months")!.band ?? undefined;
+const base = { reference: "BU" as const, triangle: "PY" as const, pctPpu: pct, pctScaleBand: pctBand, scale, polarity: 1 };
+const regionPins = { pctPpu: pins.get("regions")!.ppu, pctScaleBand: pins.get("regions")!.band ?? undefined };
 const m1 = layoutColumnTiers(months, { ...base, width: W.months, ppu: ppu.get("EUR")!, selected: "Sep", highlight: { category: "Sep", tier: "delta" } });
 const t1 = layoutColumnTiers(total, { ...base, width: W.total, ppu: ppu.get("EUR:total")!, scale: pickScale([totAF]), primaryLabel: "AC&FC" });
 const align = alignTiers(m1, t1);
 const monthsL = layoutColumnTiers(months, { ...base, width: W.months, ppu: ppu.get("EUR")!, selected: "Sep", highlight: { category: "Sep", tier: "delta" }, minTierPx: align, scaleBand: 2e6, deltaScaleBand: 0.5e6, keep: ["Sep"] });
 const totalL = layoutColumnTiers(total, { ...base, width: W.total, ppu: ppu.get("EUR:total")!, scale: pickScale([totAF]), minTierPx: align, scaleBand: 2e6, deltaScaleBand: 0.5e6, primaryLabel: "AC&FC" });
-const structL = layoutStructureBars(structure, { width: W.half, reference: "BU", ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1, highlight: { category: "Region West", tier: "delta" } });
+const structL = layoutStructureBars(structure, { width: W.half, reference: "BU", ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1, highlight: { category: "Region West", tier: "delta" }, ...regionPins });
 const bridgeL = layoutVarianceWaterfall(bridge, { width: W.half, ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1 });
 
 // Small contributions next to a large base: the magnifier case (CH 4.5). Costs: polarity -1.
@@ -149,7 +158,7 @@ const page = (
       <Card title="Operating costs in mEUR" sub="Jan..Sep 2026, BU to AC, by cost type (steps magnified)"><MarksSvg layout={costL} title={charts[4]![2]} /></Card>
       <Card title="Revenue in mEUR" sub="Jan..Sep 2026, PY to AC, by quarter (steps magnified)"><MarksSvg layout={quarterL} title={charts[5]![2]} /></Card>
     </div>
-    <footer style={{ fontSize: 12, color: tokens.color.text.secondary }}>¹ The Total has its own scale; the blue scale band is 2.0 mEUR in both charts (0.5 mEUR in the ΔBU tiers). Sample data.</footer>
+    <footer style={{ fontSize: 12, color: tokens.color.text.secondary }}>¹ The Total has its own scale; the blue scale band is 2.0 mEUR in both charts (0.5 mEUR in the ΔBU tiers). The ΔBU% tiers of the months and of the regions are on different scales, each sized to its tier; the blue mark in each shows its round value. Sample data.</footer>
   </main>
 );
 writeFileSync(
@@ -159,7 +168,7 @@ writeFileSync(
 // Phone check (390 px viewport, 16 px gutters): the same data redrawn for the width, not shrunk.
 const PW = 390 - 2 * 16 - 2 * 16; // viewport − page gutters − card padding
 const pMonths = layoutColumnTiers(months, { ...base, width: PW, ppu: ppu.get("EUR")!, selected: "Sep", keep: ["Sep"], scaleBand: 2e6 });
-const pStruct = layoutStructureBars(structure, { width: PW, reference: "BU", stack: "auto", ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1 });
+const pStruct = layoutStructureBars(structure, { width: PW, reference: "BU", stack: "auto", ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1, ...regionPins });
 const pCost = layoutVarianceWaterfall(costBridge, { width: PW, ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: -1, magnifier: "below" });
 const pQuarter = layoutTimeWaterfall(quarterBridge, { width: PW, ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1 });
 const phone = (

@@ -6,7 +6,7 @@ import { tokens } from "../tokens.generated";
 import { formatDelta, formatPercentDelta, formatValue, roundsToZero, type NumberScale } from "../format";
 import { impactFill, impactKey, impactText, type ColorMode, type Impact } from "../impact";
 import { clamp, lineBox, markBox, overlaps, periodLabels, spreadLabels, textWidth, type Fill, type Layout, type Mark } from "./marks";
-import { pinScale } from "../scale";
+import { pinScale, pinScaleBand } from "../scale";
 
 export type Scenario = "AC" | "FC" | "PY" | "PL" | "BU";
 
@@ -77,6 +77,12 @@ export type ColumnTiersOptions = {
   scaleBand?: number;
   /** The same for the absolute Δ tier (a smaller round value that fits it): a Total on its own scale shows it in every tier. */
   deltaScaleBand?: number;
+  /**
+   * Scaling marker of the pin tier (UN 5.2 / CH 4.3), required when this tier's % scale differs from
+   * the page's other % tiers (OURS): a round value as a fraction (0.1 = 10 %), or "auto" for the
+   * value `pinScaleBand` picks (25–60 % of the tier). `pagePinScales` says when scales differ.
+   */
+  pctScaleBand?: number | "auto";
   /** Name of the primary series in the end legend, e.g. "AC&FC" for a Total of closed and open months. */
   primaryLabel?: string;
   /** Scenario names at the end of the series. Default true. */
@@ -90,6 +96,7 @@ export type ColumnTiersLayout = Layout & {
 };
 
 const T = tokens;
+const PIN_ROLES = new Set(["pin", "pin-head", "outlier"]);
 const TIER_GAP = 8;
 
 type Primary = { scenario: "AC" | "FC"; value: number } | null;
@@ -407,6 +414,17 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
     back.push({ kind: "rect", role: "scale-band", x: left - 7, y: y0 - o.scaleBand * o.ppu, w: 5, h: o.scaleBand * o.ppu, fill: C.marker.scaleBandFill, stroke: C.marker.scaleBandLine, strokeWidth: 0.5 });
     marks.push({ kind: "text", role: "scale-band-label", x: left - 2, y: y0 - o.scaleBand * o.ppu - box / 2 - 1, text: bandLabel, anchor: "end", size, fill: C.text.secondary });
   }
+  // pin-tier scaling marker: this tier's % scale differs from the page's other % tiers (OURS); the band
+  // grows to the side the pins use most, its label beyond its end, the tier name stays on the axis
+  const pctBand = o.pctScaleBand === "auto" ? pinScaleBand(pctTierPx, pctPpu) : o.pctScaleBand;
+  if (pctBand && order.includes("pct")) {
+    const py = tiers.pct.y0;
+    const h = pctBand * pctPpu;
+    const up = tiers.pct.up >= tiers.pct.down;
+    const text = `${+(pctBand * 100).toFixed(0)}%`;
+    back.push({ kind: "rect", role: "scale-band", tier: "pct", x: left - 7, y: up ? py - h : py, w: 5, h, fill: C.marker.scaleBandFill, stroke: C.marker.scaleBandLine, strokeWidth: 0.5 });
+    marks.push({ kind: "text", role: "scale-band-label", tier: "pct", x: left - 2, y: up ? py - h - box / 2 - 1 : py + h + box / 2 + 1, text, anchor: "end", size, fill: C.text.secondary });
+  }
   if (o.deltaScaleBand && order.includes("delta")) {
     const dy = tiers.delta.y0;
     const h = o.deltaScaleBand * o.ppu; // the true round value, never clipped to fit
@@ -455,7 +473,9 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
     ...(order.includes("delta") ? [deltaLabel(i)] : []), ...(order.includes("delta2") ? [delta2Label(i)] : []), ...(order.includes("pct") ? [pctLabel(i)] : []),
   ])];
 
-  return { width: o.width, height, marks: [...back, ...marks], warnings, table, tiers, step };
+  // pin marks carry their tier's px per 1.0, so a page check can see differing % scales (data-ppu)
+  const tagPins = (m: Mark): Mark => (PIN_ROLES.has(m.role) && m.category != null && m.ppu == null ? { ...m, ppu: pctPpu } : m);
+  return { width: o.width, height, marks: [...back, ...marks].map(tagPins), warnings, table, tiers, step };
 }
 
 /**

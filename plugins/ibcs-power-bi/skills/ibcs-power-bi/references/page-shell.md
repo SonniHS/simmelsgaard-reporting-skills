@@ -172,7 +172,16 @@ be one white strip, and with column width < `imageWidth` + 20 it draws a stray "
   column tiers, 90 px for horizontal pin columns) and the clipped pin range fills about 90 % of it
   (Deneb `pinPxPerUnit` 0 = this rule; `scale_layout.py` prints the value per member). No page-wide
   % group: one −55 % structure variance would shrink the month pins to a few px. Only charts read
-  together share a pin scale: months and their Total (`alignTiers`). The pin range is the clipped
+  together share a pin scale: months and their Total (`alignTiers`). **Differing % scales are
+  marked (OURS):** every pin tier whose px per point differs from the page's other pin tiers
+  carries a scaling marker in the scale-band style (UN 5.2, CH 4.3): Deneb knob `pinScaleBand`
+  (−1 = a round value 1/2/5 × 10ⁿ % that is 25–60 % of the tier, chosen by the template; a
+  fraction such as 0.1 = that value; 0 = off), a band at the tier's start with its value label,
+  the same value for charts read together; `scale_layout.py` sets `pinScaleBand` -1 in
+  `setParams` whenever the page's pin scales differ (list every pin chart of the page in one
+  group file), and the page footnote says the % tiers are on different scales. Why: one −55 %
+  structure variance on a page-wide % scale squashes every other pin below readability. The
+  linter fails an unmarked differing % scale (F6 with `--layout`). The pin range is the clipped
   range (outliers beyond ±100 % are clipped with an outlier triangle at the clip point, the label
   keeps the full value). The head is 6 px (token minimum) at the stem end; a pin that does not
   round to zero is at least head + 2 px long; a Δ% that rounds to zero keeps its head on the axis

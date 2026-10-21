@@ -61,6 +61,7 @@
         "pinMin",
         "pinMax",
         "pinClip",
+        "pinScaleBand",
         "markLastClosed",
         "naOnNegativeRef"
       ],
@@ -238,9 +239,22 @@
             "height": 200
           },
           "note": "Tiny values under a fixed pxPerUnit: the base tier is a few px high, the end legend still keeps the names ibcsFontSize + 2 px apart."
+        },
+        {
+          "suffix": "-pins-scale-band",
+          "params": {
+            "refScenario": "BU",
+            "pinTier": true,
+            "pinScaleBand": -1
+          },
+          "preview": {
+            "width": 420,
+            "height": 400
+          },
+          "note": "pinScaleBand -1: this chart's % pin scale differs from the page's other pin tiers, so the pin tier carries a scaling marker (a round value 25–60 % of the tier, its label above it; the tier name moves below the axis)."
         }
       ],
-      "notes": "Same unit, same scale (CH 4.1) means the same px per unit, not the same domain: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field from one DAX measure) and size each visual's height to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill computes it), so a chart with smaller values is shorter (CH 4.2). yMax, varMin, varMax only share a domain: use them for visuals of the same height that must show the same range, never to align a smaller chart with a larger one. A Total / extension column (e.g. the year next to its months) is a separate visual with periodType 'year'; when its values need another scale, mark it with a scaling indicator or a footnote. Same column width across visuals (e.g. the month chart and its total): set barPx. Values are drawn as delivered: bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Period or no value in AC, FC, PY, PL, BU, refScenario or triangleScenario are dropped, even if constant scale measures are present; reference-only periods remain. The integrated reference legend names the first period with a nonblank reference value, including zero. periodLabel: auto preserves category labels unchanged; month formats YYYY-MM as Jan..Dec with the year below the first month of each later year (below the first month only when the months span two years) and a thin separator at subsequent year boundaries; short formats YYYY-MM as mm. Other category formats are left unchanged. When showCategoryLabels is false, year labels and year separators are hidden too. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Comment markers (UN 2.4): bind Comment (e.g. a DAX SWITCH returning 1, 2 … for the periods the comments explain) and print the same numbers in circles in the comment text box; the marker sits above the value label, so keep ibcsTierGapPx large enough when a variance tier is stacked above. Variance-only tier (showBase false): only the variance axis, variance columns and labels and the tier label are drawn; stack it above a chart that shows the base, with showCategoryLabels false when the visual below shows them. Pin tier (pinTier true): ΔX% = (AC&FC − REF) / REF with the signed reference, N/A when REF is blank or 0, or negative while naOnNegativeRef is true; drawn as pins above the absolute variance tier in the same view, so base, ΔX and ΔX% always share the category axis and stay together when a filter changes the data (separate stacked visuals each anchor their own plot and drift apart). The pins have their own % scale sized to the tier: the pin range fills 90 % of pinTierPx (48 px), or, for charts read together (months and their Total), the pinPxPerUnit they share (scale_layout.py: the smaller of their own values); no page-wide % scale, so each chart's largest |Δ%| fills most of its tier and pin length carries the value; without pxPerUnit, pinShare of the base tier. Pins beyond ±pinClip (default ±100 %) are clipped at the clip point with an outlier triangle in the growth direction; the label keeps the full value; a Δ% that rounds to zero keeps its head on the axis as a baseline marker (no stem, no colour); a non-zero pin is at least head + 2 px long; the head is 6 px (token minimum), at the stem end; labels one decimal (pinDecimals 1). Period labels never get an ellipsis: wider than their step they become their first letter (Jan → J, the year stays in the title). Integrated legend (one rule for Power BI and web apps): the scenario names sit right of the last column at their own marks (triangle tip, upper part of the reference column, middle of the AC/FC column), spread at least ibcsFontSize + 2 px apart and kept inside the base tier; a series of AC months followed by FC months is named AC&FC; the right padding (46 px) holds 'AC&FC'. Names are taken from the last row: a scenario without a value in the last period is not named. The scale band is a narrow band at the left edge of the plot with its value label above it, so it never meets the legend names. Pin tiers of visuals side by side (months and Total) align only with the same pin range (like the Δ tier range) and the same pinPxPerUnit. Under filters fixed knobs are not enough (the months' tiers grow with the data): bind VarMin/VarMax/PinMin/PinMax on both visuals to union measures; the fields win over the knobs, like PxPerUnit. The Total's Δ tiers use the Total's own px per unit (its own scale, like its base; scale band and footnote), so the Δ union is taken in px: Var Max Months = VAR m = MAXX(ALLSELECTED('Date'[Month]), [Δ BU]) RETURN MAX(MAX(m, [Δ BU Year] * [PxPerUnit Total] / [PxPerUnit Months]), 0) and Var Max Total = [Var Max Months] * [PxPerUnit Months] / [PxPerUnit Total] (VarMin likewise with MINX/MIN): both tiers get the same height. The pins share one % scale (pinPxPerUnit) on both, so Pin Max = MAX(MAXX(ALLSELECTED('Date'[Month]), [Δ BU %]), [Δ BU % Year], 0) for both. Give months and Total the same visual top, height and categoryLabelPx, so their baselines and tiers sit at the same y.",
+      "notes": "Same unit, same scale (CH 4.1) means the same px per unit, not the same domain: give every chart of a scale group the same pxPerUnit (or the PxPerUnit field from one DAX measure) and size each visual's height to its own data (usermeta.ibcs.layout; scripts/scale_layout.py in the ibcs-power-bi skill computes it), so a chart with smaller values is shorter (CH 4.2). yMax, varMin, varMax only share a domain: use them for visuals of the same height that must show the same range, never to align a smaller chart with a larger one. A Total / extension column (e.g. the year next to its months) is a separate visual with periodType 'year'; when its values need another scale, mark it with a scaling indicator or a footnote. Same column width across visuals (e.g. the month chart and its total): set barPx. Values are drawn as delivered: bind scaled measures or set unitDivisor so labels never show raw values. Rows with a blank Period or no value in AC, FC, PY, PL, BU, refScenario or triangleScenario are dropped, even if constant scale measures are present; reference-only periods remain. The integrated reference legend names the first period with a nonblank reference value, including zero. periodLabel: auto preserves category labels unchanged; month formats YYYY-MM as Jan..Dec with the year below the first month of each later year (below the first month only when the months span two years) and a thin separator at subsequent year boundaries; short formats YYYY-MM as mm. Other category formats are left unchanged. When showCategoryLabels is false, year labels and year separators are hidden too. Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Scale band (CH 4.3): when charts of one unit must use different scales, set scaleBand (display units, e.g. 10) to the same round value in each of them: a light area from the axis to that value and a labelled line make the scales comparable. 0 = off. Comment markers (UN 2.4): bind Comment (e.g. a DAX SWITCH returning 1, 2 … for the periods the comments explain) and print the same numbers in circles in the comment text box; the marker sits above the value label, so keep ibcsTierGapPx large enough when a variance tier is stacked above. Variance-only tier (showBase false): only the variance axis, variance columns and labels and the tier label are drawn; stack it above a chart that shows the base, with showCategoryLabels false when the visual below shows them. Pin tier (pinTier true): ΔX% = (AC&FC − REF) / REF with the signed reference, N/A when REF is blank or 0, or negative while naOnNegativeRef is true; drawn as pins above the absolute variance tier in the same view, so base, ΔX and ΔX% always share the category axis and stay together when a filter changes the data (separate stacked visuals each anchor their own plot and drift apart). The pins have their own % scale sized to the tier: the pin range fills 90 % of pinTierPx (48 px), or, for charts read together (months and their Total), the pinPxPerUnit they share (scale_layout.py: the smaller of their own values); no page-wide % scale, so each chart's largest |Δ%| fills most of its tier and pin length carries the value; without pxPerUnit, pinShare of the base tier. Pins beyond ±pinClip (default ±100 %) are clipped at the clip point with an outlier triangle in the growth direction; the label keeps the full value; a Δ% that rounds to zero keeps its head on the axis as a baseline marker (no stem, no colour); a non-zero pin is at least head + 2 px long; the head is 6 px (token minimum), at the stem end; labels one decimal (pinDecimals 1). Period labels never get an ellipsis: wider than their step they become their first letter (Jan → J, the year stays in the title). Integrated legend (one rule for Power BI and web apps): the scenario names sit right of the last column at their own marks (triangle tip, upper part of the reference column, middle of the AC/FC column), spread at least ibcsFontSize + 2 px apart and kept inside the base tier; a series of AC months followed by FC months is named AC&FC; the right padding (46 px) holds 'AC&FC'. Names are taken from the last row: a scenario without a value in the last period is not named. The scale band is a narrow band at the left edge of the plot with its value label above it, so it never meets the legend names. Pin tiers of visuals side by side (months and Total) align only with the same pin range (like the Δ tier range) and the same pinPxPerUnit. Under filters fixed knobs are not enough (the months' tiers grow with the data): bind VarMin/VarMax/PinMin/PinMax on both visuals to union measures; the fields win over the knobs, like PxPerUnit. The Total's Δ tiers use the Total's own px per unit (its own scale, like its base; scale band and footnote), so the Δ union is taken in px: Var Max Months = VAR m = MAXX(ALLSELECTED('Date'[Month]), [Δ BU]) RETURN MAX(MAX(m, [Δ BU Year] * [PxPerUnit Total] / [PxPerUnit Months]), 0) and Var Max Total = [Var Max Months] * [PxPerUnit Months] / [PxPerUnit Total] (VarMin likewise with MINX/MIN): both tiers get the same height. The pins share one % scale (pinPxPerUnit) on both, so Pin Max = MAX(MAXX(ALLSELECTED('Date'[Month]), [Δ BU %]), [Δ BU % Year], 0) for both. Give months and Total the same visual top, height and categoryLabelPx, so their baselines and tiers sit at the same y. Differing % scales are marked (OURS, UN 5.2 / CH 4.3): this chart's pin scale is sized to its own tier, so when it differs from the page's other pin tiers set pinScaleBand (-1 = auto round value 1/2/5 × 10^n % at 25–60 % of the tier; or the same fraction in charts read together): a band at the left edge of the plot from the axis with its value label, the tier name moves to the other side of the axis; scale_layout.py sets -1 whenever the page's pin scales differ, and the page footnote says the % tiers are on different scales.",
       "previewGroups": [
         {
           "suffix": "-scale-group",
@@ -416,6 +430,11 @@
       "name": "pinClip",
       "value": 1,
       "description": "pins beyond ±pinClip (fraction; 1 = ±100 %, ours) are clipped at the clip point and end in an outlier triangle in the growth direction instead of a head; the label keeps the full value; the pin range is the clipped range. 0 = off"
+    },
+    {
+      "name": "pinScaleBand",
+      "value": 0,
+      "description": "scaling marker of the pin tier (UN 5.2, CH 4.3; OURS rule): required when this chart's % scale differs from the page's other pin tiers (each pin tier is sized to its own tier; only charts read together, the months and their Total, share one). -1 = auto: a round value 1/2/5 × 10^n % that is 25–60 % of the tier; a fraction (0.1 = 10 %) = that value, the same in charts read together; 0 = off. A band at the tier's start in the scale-band colours with its value label; scripts/scale_layout.py sets -1 when the page's pin scales differ; the page footnote says the % tiers are on different scales"
     },
     {
       "name": "markLastClosed",
@@ -1002,6 +1021,30 @@
     {
       "calculate": "datum._every <= 1 || datum._i == 1 || datum._i == datum._n || datum._i == datum._vHiRow._i || datum._i == datum._vLoRow._i || datum._i == datum._lastAC || datum.__selected__ == 'on' || (datum._i - 1) % datum._every == 0",
       "as": "_vShow"
+    },
+    {
+      "calculate": "pinTier && height > 0 && datum._yDom > 0 ? datum._pk * height / datum._yDom : 0",
+      "as": "_pPxPp"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? pinTierPx : (datum._pHi - datum._pLo) * datum._pPxPp",
+      "as": "_pBandT"
+    },
+    {
+      "calculate": "!pinTier || datum._pPxPp <= 0 ? 0 : (pinScaleBand > 0 ? pinScaleBand * 100 : (pinScaleBand < 0 ? ((1 * datum._pPxPp >= 0.25 * datum._pBandT && 1 * datum._pPxPp <= 0.6 * datum._pBandT) ? 1 : (2 * datum._pPxPp >= 0.25 * datum._pBandT && 2 * datum._pPxPp <= 0.6 * datum._pBandT) ? 2 : (5 * datum._pPxPp >= 0.25 * datum._pBandT && 5 * datum._pPxPp <= 0.6 * datum._pBandT) ? 5 : (10 * datum._pPxPp >= 0.25 * datum._pBandT && 10 * datum._pPxPp <= 0.6 * datum._pBandT) ? 10 : (20 * datum._pPxPp >= 0.25 * datum._pBandT && 20 * datum._pPxPp <= 0.6 * datum._pBandT) ? 20 : (50 * datum._pPxPp >= 0.25 * datum._pBandT && 50 * datum._pPxPp <= 0.6 * datum._pBandT) ? 50 : (100 * datum._pPxPp >= 0.25 * datum._pBandT && 100 * datum._pPxPp <= 0.6 * datum._pBandT) ? 100 : ((100 * datum._pPxPp <= 0.6 * datum._pBandT) ? 100 : (50 * datum._pPxPp <= 0.6 * datum._pBandT) ? 50 : (20 * datum._pPxPp <= 0.6 * datum._pBandT) ? 20 : (10 * datum._pPxPp <= 0.6 * datum._pBandT) ? 10 : (5 * datum._pPxPp <= 0.6 * datum._pBandT) ? 5 : (2 * datum._pPxPp <= 0.6 * datum._pBandT) ? 2 : (1 * datum._pPxPp <= 0.6 * datum._pBandT) ? 1 : 1)) : 0))",
+      "as": "_pBandPp"
+    },
+    {
+      "calculate": "datum._pHi >= -datum._pLo",
+      "as": "_pBandUp"
+    },
+    {
+      "calculate": "datum._P0 + (datum._pBandUp ? 1 : -1) * datum._pBandPp * datum._pk",
+      "as": "_pBandEnd"
+    },
+    {
+      "calculate": "format(datum._pBandPp, 'd') + '%'",
+      "as": "_pBandLabel"
     }
   ],
   "encoding": {
@@ -2195,7 +2238,101 @@
       }
     },
     {
-      "description": "pin tier: tier label ΔPY% / ΔPL% left of its axis",
+      "description": "pin tier scaling marker (UN 5.2, CH 4.3; OURS): with pinScaleBand, a narrow light band at the left edge of the plot from the pin axis to a round % value, so a % scale that differs from the page's other pin tiers is visible",
+      "transform": [
+        {
+          "filter": "pinTier && datum._i == 1 && datum._pBandPp > 0"
+        }
+      ],
+      "mark": {
+        "type": "rect",
+        "fill": {
+          "expr": "ibcsScaleBandFill"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": -9
+        },
+        "x2": {
+          "value": -3
+        },
+        "y": {
+          "field": "_pBandEnd",
+          "type": "quantitative"
+        },
+        "y2": {
+          "field": "_P0"
+        }
+      }
+    },
+    {
+      "description": "pin tier scaling marker line at the round value",
+      "transform": [
+        {
+          "filter": "pinTier && datum._i == 1 && datum._pBandPp > 0"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsScaleBandLine"
+        },
+        "strokeWidth": 1
+      },
+      "encoding": {
+        "x": {
+          "value": -11
+        },
+        "x2": {
+          "value": -1
+        },
+        "y": {
+          "field": "_pBandEnd",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "pin tier scaling marker label: the round value beyond the band end, secondary text colour at label size",
+      "transform": [
+        {
+          "filter": "pinTier && datum._i == 1 && datum._pBandPp > 0"
+        },
+        {
+          "calculate": "scale('y', datum._pBandEnd) + (datum._pBandUp ? -2 : 2)",
+          "as": "_pBLy"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "right",
+        "baseline": {
+          "expr": "datum._pBandUp ? 'bottom' : 'top'"
+        },
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsTextSecondary"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": -1
+        },
+        "y": {
+          "field": "_pBLy",
+          "type": "quantitative",
+          "scale": null
+        },
+        "text": {
+          "field": "_pBandLabel"
+        }
+      }
+    },
+    {
+      "description": "pin tier: tier label ΔPY% / ΔPL% left of its axis; below the axis when the scaling marker grows upwards from it",
       "transform": [
         {
           "filter": "pinTier && datum._i == 1"
@@ -2204,8 +2341,12 @@
       "mark": {
         "type": "text",
         "align": "right",
-        "baseline": "bottom",
-        "dy": -2,
+        "baseline": {
+          "expr": "datum._pBandPp > 0 && datum._pBandUp ? 'top' : 'bottom'"
+        },
+        "dy": {
+          "expr": "datum._pBandPp > 0 && datum._pBandUp ? 2 : -2"
+        },
         "fontSize": {
           "expr": "ibcsFontSize"
         },

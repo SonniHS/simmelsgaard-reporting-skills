@@ -688,6 +688,31 @@ class CrossReviewRegressions(unittest.TestCase):
         good = self.dom("<svg><defs><pattern id='h'/></defs><rect data-role='col-FC' fill='url(#h)'/></svg>")
         self.assertFalse([x for x in good if x["rule"] == "D7"])
 
+class PinScaleMarkers(unittest.TestCase):
+    """OURS: pin tiers on different % scales each carry a scaling marker (UN 5.2, CH 4.3)."""
+
+    def dom(self, html):
+        with tempfile.TemporaryDirectory() as tmp:
+            page = Path(tmp) / "p.html"
+            page.write_text(html, encoding="utf-8")
+            return [x for x in run("dom", page, "--no-overrides")[1] if x["rule"] == "F6"]
+
+    PIN = "<rect data-role='pin' data-impact='good' data-category='{c}' data-ppu='{ppu}' fill='#8CB400'/>"
+    BAND = "<rect data-role='scale-band' data-tier='pct' fill='#DCE8FA'/>"
+
+    def test_different_pin_scales_without_a_marker_fail(self):
+        f = self.dom(f"<svg>{self.PIN.format(c='Jan', ppu=1100)}</svg><svg>{self.PIN.format(c='North', ppu=146)}</svg>")
+        self.assertEqual(len(f), 2)
+        self.assertTrue(all(x["status"] == "fail" and x["sev"] == "M" for x in f))
+
+    def test_marked_or_shared_pin_scales_pass(self):
+        marked = self.dom(f"<svg>{self.BAND}{self.PIN.format(c='Jan', ppu=1100)}</svg>"
+                          f"<svg>{self.BAND}{self.PIN.format(c='North', ppu=146)}</svg>")
+        self.assertEqual(marked, [])
+        shared = self.dom(f"<svg>{self.PIN.format(c='Jan', ppu=1100)}</svg><svg>{self.PIN.format(c='Total', ppu=1100)}</svg>")
+        self.assertEqual(shared, [])
+
+
 class RoundThreeRegressions(unittest.TestCase):
     """False passes and false failures found in the round-3 release test."""
 

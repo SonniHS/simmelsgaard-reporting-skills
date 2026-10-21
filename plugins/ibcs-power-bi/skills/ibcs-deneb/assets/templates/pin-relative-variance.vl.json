@@ -24,7 +24,7 @@
       "requiredFields": [
         "Period"
       ],
-      "notes": "ΔX% = (AC-REF)/REF with the SIGNED reference (never ABS). N/A when REF is blank or 0, or when REF < 0 and naOnNegativeRef is true (IBCS UN 4.1 p.54). If you pass a precomputed ΔPY% measure instead, keep the same rule in DAX. Same % scale on the page: the same pxPerUnit (px per percentage point) on every pin chart and each visual's height sized to its own Δ% range (usermeta.ibcs.layout), not the same yMin/yMax on visuals of one height. Rows with a blank Period are dropped (a constant measure such as a scale field would otherwise add a blank category). Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Outliers (UN 5.3, CH 4.4): set clipPct (fraction, e.g. 0.5 = 50%) or bind ClipPct for business-irrelevant relative outliers: the pin is cut at that value, has no head, keeps its full label, and a small triangle beyond the label points in the growth direction. Only for relative variances; never cut absolute columns or bars (CH 2.1).",
+      "notes": "ΔX% = (AC-REF)/REF with the SIGNED reference (never ABS). N/A when REF is blank or 0, or when REF < 0 and naOnNegativeRef is true (IBCS UN 4.1 p.54). If you pass a precomputed ΔPY% measure instead, keep the same rule in DAX. Same % scale on the page: the same pxPerUnit (px per percentage point) on every pin chart and each visual's height sized to its own Δ% range (usermeta.ibcs.layout), not the same yMin/yMax on visuals of one height. Rows with a blank Period are dropped (a constant measure such as a scale field would otherwise add a blank category). Rounded-zero rule: a variance that rounds to 0 at `decimals` is labelled 0 without sign and gets no impact colour. Outliers (UN 5.3, CH 4.4): set clipPct (fraction, e.g. 0.5 = 50%) or bind ClipPct for business-irrelevant relative outliers: the pin is cut at that value, has no head, keeps its full label, and a small triangle beyond the label points in the growth direction. Only for relative variances; never cut absolute columns or bars (CH 2.1). Differing % scales are marked (OURS, UN 5.2 / CH 4.3): this chart's pin scale is sized to its own tier, so when it differs from the page's other pin tiers set pinScaleBand (-1 = auto round value 1/2/5 × 10^n % at 25–60 % of the tier; or the same fraction in charts read together): a band at the left edge of the plot from the axis with its value label, the tier name moves to the other side of the axis; scale_layout.py sets -1 whenever the page's pin scales differ, and the page footnote says the % tiers are on different scales.",
       "knobs": [
         "refScenario",
         "polarity",
@@ -38,7 +38,8 @@
         "yMax",
         "pxPerUnit",
         "showCategoryLabels",
-        "clipPct"
+        "clipPct",
+        "pinScaleBand"
       ],
       "layout": {
         "valueAxis": "height",
@@ -90,6 +91,13 @@
             "clipPct": 0.25
           },
           "sampleData": "pin-edge-cases.json"
+        },
+        {
+          "suffix": "-scale-band",
+          "params": {
+            "pinScaleBand": -1
+          },
+          "note": "pinScaleBand -1: a scaling marker at the left edge for a % scale that differs from the page's other pin tiers."
         }
       ]
     }
@@ -155,6 +163,11 @@
       "name": "clipPct",
       "value": 1,
       "description": "relative outlier clip (UN 5.3, CH 4.4) as a fraction; default 1 = ±100 % (ours, the same rule in Power BI and web apps): pins beyond it are cut at the clip point, have no head, end in a triangle in the growth direction at the clip point and keep their full label; 0 = off (field ClipPct wins)"
+    },
+    {
+      "name": "pinScaleBand",
+      "value": 0,
+      "description": "scaling marker of the pin tier (UN 5.2, CH 4.3; OURS rule): required when this chart's % scale differs from the page's other pin tiers (each pin tier is sized to its own tier; only charts read together, the months and their Total, share one). -1 = auto: a round value 1/2/5 × 10^n % that is 25–60 % of the plot height; a fraction (0.1 = 10 %) = that value, the same in charts read together; 0 = off. A band at the tier's start in the scale-band colours with its value label; scripts/scale_layout.py sets -1 when the page's pin scales differ; the page footnote says the % tiers are on different scales"
     },
     {
       "name": "naOnNegativeRef",
@@ -299,6 +312,18 @@
       }
     },
     {
+      "name": "ibcsScaleBandFill",
+      "value": "#DCE8FA"
+    },
+    {
+      "name": "ibcsScaleBandLine",
+      "value": "#5B9BD5"
+    },
+    {
+      "name": "ibcsTextSecondary",
+      "value": "#595959"
+    },
+    {
       "name": "bw",
       "expr": "min(bandwidth('x'), ibcsCategoryStep[periodType] * stepScale * ibcsBarRatio)",
       "description": "column width: 2/3 of the category, capped at the token step so every chart of this period type has the same width"
@@ -437,6 +462,26 @@
     {
       "calculate": "datum._ok ? datum._pdD : 0",
       "as": "_ly"
+    },
+    {
+      "calculate": "height > 0 && datum._yTop > datum._yLo ? height / (datum._yTop - datum._yLo) : 0",
+      "as": "_pxF"
+    },
+    {
+      "calculate": "datum._pxF <= 0 ? 0 : (pinScaleBand > 0 ? pinScaleBand : (pinScaleBand < 0 ? ((0.01 * datum._pxF >= 0.25 * height && 0.01 * datum._pxF <= 0.6 * height) ? 0.01 : (0.02 * datum._pxF >= 0.25 * height && 0.02 * datum._pxF <= 0.6 * height) ? 0.02 : (0.05 * datum._pxF >= 0.25 * height && 0.05 * datum._pxF <= 0.6 * height) ? 0.05 : (0.1 * datum._pxF >= 0.25 * height && 0.1 * datum._pxF <= 0.6 * height) ? 0.1 : (0.2 * datum._pxF >= 0.25 * height && 0.2 * datum._pxF <= 0.6 * height) ? 0.2 : (0.5 * datum._pxF >= 0.25 * height && 0.5 * datum._pxF <= 0.6 * height) ? 0.5 : (1 * datum._pxF >= 0.25 * height && 1 * datum._pxF <= 0.6 * height) ? 1 : ((1 * datum._pxF <= 0.6 * height) ? 1 : (0.5 * datum._pxF <= 0.6 * height) ? 0.5 : (0.2 * datum._pxF <= 0.6 * height) ? 0.2 : (0.1 * datum._pxF <= 0.6 * height) ? 0.1 : (0.05 * datum._pxF <= 0.6 * height) ? 0.05 : (0.02 * datum._pxF <= 0.6 * height) ? 0.02 : (0.01 * datum._pxF <= 0.6 * height) ? 0.01 : 0.01)) : 0))",
+      "as": "_bandF"
+    },
+    {
+      "calculate": "datum._pMax >= -datum._pMin",
+      "as": "_bandUp"
+    },
+    {
+      "calculate": "datum._bandUp ? datum._bandF : -datum._bandF",
+      "as": "_bandEnd"
+    },
+    {
+      "calculate": "format(datum._bandF * 100, 'd') + '%'",
+      "as": "_bandLabel"
     }
   ],
   "encoding": {
@@ -807,7 +852,101 @@
       }
     },
     {
-      "description": "tier label (ΔPY% / ΔPL%) left of the axis",
+      "description": "scaling marker (UN 5.2, CH 4.3; OURS): with pinScaleBand, a narrow light band at the left edge of the plot from the axis to a round % value, so a % scale that differs from the page's other pin tiers is visible",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._bandF > 0"
+        }
+      ],
+      "mark": {
+        "type": "rect",
+        "fill": {
+          "expr": "ibcsScaleBandFill"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": -9
+        },
+        "x2": {
+          "value": -3
+        },
+        "y": {
+          "field": "_bandEnd",
+          "type": "quantitative"
+        },
+        "y2": {
+          "datum": 0
+        }
+      }
+    },
+    {
+      "description": "scaling marker line at the round value",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._bandF > 0"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsScaleBandLine"
+        },
+        "strokeWidth": 1
+      },
+      "encoding": {
+        "x": {
+          "value": -11
+        },
+        "x2": {
+          "value": -1
+        },
+        "y": {
+          "field": "_bandEnd",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "scaling marker label: the round value beyond the band end, secondary text colour at label size",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._bandF > 0"
+        },
+        {
+          "calculate": "scale('y', datum._bandEnd) + (datum._bandUp ? -2 : 2)",
+          "as": "_bLy"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "right",
+        "baseline": {
+          "expr": "datum._bandUp ? 'bottom' : 'top'"
+        },
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsTextSecondary"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": -1
+        },
+        "y": {
+          "field": "_bLy",
+          "type": "quantitative",
+          "scale": null
+        },
+        "text": {
+          "field": "_bandLabel"
+        }
+      }
+    },
+    {
+      "description": "tier label (ΔPY% / ΔPL%) left of the axis; below the axis when the scaling marker grows upwards from it",
       "transform": [
         {
           "filter": "datum._i == 1"
@@ -816,8 +955,12 @@
       "mark": {
         "type": "text",
         "align": "right",
-        "baseline": "bottom",
-        "dy": -3,
+        "baseline": {
+          "expr": "datum._bandF > 0 && datum._bandUp ? 'top' : 'bottom'"
+        },
+        "dy": {
+          "expr": "datum._bandF > 0 && datum._bandUp ? 3 : -3"
+        },
         "fontSize": {
           "expr": "ibcsFontSize"
         },

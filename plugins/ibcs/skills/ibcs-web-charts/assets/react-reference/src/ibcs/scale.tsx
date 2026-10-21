@@ -37,6 +37,43 @@ export function pinScale(tiers: Iterable<{ min: number; max: number; tierPx: num
   return Number.isFinite(ppu) ? ppu : 100;
 }
 
+/**
+ * The scaling marker of a pin tier on its own scale (UN 5.2 / CH 4.3; OURS sizing): the round value
+ * 1/2/5 × 10^n (as a fraction, 0.1 = 10 %) whose length is 25–60 % of the tier, so the reader can see
+ * that this tier's % scale differs from the page's other % tiers.
+ */
+export function pinScaleBand(tierPx: number, ppu: number): number {
+  const candidates = [0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1];
+  const fit = candidates.find((c) => c * ppu >= 0.25 * tierPx && c * ppu <= 0.6 * tierPx);
+  if (fit) return fit;
+  const tooLong = candidates.filter((c) => c * ppu <= 0.6 * tierPx);
+  return tooLong.length ? tooLong[tooLong.length - 1]! : candidates[0]!;
+}
+
+export type PinTier = { id: string; min: number; max: number; tierPx: number; /** charts read together share a group */ group?: string };
+export type PinTierScale = { ppu: number; band: number | null; differs: boolean };
+
+/**
+ * Pin scales for every pin tier of a page (OURS): each tier (or group of charts read together, such
+ * as the months and their Total) gets its own scale sized to its tier; when the scales differ across
+ * the page, every tier gets a scaling marker of the same round value within a group.
+ */
+export function pagePinScales(tiers: PinTier[], fill = 0.9): Map<string, PinTierScale> {
+  const groups = new Map<string, PinTier[]>();
+  for (const t of tiers) groups.set(t.group ?? t.id, [...(groups.get(t.group ?? t.id) ?? []), t]);
+  const ppuOf = new Map<string, number>();
+  for (const [g, ts] of groups) ppuOf.set(g, pinScale(ts, fill));
+  const values = [...ppuOf.values()];
+  const differs = values.some((v) => Math.abs(v - values[0]!) > 0.01 * Math.max(v, values[0]!));
+  const out = new Map<string, PinTierScale>();
+  for (const [g, ts] of groups) {
+    const ppu = ppuOf.get(g)!;
+    const band = differs ? pinScaleBand(Math.min(...ts.map((t) => t.tierPx)), ppu) : null;
+    for (const t of ts) out.set(t.id, { ppu, band, differs });
+  }
+  return out;
+}
+
 type Api = {
   register: (id: string, requests: ScaleRequest[]) => void;
   unregister: (id: string) => void;

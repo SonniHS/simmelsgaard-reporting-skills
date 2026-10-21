@@ -61,6 +61,13 @@ All notable changes to this marketplace and its plugins. The format follows
   when the largest step is under 5 % of the base (our default, knob `magnifyBelow`); base and total
   stay on the page scale.
 
+### Changed (marked pin scales)
+- A relative-variance tier whose scale differs from the page's other pin tiers carries a scaling marker
+  (UN 5.2 / CH 4.3): a round-value band with its label, in the scale-band style (web `pctScaleBand`,
+  Deneb `pinScaleBand`, set automatically by `scale_layout.py`). Charts read together share one scale.
+  Our rule, stated in the contract, chart layer, page shell, visual spec format and notation skill; an
+  unmarked differing pin scale fails the `pbir` and `dom` lint checks (F6).
+
 ### Fixed (proof run 1)
 - Pins carry magnitude: each relative-variance tier has its own scale sized to the tier (48 px column,
   90 px bar tiers), the largest |Δ%| fills about 90 %; 6 px heads at the stem end; a rounded zero keeps a

@@ -51,6 +51,7 @@ page:
       - {marker: "1", text: "AC&FC: actuals up to the last closed month, forecast (9+3) after it."}
       - {marker: "2", text: "The full year has its own scale; the scale band is 5 mEUR in both charts."}
       - {marker: "3", text: "In line with budget: |ΔBU%| below 0.5 %."}
+      - {marker: "4", text: "ΔBU% pins are on their own scale per chart; the blue band shows 2% (months) and 20% (regions)."}
   layout:
     grid: {columns: 12, rows: 12, margin: 16, gutter: 16}
     header: {messagePosition: above-title}
@@ -62,7 +63,11 @@ scaleGroups:
   - {id: meur-fy, unit: mEUR, kind: absolute, members: [v1.extension], domain: shared, sizing: scale-band,
      scaleBand: {value: 5, label: "5"}}
   - {id: meur-ytd, unit: mEUR, kind: absolute, members: [v2.base, v2.dbu], domain: shared, sizing: identical}
-  - {id: pct-bu, unit: "%", kind: relative, members: [v1.dbup, v2.dbup], domain: shared, sizing: identical}
+  # Pin tiers: one % scale per chart read on its own, each marked (OURS; see footnote 4)
+  - {id: pct-bu-month, unit: "%", kind: relative, members: [v1.dbup], domain: shared, sizing: scale-band,
+     scaleBand: {value: 0.02, label: "2%"}}
+  - {id: pct-bu-region, unit: "%", kind: relative, members: [v2.dbup], domain: shared, sizing: scale-band,
+     scaleBand: {value: 0.2, label: "20%"}}
 
 visuals:
   - id: k1
@@ -113,7 +118,7 @@ visuals:
     type: grouped-column
     card: A-5 + A-6 + A-7 + A-8 + CO 4.2 + CO 4.3
     question: "How does revenue develop by month against budget, and where will the year end?"
-    subtitle: "**Revenue** by month | {month.year} AC&FC¹ and BU and PY, ΔBU and ΔBU%"
+    subtitle: "**Revenue** by month | {month.year} AC&FC¹ and BU and PY, ΔBU and ΔBU%⁴"
     grid: {col: 1, row: 3, colSpan: 12, rowSpan: 5}
     data:
       grain: [month]
@@ -140,7 +145,7 @@ visuals:
       - {id: base, type: grouped-column, values: [rev.BU, rev.AC&FC, rev.PY], scaleGroup: meur-month, position: base,
          draw: {rev.BU: overlap, rev.AC&FC: primary, rev.PY: triangle}}
       - {id: dbu, type: variance-column, values: [dbu-fc], scaleGroup: meur-month, position: above}
-      - {id: dbup, type: pin-time, values: [dbup-fc], scaleGroup: pct-bu, position: above}
+      - {id: dbup, type: pin-time, values: [dbup-fc], scaleGroup: pct-bu-month, position: above}
     labels: {data: primary-only, legend: integrated}
     markers:
       - {kind: separator, at: asOf}
@@ -153,7 +158,7 @@ visuals:
     type: grouped-bar
     card: A-24 + A-25 + A-26 + A-30 + CO 4.2
     question: "Which regions drive the gap to budget year to date?"
-    subtitle: "**Revenue** by region | _{month} AC and BU, ΔBU and ΔBU%"
+    subtitle: "**Revenue** by region | _{month} AC and BU, ΔBU and ΔBU%⁴"
     grid: {col: 1, row: 8, colSpan: 12, rowSpan: 4}
     data:
       grain: [region]
@@ -175,7 +180,7 @@ visuals:
       - {id: base, type: bar-triangles, values: [rev.AC, rev.BU], scaleGroup: meur-ytd, position: base,
          draw: {rev.AC: primary, rev.BU: triangle}}
       - {id: dbu, type: variance-bar, values: [dbu], scaleGroup: meur-ytd, position: right}
-      - {id: dbup, type: pin-structure, values: [dbup], scaleGroup: pct-bu, position: right}
+      - {id: dbup, type: pin-structure, values: [dbup], scaleGroup: pct-bu-region, position: right}
     labels: {data: primary-only, legend: integrated}
     markers:
       - {kind: ellipse, target: {visual: v2, tier: dbu, category: "{topRegion}", value: dbu}, reason: message}

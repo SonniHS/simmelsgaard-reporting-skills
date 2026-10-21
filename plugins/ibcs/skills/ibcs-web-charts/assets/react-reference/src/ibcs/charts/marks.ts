@@ -6,7 +6,16 @@ import type { ImpactKey } from "../impact";
 export type Fill = string | { hatch: string };
 
 /** `group: "zoom"` marks the magnifier panel of a waterfall (rendered as data-group). */
-type Base = { role: string; category?: string; impact?: ImpactKey; group?: "zoom" };
+type Base = {
+  role: string;
+  category?: string;
+  impact?: ImpactKey;
+  group?: "zoom";
+  /** Pin marks: px per 1.0 (= 100 %) of their tier, written as data-ppu (the ibcs-review dom lint compares tiers). */
+  ppu?: number;
+  /** Scale-band marks: the tier they mark ("pct" for a pin tier), written as data-tier. */
+  tier?: string;
+};
 
 export type Mark =
   | (Base & { kind: "rect"; x: number; y: number; w: number; h: number; fill?: Fill; stroke?: string; strokeWidth?: number; tooltip?: string })

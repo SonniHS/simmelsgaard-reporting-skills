@@ -68,6 +68,19 @@ Rules:
   the largest |Δ%| fills about 90 %; the months and their Total share one scale via `pinScale`),
   6 px heads at the stem end, clipped at ±100 % with an outlier triangle, a baseline marker for a
   Δ% that rounds to zero, labels with one decimal. Check: the largest stem is ≥ 40 % of its tier.
+  **Differing % scales are marked (OURS).** Pin tiers share one % scale wherever charts are read
+  together (the months and their Total, small multiples); every other pin tier keeps its own
+  scale, because one large relative variance (e.g. −55 % in a structure chart) on a page-wide
+  scale would squash every other pin below readability. That is a deviation from "same unit, same
+  scale" (CH 4.1), so it must be visible: each pin tier whose scale differs from the page's other
+  pin tiers carries a **scaling marker** in the scale-band style (UN 5.2, CH 4.3; tokens
+  `color.marker.scaleBandFill` / `scaleBandLine`, label in `color.text.secondary`): a band of a
+  round value (1/2/5 × 10ⁿ %, 25–60 % of the tier) at the tier's start with its value (`10%`),
+  clear of the tier name, pins and labels, the same value for charts read together; the page
+  footnote says the % tiers are on different scales. An unmarked differing % scale fails the
+  review (ibcs-review linter F6 on the saved page: `ibcs_lint.py dom`). In code: build the page's
+  pin tiers with `pagePinScales` (group the months with their Total), pass each tier's `ppu` as
+  `pctPpu` and its `band` as `pctScaleBand`.
 - **Labels and names** (proof run 1): month names fall back Jan → J → two rows, never an
   ellipsis; structure and bridge names take the free width before they wrap or are cut; no label
   touches an axis, baseline, frame, connector or assisting line (the reference waterfalls move it

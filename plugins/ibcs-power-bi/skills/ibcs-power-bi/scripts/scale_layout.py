@@ -77,7 +77,10 @@ large structure variance (−55 %) would shrink the month pins to a few px. Only
 share one pin scale: the members of an "alignTiers" group (months and their Total) get the smallest
 of their values. The script sets it per member (setParams pinPxPerUnit, or pxPerUnit of
 pin-relative-variance) and warns when a member's largest |Δ%| gets a stem shorter than 40 % of its
-tier (e.g. a fixed pinPxPerUnit that is too small).
+tier (e.g. a fixed pinPxPerUnit that is too small). Differing % scales are marked (OURS, UN 5.2 /
+CH 4.3): when the pin members' px per point differ, each gets setParams pinScaleBand -1 (a scaling
+marker of a round value, 25–60 % of its tier), so list every pin chart of the page in one group
+file; the page footnote says the % tiers are on different scales.
 
 Data-bound tier ranges (fields YMax, VarMin/VarMax, PinMin/PinMax under a selection): give "tiers" the
 LARGEST range any single selection produces (e.g. the largest company's months, not the group's), so
@@ -370,6 +373,22 @@ def pin_group(g: dict, members: list[dict], tdir: Path, warnings: dict, set_para
     return out
 
 
+def pin_markers(pin_ppu: dict, members: list[dict], set_params: dict) -> None:
+    """Differing % scales are marked (OURS, UN 5.2 / CH 4.3): when the page's pin tiers do not all share
+    one px per point, every pin member gets pinScaleBand -1 (a round value 25–60 % of its tier, drawn by
+    the template) unless it already sets a value. List every pin chart of the page in one group file."""
+    values = list(pin_ppu.values())
+    if len(values) < 2 or all(abs(v - values[0]) <= 0.01 * max(v, values[0]) for v in values):
+        return
+    by_id = {m["id"]: m for m in members}
+    for mid in pin_ppu:
+        m = by_id[mid]
+        if float(m.get("params", {}).get("pinScaleBand") or 0) != 0:
+            continue
+        m["params"] = {**m.get("params", {}), "pinScaleBand": -1}
+        set_params.setdefault(mid, {})["pinScaleBand"] = -1
+
+
 def tier_ppu(m: dict, tier: dict, params: dict, group_ppu: float) -> float:
     """px per unit of one tier of a member (the same resolution as member_parts)."""
     tppu = m.get("tierPxPerUnit", {}).get(tier["id"])
@@ -474,6 +493,7 @@ def main() -> int:
             m["params"] = {**m.get("params", {}), **knobs}   # size with the label room it needs
         warnings[m["id"]] += warns
     pin_ppu = pin_group(g, members, tdir, warnings, set_params)      # pin scale per chart (aligned charts share)
+    pin_markers(pin_ppu, members, set_params)                        # differing % scales are marked
     derive = [m for m in members if m.get("own") and not m.get("basePxPerUnit")]
     for m in derive:
         m["basePxPerUnit"] = 1.0   # placeholder: derived below, once the group's px per unit is known

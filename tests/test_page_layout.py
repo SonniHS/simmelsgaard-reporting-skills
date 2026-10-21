@@ -207,6 +207,27 @@ class PinScale(unittest.TestCase):
         self.assertEqual(rows(f, "E12", "own") + rows(f, "B5", "own"), [])
 
 
+class PinScaleMarker(unittest.TestCase):
+    """OURS: pin tiers on different % scales each carry a scaling marker (pinScaleBand), UN 5.2 / CH 4.3."""
+
+    def page(self, a, b):
+        with tempfile.TemporaryDirectory() as tmp:
+            _, f, _ = lint(report(Path(tmp), {"p": [deneb("months", "column-two-tier-variance", (16, 400, 600, 300), a),
+                                                    deneb("regions", "pin-relative-variance", (640, 400, 600, 300), b)]}))
+        return rows(f, "F6")
+
+    def test_own_pin_scales_without_a_marker_fail(self):
+        f = self.page({"pinTier": True, "pinPxPerUnit": 0}, {})
+        self.assertEqual({r["location"].split(" / ")[-1] for r in f}, {"months", "regions"})
+        self.assertTrue(all(r["sev"] == "M" and r["status"] == "fail" for r in f))
+
+    def test_marked_or_shared_pin_scales_pass(self):
+        self.assertEqual(self.page({"pinTier": True, "pinScaleBand": -1}, {"pinScaleBand": 0.1}), [])
+        self.assertEqual(self.page({"pinTier": True, "pinPxPerUnit": 2}, {"pxPerUnit": 2}), [])
+        one = self.page({"pinTier": True, "pinScaleBand": -1}, {})
+        self.assertEqual([r["location"].split(" / ")[-1] for r in one], ["regions"])
+
+
 class Truncation(unittest.TestCase):
     def test_long_slicer_header_fails_short_one_passes(self):
         with tempfile.TemporaryDirectory() as tmp:

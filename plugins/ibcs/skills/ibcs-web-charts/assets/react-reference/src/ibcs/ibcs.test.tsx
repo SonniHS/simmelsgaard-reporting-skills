@@ -13,7 +13,7 @@ import { act, create } from "react-test-renderer";
 import { describe, expect, it } from "vitest";
 import {
   KpiCard, MarksSvg, alignTiers, fitLines, overlaps, formatDelta, formatPercentDelta, formatPp, formatValue, impactFill, impactKey, impactText,
-  layoutColumnTiers, layoutStructureBars, periodLabels, pinScale, layoutTimeWaterfall, layoutVarianceWaterfall, lineBoxes, magnifierFactor, markBox, pickScale, pxPerUnit, ScaleProvider, tokens, useScale,
+  layoutColumnTiers, layoutStructureBars, periodLabels, pinScale, layoutTimeWaterfall, layoutVarianceWaterfall, lineBoxes, magnifierFactor, markBox, pagePinScales, pickScale, pinScaleBand, pxPerUnit, ScaleProvider, tokens, useScale,
   type ColumnTiersOptions, type Layout, type Mark, type PeriodRow,
 } from "./index";
 
@@ -682,3 +682,59 @@ describe("builder gaps (proof run 1)", () => {
     }
   });
 });
+
+describe("pin tiers on different % scales are marked (OURS, UN 5.2 / CH 4.3)", () => {
+  const regions = [
+    { category: "North", AC: 5e6, BU: 4.6e6, delta: 0.4e6, deltaPct: 0.087 },
+    { category: "Other", AC: 0.2e6, BU: 0.45e6, delta: -0.25e6, deltaPct: -0.556, remainder: true },
+  ];
+  const tiers = [
+    { id: "months", min: -0.0488, max: 0.0556, tierPx: 48 },
+    { id: "regions", min: -0.556, max: 0.087, tierPx: 90 },
+  ];
+  it("pinScaleBand picks a round value 25–60 % of the tier", () => {
+    for (const [tierPx, ppu] of [[48, 0.9 * 48 / 0.0556], [90, 0.9 * 90 / 0.556], [48, 100]] as const) {
+      const band = pinScaleBand(tierPx, ppu);
+      expect([0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1]).toContain(band);
+      expect(band * ppu).toBeLessThanOrEqual(0.6 * tierPx + 1e-9);
+    }
+    expect(pinScaleBand(48, 0.9 * 48 / 0.0556) * (0.9 * 48 / 0.0556)).toBeGreaterThanOrEqual(0.25 * 48);
+  });
+  it("pagePinScales: charts read together share one scale; differing scales get a band each", () => {
+    const one = pagePinScales([{ ...tiers[0]!, group: "m" }, { id: "total", min: 0, max: 0.013, tierPx: 48, group: "m" }]);
+    expect(one.get("months")!.differs).toBe(false);
+    expect(one.get("months")!.band).toBeNull();
+    expect(one.get("total")!.ppu).toBe(one.get("months")!.ppu);
+    const page = pagePinScales(tiers);
+    expect(page.get("months")!.differs).toBe(true);
+    expect(page.get("months")!.band).not.toBeNull();
+    expect(page.get("regions")!.band).not.toBeNull();
+  });
+  it("a page with two pin tiers at different scales draws a scaling marker in each, with data-ppu on the pins", () => {
+    const page = pagePinScales(tiers);
+    const m = layoutColumnTiers(months, { ...opts, pctPpu: page.get("months")!.ppu, pctScaleBand: page.get("months")!.band! });
+    const r = layoutStructureBars(regions, { width: 640, reference: "BU", ppu: 40 / 1e6, pctPpu: page.get("regions")!.ppu, pctScaleBand: page.get("regions")!.band!, scale });
+    for (const l of [m, r]) {
+      const bands = l.marks.filter((x) => x.role === "scale-band" && x.tier === "pct");
+      expect(bands).toHaveLength(1);
+      expect(l.marks.some((x) => x.role === "scale-band-label" && x.tier === "pct")).toBe(true);
+      const ppus = new Set(l.marks.filter((x) => x.role === "pin").map((x) => x.ppu));
+      expect(ppus.size).toBe(1);
+    }
+    expect(m.marks.find((x) => x.role === "pin")!.ppu).not.toBeCloseTo(r.marks.find((x) => x.role === "pin")!.ppu!);
+    // the marker's label stays inside the box and clear of the tier name and of every pin label
+    for (const l of [m, r]) {
+      const label = l.marks.find((x) => x.role === "scale-band-label")!;
+      const b = markBox(label);
+      expect(b.x).toBeGreaterThanOrEqual(-0.5);
+      expect(b.y).toBeGreaterThanOrEqual(-0.5);
+      expect(b.x + b.w).toBeLessThanOrEqual(l.width + 0.5);
+      for (const other of l.marks.filter((x) => x.kind === "text" && x !== label && (x.role === "tier-name" || x.role === "variance-label")))
+        expect(overlaps(b, markBox(other))).toBe(false);
+    }
+    const html = renderToStaticMarkup(<MarksSvg layout={m} title="ΔBU%" />);
+    expect(html).toMatch(/data-role="pin"[^>]*data-ppu="/);
+    expect(html).toMatch(/data-role="scale-band"[^>]*data-tier="pct"/);
+  });
+});
+

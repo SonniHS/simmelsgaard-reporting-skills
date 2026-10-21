@@ -264,6 +264,13 @@ written reports and dashboards.
   band** of the same round value in both groups, a footnote and a recorded deviation (CH 4.1
   "extreme cases"). Never silently auto-scale the Total. Averages (Ø) and single reference
   values are comparable with a month and stay on the months' scale.
+- **Pin tiers (relative variances) on a page** (OURS): charts read together (the months and their
+  Total, small multiples) share one % scale; every other pin tier is sized to its own tier, because
+  one large relative variance (e.g. −55 % in a structure chart) on one page-wide % scale would
+  squash every other pin below readability. A pin tier whose % scale differs from the page's other
+  pin tiers carries a **scaling marker** in the scale-band style (UN 5.2, CH 4.3): a band of a round
+  value (1/2/5 × 10ⁿ %, 25–60 % of the tier) with its value label, plus a page footnote. An unmarked
+  differing % scale is a review failure. Renderer rules: `ibcs-web-charts` behaviour contract §3.
 - **Outlier markers** only for business-irrelevant outliers in relative values/variances: pin
   truncated at the plot edge, no head, full value labelled, small triangle in growth direction
   (impact colour).

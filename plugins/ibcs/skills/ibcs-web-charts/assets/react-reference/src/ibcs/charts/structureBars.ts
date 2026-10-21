@@ -6,7 +6,7 @@ import { formatDelta, formatPercentDelta, formatValue, roundsToZero, type Number
 import { impactFill, impactKey, impactText, type ColorMode, type Impact } from "../impact";
 import { clamp, lineBox, textWidth, fitLines, type Fill, type Layout, type Mark } from "./marks";
 import type { Scenario } from "./columnTiers";
-import { pinScale } from "../scale";
+import { pinScale, pinScaleBand } from "../scale";
 
 export type StructureRow = {
   category: string;
@@ -38,6 +38,11 @@ export type StructureBarsOptions = {
   pctPpu?: number;
   /** Width of the pin tier in px (OURS default 90 for bar charts): the largest |Δ%| fills 90 % of it. */
   pctTierPx?: number;
+  /**
+   * Scaling marker of the pin tier (UN 5.2 / CH 4.3) when its % scale differs from the page's other %
+   * tiers (OURS): a round value as a fraction (0.1 = 10 %), or "auto" (`pinScaleBand`, 25–60 % of the tier).
+   */
+  pctScaleBand?: number | "auto";
   scale: NumberScale;
   pctDecimals?: number;
   polarity?: number;
@@ -71,6 +76,8 @@ function shift(m: Mark, dy: number): Mark {
     case "path": return { ...m, d: m.d.replace(/(-?\d+(?:\.\d+)?) (-?\d+(?:\.\d+)?)/g, (_, x, y) => `${x} ${Number(y) + dy}`) };
   }
 }
+
+const PIN_ROLES = new Set(["pin", "pin-head", "outlier"]);
 
 export function layoutStructureBars(input: StructureRow[], o: StructureBarsOptions): Layout {
   if (o.stack && !o.only && o.reference) {
@@ -215,6 +222,18 @@ export function layoutStructureBars(input: StructureRow[], o: StructureBarsOptio
     marks.push({ kind: "text", role: "tier-name", x: Math.min(Math.max(ax, half), o.width - half), y: box / 2 + 1, text: tn, anchor: "middle", size, fill: C.text.primary });
   }
 
+  // pin-tier scaling marker (OURS): a thin band just above the first row, from the axis towards the side
+  // the pins use most, its value beyond its end (clear of the tier name above the axis)
+  const pctBand = o.pctScaleBand === "auto" ? pinScaleBand(o.pctTierPx ?? 90, pctPpu) : o.pctScaleBand;
+  if (pctBand && x0.pct != null) {
+    const ax = x0.pct;
+    const w = pctBand * pctPpu;
+    const right = pct.right >= pct.left;
+    const text = `${+(pctBand * 100).toFixed(0)}%`;
+    back.push({ kind: "rect", role: "scale-band", tier: "pct", x: right ? ax : ax - w, y: top - 6, w, h: 5, fill: C.marker.scaleBandFill, stroke: C.marker.scaleBandLine, strokeWidth: 0.5 });
+    marks.push({ kind: "text", role: "scale-band-label", tier: "pct", x: right ? ax + w + 3 : ax - w - 3, y: top - 3.5, text, anchor: right ? "start" : "end", size, fill: C.text.secondary });
+  }
+
   const ring = (cx: number, cy: number, text: string, category: string) =>
     marks.push({ kind: "ellipse", role: "marker-ellipse", cx, cy, rx: textWidth(text, size) / 2 + 6, ry: box / 2 + 3, stroke: C.marker.highlight, strokeWidth: T.stroke.highlightEllipsePx, category });
   const tri = clamp(T.geometry.triangleSizeRatio * B, T.geometry.triangleSizePx.min, T.geometry.triangleSizePx.max);
@@ -320,7 +339,9 @@ export function layoutStructureBars(input: StructureRow[], o: StructureBarsOptio
     ["Category", primary, ...(ref ? [ref] : []), ...(tiers.includes("delta") ? [refCode] : []), ...(tiers.includes("pct") ? [`${refCode}%`] : [])],
     ...rows.map((r, i) => [r.category, labelsP[i]!, ...(ref ? [formatValue(r.R, o.scale)] : []), ...(tiers.includes("delta") ? [labelsD[i]!] : []), ...(tiers.includes("pct") ? [labelsPct[i]!] : [])]),
   ];
-  return { width: o.width, height, marks: [...back, ...marks], warnings, table };
+  // pin marks carry their tier's px per 1.0, so a page check can see differing % scales (data-ppu)
+  const tagPins = (m: Mark): Mark => (PIN_ROLES.has(m.role) && m.category != null ? { ...m, ppu: pctPpu } : m);
+  return { width: o.width, height, marks: [...back, ...marks].map(tagPins), warnings, table };
 }
 
 /** Extents for the page registry: bars and Δ join the unit, pins join "%". */
