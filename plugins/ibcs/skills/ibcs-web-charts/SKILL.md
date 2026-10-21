@@ -20,8 +20,13 @@ look like and why) is in the [ibcs-notation](../ibcs-notation/SKILL.md) skill; p
 the visual spec are in [ibcs-composition](../ibcs-composition/SKILL.md); checking a finished page
 is [ibcs-review](../ibcs-review/SKILL.md).
 
-It does not ship a chart library. It describes **what a conforming chart component does**, so
-you can build one with any React/SVG stack or bend an existing library into shape. All colours,
+It describes **what a conforming chart component does**, so you can build one with any React/SVG
+stack or bend an existing library into shape. For React it ships a lean, tested reference set in
+`${CLAUDE_SKILL_DIR}/assets/react-reference/` (README there): column chart with variance tiers and
+pins (plus Total alignment), structure bars with triangles and Δ tiers, variance waterfall, KPI
+card, number formatting with the rounded-zero rule, and a page scale registry. **Copy its
+`src/ibcs/` into the app and extend it** — new chart types as new layout functions with tests —
+instead of writing these from scratch; read its README first. All colours,
 widths and patterns come from the token file
 `${CLAUDE_SKILL_DIR}/../ibcs-notation/assets/ibcs-tokens.json` (users override in their own
 `ibcs-tokens.overrides.json`); never retype a hex.

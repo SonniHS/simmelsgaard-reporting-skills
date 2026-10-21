@@ -7,8 +7,8 @@ by business impact, widths, titles, number formats, identical scales — and shi
 tokens all other plugins consume. `ibcs-composition` turns a question into a page: key message,
 MECE storyline, page pattern and a tool-agnostic YAML visual spec for builders. `ibcs-review`
 audits screenshots, Power BI reports, Vega-Lite specs, web pages and specs with a rule-cited
-checklist and a read-only linter. `ibcs-web-charts` provides SVG/React chart components for web
-pages and apps.
+checklist and a read-only linter. `ibcs-web-charts` gives the behaviour contract for chart components in web pages and apps, and
+ships tested React + SVG reference components to copy and extend.
 
 ## Install
 
@@ -28,7 +28,7 @@ pages and apps.
 - [`ibcs-review`](skills/ibcs-review/SKILL.md) — audit procedure, checklist (A–K) and
   `scripts/ibcs_lint.py` (PBIR folders incl. report-level measures, Power BI themes, Vega-Lite
   specs, token files).
-- [`ibcs-web-charts`](skills/ibcs-web-charts/SKILL.md) — IBCS chart components for web pages
+- [`ibcs-web-charts`](skills/ibcs-web-charts/SKILL.md) — IBCS chart components for web pages, with [reference components](skills/ibcs-web-charts/assets/react-reference/README.md)
   and apps (SVG/React), driven by the same tokens.
 - Agent `ibcs-visual-designer` — designs pages and writes visual specs; does not build.
 - Agent `ibcs-reviewer` — read-only reviewer that returns a findings table.

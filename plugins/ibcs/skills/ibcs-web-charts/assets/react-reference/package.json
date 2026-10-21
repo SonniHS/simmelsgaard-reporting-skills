@@ -1,0 +1,26 @@
+{
+  "name": "ibcs-react-reference",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Reference React + SVG chart components for IBCS®-style reporting, written to the ibcs-web-charts behaviour contract. Copy src/ibcs into your app and extend.",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "tokens": "node ../../../ibcs-notation/scripts/gen_tokens.mjs --tokens ../../../ibcs-notation/assets/ibcs-tokens.json --out src/ibcs/tokens.generated.ts",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit",
+    "previews": "tsx scripts/render-previews.tsx"
+  },
+  "dependencies": {
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "22.15.30",
+    "@types/react": "18.3.23",
+    "@types/react-dom": "18.3.7",
+    "tsx": "4.20.6",
+    "typescript": "5.9.3",
+    "vitest": "3.2.4"
+  }
+}

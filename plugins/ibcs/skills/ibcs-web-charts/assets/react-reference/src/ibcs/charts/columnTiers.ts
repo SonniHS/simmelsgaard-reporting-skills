@@ -1,0 +1,375 @@
+// Column chart over time with variance tiers (behaviour contract §2 and §3): scenario columns with
+// an overlapped reference and an optional triangle, an absolute Δ tier on the same px per unit, a
+// relative Δ% pin tier on the "%" group, end legend at the marks, and px-extent alignment for a
+// Total chart beside it. Pure: rows + px per unit in, marks out.
+import { tokens } from "../tokens.generated";
+import { formatDelta, formatPercentDelta, formatValue, roundsToZero, type NumberScale } from "../format";
+import { impactFill, impactKey, impactText, type ColorMode, type Impact } from "../impact";
+import { clamp, lineBox, spreadLabels, textWidth, truncateEnd, type Fill, type Layout, type Mark } from "./marks";
+
+export type Scenario = "AC" | "FC" | "PY" | "PL" | "BU";
+
+export type PeriodRow = {
+  period: string;
+  /** True up to and including the last closed period; omit to use AC where present, else FC. */
+  closed?: boolean;
+  AC?: number | null;
+  FC?: number | null;
+  PY?: number | null;
+  PL?: number | null;
+  BU?: number | null;
+  /** Absolute variance from the model (e.g. AC&FC − BU). Never computed here. */
+  delta?: number | null;
+  deltaImpact?: Impact | null;
+  /** Relative variance from the model as a fraction; null = N/A (no pin). */
+  deltaPct?: number | null;
+  deltaPctImpact?: Impact | null;
+};
+
+export type TierKey = "pct" | "delta" | "base";
+export type TierPx = { up: number; down: number };
+
+export type ColumnTiersOptions = {
+  width: number;
+  /** Overlapped reference column behind the primary. With "FC" the primary is AC only. */
+  reference: Exclude<Scenario, "AC">;
+  /** A third scenario drawn as a triangle at the primary column's left edge. */
+  triangle?: Exclude<Scenario, "AC" | "FC">;
+  /** Variance tiers above the base, top to bottom. Default: both. */
+  tiers?: ("pct" | "delta")[];
+  /** px per raw unit from the page registry; the base and the Δ tier share it. */
+  ppu: number;
+  /** px per 1.0 (= 100 %) from the "%" group, for the pins. */
+  pctPpu?: number;
+  scale: NumberScale;
+  pctDecimals?: number;
+  polarity?: number;
+  colorMode?: ColorMode;
+  selected?: string;
+  /** Ring the value label the key message cites (UN 5.1). */
+  highlight?: { category: string; tier: TierKey };
+  /** Pins beyond ±limit (fraction) are truncated with an outlier marker. Default 1 (±100 %). */
+  outlierLimit?: number;
+  /** Minimum px above and below each tier's zero line: pass the union with a Total chart. */
+  minTierPx?: Partial<Record<TierKey, TierPx>>;
+  /** Draw a scale band (UN 5.2) at this round raw value: required on every chart of the unit when one chart has its own scale. */
+  scaleBand?: number;
+  /** Name of the primary series in the end legend, e.g. "AC&FC" for a Total of closed and open months. */
+  primaryLabel?: string;
+  /** Scenario names at the end of the series. Default true. */
+  legend?: boolean;
+  fontSize?: number;
+};
+
+export type ColumnTiersLayout = Layout & {
+  tiers: Record<TierKey, TierPx & { y0: number }>;
+  step: number;
+};
+
+const T = tokens;
+const TIER_GAP = 8;
+
+type Primary = { scenario: "AC" | "FC"; value: number } | null;
+
+export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): ColumnTiersLayout {
+  const warnings: string[] = [];
+  const size = o.fontSize ?? T.typography.size.label.px;
+  const box = lineBox(size);
+  const room = box + 2;
+  const pctDec = o.pctDecimals ?? 0;
+  const limit = o.outlierLimit ?? 1;
+  const mode = o.colorMode ?? "color";
+  const tierList = o.tiers ?? ["pct", "delta"];
+  const order: TierKey[] = [...(["pct", "delta"] as const).filter((t) => tierList.includes(t)), "base"];
+  const refCode = `Δ${o.reference}`;
+  const tierName: Record<TierKey, string> = { pct: `${refCode}%`, delta: refCode, base: "" };
+
+  const finite = (v: number | null | undefined): number | null => {
+    if (v == null) return null;
+    if (Number.isFinite(v)) return v;
+    warnings.push("non-finite value dropped");
+    return null;
+  };
+  const rows = input.map((r) => ({
+    ...r,
+    AC: finite(r.AC), FC: finite(r.FC), PY: finite(r.PY), PL: finite(r.PL), BU: finite(r.BU),
+    delta: finite(r.delta), deltaPct: finite(r.deltaPct),
+  }));
+  const hasClosed = rows.some((r) => r.closed != null);
+  const primaryOf = (r: (typeof rows)[number]): Primary => {
+    if (o.reference === "FC") return r.AC != null && (!hasClosed || r.closed) ? { scenario: "AC", value: r.AC } : null;
+    if (hasClosed) {
+      if (r.closed) return r.AC != null ? { scenario: "AC", value: r.AC } : null;
+      return r.FC != null ? { scenario: "FC", value: r.FC } : null; // a partial AC of the open period is not drawn
+    }
+    if (r.AC != null) return { scenario: "AC", value: r.AC };
+    return r.FC != null ? { scenario: "FC", value: r.FC } : null;
+  };
+  const prim = rows.map(primaryOf);
+  const n = Math.max(rows.length, 1);
+
+  // Labels decide the margins, never the plot width (contract §1, label clearance).
+  const lastPrim = [...prim].reverse().find((p) => p != null) ?? null;
+  const anyAC = prim.some((p) => p?.scenario === "AC");
+  const primaryName = o.primaryLabel ?? (lastPrim?.scenario === "FC" ? (anyAC ? "AC&FC" : "FC") : "AC");
+  const legendOn = o.legend !== false && rows.length > 0;
+  const legendNames = legendOn ? [primaryName, o.reference, ...(o.triangle ? [o.triangle] : [])] : [];
+  const legendW = legendNames.length ? Math.max(...legendNames.map((s) => textWidth(s, size))) + 10 : 0;
+  const tierNameW = order.length > 1 ? Math.max(...order.map((t) => textWidth(tierName[t], size))) + 8 : 0;
+
+  const valueLabel = (i: number) => formatValue(prim[i]?.value, o.scale);
+  const deltaLabel = (i: number) => (rows[i]!.delta == null ? "" : formatDelta(rows[i]!.delta, o.scale));
+  const pctLabel = (i: number) => formatPercentDelta(rows[i]!.deltaPct, pctDec);
+  const edgeW = (i: number) =>
+    Math.max(
+      textWidth(valueLabel(i), size),
+      order.includes("delta") ? textWidth(deltaLabel(i), size) : 0,
+      order.includes("pct") ? textWidth(pctLabel(i), size) : 0,
+    );
+  let left = Math.max(tierNameW, o.scaleBand ? 10 : 0);
+  let right = legendW;
+  let step = (o.width - left - right) / n;
+  left += Math.max(0, edgeW(0) / 2 - step / 2);
+  right = Math.max(right, Math.max(0, edgeW(n - 1) / 2 - step / 2));
+  step = Math.max(1, (o.width - left - right) / n);
+  const plotW = step * n;
+  const B = step * T.geometry.barWidthRatio.absolute;
+  const off = T.geometry.referenceOffsetRatio.column * B;
+  const cx = (i: number) => left + step * (i + 0.5);
+
+  // Tier extents in px (sized to the data, then the union passed in for alignment).
+  const ext = (vals: (number | null | undefined)[], ppu: number): TierPx => {
+    let up = 0;
+    let down = 0;
+    for (const v of vals) if (v != null) { up = Math.max(up, v * ppu); down = Math.max(down, -v * ppu); }
+    return { up, down };
+  };
+  const pctPpu = o.pctPpu ?? 0;
+  if (order.includes("pct") && !(pctPpu > 0)) warnings.push("pct tier without a px per unit from the \"%\" group");
+  const raw: Record<TierKey, TierPx> = {
+    base: ext(rows.flatMap((r, i) => [prim[i]?.value, r[o.reference], o.triangle ? r[o.triangle] : null]), o.ppu),
+    delta: ext(rows.map((r) => r.delta), o.ppu),
+    pct: ext(rows.map((r) => (r.deltaPct == null ? null : clamp(r.deltaPct, -limit, limit))), pctPpu),
+  };
+  const tiers = {} as ColumnTiersLayout["tiers"];
+  let cursor = 0;
+  for (const t of order) {
+    const min = o.minTierPx?.[t];
+    const up = Math.max(raw[t].up, min?.up ?? 0);
+    const down = Math.max(raw[t].down, min?.down ?? 0);
+    // pin labels sit beyond the head (or the outlier marker): their tier needs that much more room
+    const r = t === "pct" ? room + 9 : room;
+    const y0 = cursor + r + up;
+    tiers[t] = { up, down, y0 };
+    cursor = y0 + down + r + (t === "base" ? 0 : TIER_GAP);
+  }
+  for (const t of ["pct", "delta"] as const) if (!tiers[t]) tiers[t] = { up: 0, down: 0, y0: tiers.base.y0 };
+  const catY = cursor + box / 2 + 2;
+  const height = cursor + box + 4;
+  if (tiers.base.up + tiers.base.down < 24) warnings.push("base tier below 24 px: give this chart its own scale group with a scale band");
+
+  const marks: Mark[] = [];
+  const back: Mark[] = [];
+  const C = T.color;
+  const hatch = (stripe: string): Fill => ({ hatch: stripe });
+  const notation = (sc: Scenario): { fill: Fill; stroke?: string } =>
+    sc === "AC" ? { fill: C.scenario.ac }
+      : sc === "PY" ? { fill: C.scenario.py }
+      : sc === "FC" ? { fill: hatch(C.scenario.fc.stripe), stroke: C.scenario.fc.stroke }
+      : { fill: C.scenario.pl.fill, stroke: C.scenario.pl.stroke };
+
+  // 1. assisting area behind the selected category, through all tiers
+  const selIdx = rows.findIndex((r) => r.period === o.selected);
+  if (selIdx >= 0) back.push({ kind: "rect", role: "assisting-area", x: cx(selIdx) - step / 2, y: 0, w: step, h: height, fill: C.marker.assistingArea, category: o.selected });
+
+  // 2. axes, before the marks
+  back.push({ kind: "line", role: "axis", x1: left, x2: left + plotW, y1: tiers.base.y0, y2: tiers.base.y0, stroke: C.axis.category, strokeWidth: T.stroke.categoryAxisPx });
+  for (const t of order) {
+    if (t === "base") continue;
+    const y = tiers[t].y0;
+    const role = `axis-${o.reference}`;
+    if (o.reference === "PY") back.push({ kind: "line", role, x1: left, x2: left + plotW, y1: y, y2: y, stroke: C.axis.pyReference, strokeWidth: T.stroke.varianceAxis.pyWidthPx });
+    else if (o.reference === "FC") back.push({ kind: "rect", role, x: left, y: y - 2, w: plotW, h: 4, fill: hatch(C.scenario.fc.stripe), stroke: C.scenario.fc.stroke, strokeWidth: 0.5 });
+    else {
+      const d = (T.stroke.varianceAxis.plGapPx + T.stroke.varianceAxis.plLinePx) / 2;
+      for (const dy of [-d, d]) back.push({ kind: "line", role, x1: left, x2: left + plotW, y1: y + dy, y2: y + dy, stroke: C.axis.plReference, strokeWidth: T.stroke.varianceAxis.plLinePx });
+    }
+    marks.push({ kind: "text", role: "tier-name", x: left - 8, y, text: tierName[t], anchor: "end", size, fill: C.text.primary });
+  }
+
+  // label thinning: keep first, last, highest, lowest and the selected one when labels collide
+  const valueLabels = rows.map((_, i) => valueLabel(i));
+  const crowded = valueLabels.some((s) => textWidth(s, size) > step - 2);
+  const keep = new Set<number>([0, n - 1, selIdx]);
+  if (crowded) {
+    const vals = prim.map((p, i) => ({ v: p?.value, i })).filter((x) => x.v != null) as { v: number; i: number }[];
+    if (vals.length) {
+      keep.add(vals.reduce((a, b) => (b.v > a.v ? b : a)).i);
+      keep.add(vals.reduce((a, b) => (b.v < a.v ? b : a)).i);
+    }
+    warnings.push("value labels thinned: keep first, last, highest, lowest, selected");
+  }
+
+  const ring = (cxL: number, cyL: number, text: string, category: string) =>
+    marks.push({ kind: "ellipse", role: "marker-ellipse", cx: cxL, cy: cyL, rx: textWidth(text, size) / 2 + 6, ry: box / 2 + 3, stroke: C.marker.highlight, strokeWidth: T.stroke.highlightEllipsePx, category });
+
+  const triSize = clamp(T.geometry.triangleSizeRatio * B, T.geometry.triangleSizePx.min, T.geometry.triangleSizePx.max);
+  const y0 = tiers.base.y0;
+  const yOf = (v: number) => y0 - v * o.ppu;
+  rows.forEach((r, i) => {
+    const c = cx(i);
+    const p = prim[i];
+    const refV = r[o.reference];
+    // 3. reference behind, shifted left
+    if (refV != null && !(o.reference === "FC" && p?.scenario === "FC")) {
+      const nt = notation(o.reference);
+      marks.push({ kind: "rect", role: `col-${o.reference}`, category: r.period, x: c - B / 2 - off / 2, y: Math.min(yOf(refV), y0), w: B, h: Math.abs(refV) * o.ppu, fill: nt.fill, stroke: nt.stroke, strokeWidth: nt.stroke ? T.stroke.outlinePx : undefined });
+    }
+    // primary in front, shifted right
+    if (p) {
+      const nt = notation(p.scenario);
+      marks.push({ kind: "rect", role: `col-${p.scenario}`, category: r.period, x: c - B / 2 + off / 2, y: Math.min(yOf(p.value), y0), w: B, h: Math.abs(p.value) * o.ppu, fill: nt.fill, stroke: nt.stroke, strokeWidth: nt.stroke ? T.stroke.outlinePx : undefined });
+    }
+    // triangle: tip on the primary column's left edge, pointing right
+    const triV = o.triangle ? r[o.triangle] : null;
+    if (o.triangle && triV != null) {
+      const xl = c - B / 2 + off / 2;
+      const y = yOf(triV);
+      const w = triSize * 0.87;
+      const nt = notation(o.triangle);
+      marks.push({ kind: "path", role: `triangle-${o.triangle}`, category: r.period, d: `M${xl} ${y} L${xl - w} ${y - triSize / 2} L${xl - w} ${y + triSize / 2} Z`, fill: nt.fill, stroke: nt.stroke ?? C.scenario.ac, strokeWidth: 0.75 });
+    }
+    // value label above the taller of primary and reference (below for negatives)
+    if (p && (!crowded || keep.has(i))) {
+      const tops = [p.value, refV ?? 0, triV ?? 0];
+      const y = p.value >= 0 ? yOf(Math.max(...tops)) - box / 2 - 1 : yOf(Math.min(...tops, p.value)) + box / 2 + 1;
+      const text = valueLabels[i]!;
+      marks.push({ kind: "text", role: "label", category: r.period, x: c + off / 2, y, text, anchor: "middle", size, fill: C.text.primary });
+      if (o.highlight?.category === r.period && o.highlight.tier === "base") ring(c + off / 2, y, text, r.period);
+    }
+    // 5. absolute variance: same width and px per unit as the base
+    if (order.includes("delta") && r.delta != null) {
+      const d = r.delta;
+      const zero = roundsToZero(d, o.scale);
+      const key = impactKey(d, { impact: r.deltaImpact, polarity: o.polarity, isZero: zero });
+      const ty = tiers.delta.y0;
+      if (!zero) {
+        const fill = impactFill(key, mode)!;
+        marks.push({ kind: "rect", role: "variance", impact: key, category: r.period, x: c - B / 2, y: d > 0 ? ty - d * o.ppu : ty, w: B, h: Math.max(1, Math.abs(d) * o.ppu), fill: p?.scenario === "FC" ? hatch(fill) : fill, stroke: p?.scenario === "FC" ? fill : undefined, strokeWidth: p?.scenario === "FC" ? 0.75 : undefined });
+      }
+      const text = formatDelta(d, o.scale);
+      const y = d >= 0 || zero ? ty - Math.max(0, d) * o.ppu - box / 2 - 1 : ty - d * o.ppu + box / 2 + 1;
+      marks.push({ kind: "text", role: "variance-label", impact: key, category: r.period, x: c, y, text, anchor: "middle", size, fill: impactText(key, mode) });
+      if (o.highlight?.category === r.period && o.highlight.tier === "delta") ring(c, y, text, r.period);
+    }
+    // 6. relative variance pins on the "%" group; N/A draws no pin but keeps its label
+    if (order.includes("pct")) {
+      const v = r.deltaPct;
+      const ty = tiers.pct.y0;
+      const text = pctLabel(i);
+      if (v == null) {
+        marks.push({ kind: "text", role: "variance-label", impact: "none", category: r.period, x: c, y: ty - box / 2 - 2, text, anchor: "middle", size, fill: C.text.primary });
+      } else {
+        const zero = roundsToZero(v, { factor: 0.01, decimals: pctDec });
+        const key = impactKey(v, { impact: r.deltaPctImpact, polarity: o.polarity, isZero: zero });
+        const outlier = Math.abs(v) > limit;
+        const end = ty - clamp(v, -limit, limit) * pctPpu;
+        if (!zero) {
+          const stem = clamp(T.geometry.pin.thicknessRatio * B, T.geometry.pin.stemPx.min, T.geometry.pin.stemPx.max);
+          const fill = impactFill(key, mode)!;
+          marks.push({ kind: "rect", role: "pin", impact: key, category: r.period, x: c - stem / 2, y: Math.min(ty, end), w: stem, h: Math.abs(end - ty), fill });
+          if (outlier) {
+            warnings.push(`${r.period}: ${refCode}% ${text} truncated as an outlier`);
+            const dir = v > 0 ? -1 : 1;
+            marks.push({ kind: "path", role: "outlier", impact: key, category: r.period, d: `M${c - 5} ${end} L${c + 5} ${end} L${c} ${end + dir * 7} Z`, fill });
+          } else if (p) {
+            const head = clamp(T.geometry.pin.headRatio * B, T.geometry.pin.headPx.min, T.geometry.pin.headPx.max);
+            const nt = notation(p.scenario);
+            marks.push({ kind: "rect", role: "pin-head", category: r.period, x: c - head / 2, y: end - head / 2, w: head, h: head, fill: nt.fill, stroke: nt.stroke, strokeWidth: nt.stroke ? T.stroke.outlinePx : undefined });
+          }
+        }
+        const reach = (outlier ? 8 : clamp(T.geometry.pin.headRatio * B, T.geometry.pin.headPx.min, T.geometry.pin.headPx.max) / 2) + 1;
+        const y = v >= 0 || zero ? Math.min(end, ty) - reach - box / 2 : end + reach + box / 2;
+        marks.push({ kind: "text", role: "variance-label", impact: key, category: r.period, x: c, y, text, anchor: "middle", size, fill: impactText(key, mode) });
+        if (o.highlight?.category === r.period && o.highlight.tier === "pct") ring(c, y, text, r.period);
+      }
+    }
+    // 8. category label, cut from the end
+    marks.push({ kind: "text", role: "category", category: r.period, x: c, y: catY, text: truncateEnd(r.period, size, step - 2), anchor: "middle", size, fill: C.text.primary });
+  });
+
+  // scale band: a light band left of the plot, as tall as the round value on this chart's scale
+  if (o.scaleBand) back.push({ kind: "rect", role: "scale-band", x: left - 7, y: y0 - o.scaleBand * o.ppu, w: 5, h: o.scaleBand * o.ppu, fill: C.marker.scaleBandFill, stroke: C.marker.scaleBandLine, strokeWidth: 0.5 });
+
+  // 4. a tick on the category axis where AC switches to FC
+  const firstFc = prim.findIndex((p) => p?.scenario === "FC");
+  if (anyAC && firstFc > 0) back.push({ kind: "line", role: "axis", x1: left + step * firstFc, x2: left + step * firstFc, y1: y0, y2: y0 + 5, stroke: C.axis.category, strokeWidth: 1 });
+
+  // 9. end legend: each name level with its mark at the last period, spread by font + 2 px
+  if (legendOn) {
+    const li = rows.length - 1;
+    const r = rows[li]!;
+    const p = prim[li];
+    const xRight = cx(li) + B / 2 + off / 2;
+    const items: { text: string; y: number }[] = [];
+    if (p) items.push({ text: primaryName, y: yOf(p.value / 2) });
+    const refV = r[o.reference];
+    if (refV != null && !(o.reference === "FC" && p?.scenario === "FC")) items.push({ text: o.reference, y: yOf(refV / 2) });
+    const triV = o.triangle ? r[o.triangle] : null;
+    if (o.triangle && triV != null) items.push({ text: o.triangle, y: yOf(triV) });
+    const top = y0 - tiers.base.up - room + box / 2;
+    const bottom = y0 + tiers.base.down + room - box / 2;
+    const ys = spreadLabels(items.map((it) => it.y), size + 2, top, bottom);
+    items.forEach((it, k) => {
+      const y = ys[k]!;
+      const x = left + plotW + 6;
+      if (Math.abs(y - it.y) > size / 2) back.push({ kind: "line", role: "legend-leader", x1: xRight + 1, y1: it.y, x2: x - 2, y2: y, stroke: C.marker.assistingLine, strokeWidth: 0.75 });
+      marks.push({ kind: "text", role: "legend", x, y, text: it.text, anchor: "start", size, fill: C.text.primary });
+    });
+  }
+
+  // 10. hit zones, one per category band through all tiers (rendered only with onSelect)
+  rows.forEach((r, i) => {
+    const parts = [`${r.period}:`, prim[i] ? `${prim[i]!.scenario} ${valueLabels[i]}` : "", r[o.reference] != null ? `${o.reference} ${formatValue(r[o.reference], o.scale)}` : ""];
+    marks.push({ kind: "rect", role: "hit", category: r.period, x: cx(i) - step / 2, y: 0, w: step, h: height, tooltip: parts.filter(Boolean).join(" ") });
+  });
+
+  const header = ["Period", primaryName, o.reference, ...(o.triangle ? [o.triangle] : []), ...(order.includes("delta") ? [refCode] : []), ...(order.includes("pct") ? [`${refCode}%`] : [])];
+  const table = [header, ...rows.map((r, i) => [
+    r.period, valueLabels[i]!, formatValue(r[o.reference], o.scale), ...(o.triangle ? [formatValue(r[o.triangle], o.scale)] : []),
+    ...(order.includes("delta") ? [deltaLabel(i)] : []), ...(order.includes("pct") ? [pctLabel(i)] : []),
+  ])];
+
+  return { width: o.width, height, marks: [...back, ...marks], warnings, table, tiers, step };
+}
+
+/**
+ * Union of two charts' tier extents in px (months and Total, each at its own px per unit). Lay both
+ * out again with this as `minTierPx`: baselines and tier axes then sit at the same y.
+ */
+export function alignTiers(...layouts: ColumnTiersLayout[]): Record<TierKey, TierPx> {
+  const out = { pct: { up: 0, down: 0 }, delta: { up: 0, down: 0 }, base: { up: 0, down: 0 } };
+  for (const l of layouts)
+    for (const t of ["pct", "delta", "base"] as const) {
+      out[t].up = Math.max(out[t].up, l.tiers[t].up);
+      out[t].down = Math.max(out[t].down, l.tiers[t].down);
+    }
+  return out;
+}
+
+/**
+ * Extents for the page registry, one request per tier: the base and the Δ tier both join the
+ * chart's unit (each with the px its tier may use), the pins join "%".
+ */
+export function columnTiersExtents(rows: PeriodRow[], o: Pick<ColumnTiersOptions, "reference" | "triangle" | "outlierLimit">) {
+  const span = (vals: (number | null | undefined)[]) => {
+    const nums = vals.filter((v): v is number => v != null && Number.isFinite(v));
+    return { min: Math.min(0, ...nums), max: Math.max(0, ...nums) };
+  };
+  const lim = o.outlierLimit ?? 1;
+  return {
+    base: span(rows.flatMap((r) => [r.AC, r.FC, r[o.reference], o.triangle ? r[o.triangle] : null])),
+    delta: span(rows.map((r) => r.delta)),
+    pct: span(rows.map((r) => (r.deltaPct == null ? null : clamp(r.deltaPct, -lim, lim)))),
+  };
+}

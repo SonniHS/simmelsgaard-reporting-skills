@@ -1,13 +1,15 @@
 # The IBCS chart layer in an app
 
-As of 2026-10 there is **no shipped IBCS chart library**: neither this plugin nor the
-`ibcs-web-charts` skill (plugin `ibcs`) ships one, and the data-app template's visuals (Vega-Lite
-specs rendered by `@microsoft/fabric-visuals`) have no IBCS scenario notation, overlapped
-references, variance pins or a page-wide scale registry. Until a library exists, each app writes a
-small layer to the `ibcs-web-charts` contract. In an end-to-end test one page (multi-tier time
-chart with a Total column, a structure chart with variances, KPI cards) took about 600 lines of
-TypeScript including tests with the layout below. Reuse it from your previous app before writing it
-again.
+The data-app template's visuals (Vega-Lite specs rendered by `@microsoft/fabric-visuals`) have no
+IBCS scenario notation, overlapped references, variance pins or a page-wide scale registry. Start
+from the **reference components** of the `ibcs-web-charts` skill (plugin `ibcs`):
+the folder `react-reference/src/ibcs/` in that skill's assets holds the format, impact and scale modules, the marks and the
+renderer, the column chart with variance tiers and Total alignment (`alignTiers`), structure bars,
+the variance waterfall and the KPI card, with 30 unit tests. Copy that folder to `src/ibcs/` in
+the app (it matches the module layout below), regenerate `tokens.generated.ts` with the project's
+overrides, run its tests, and extend it: a new chart type is a new layout function next to the
+others, with tests by role. Do not rewrite what it already implements; in end-to-end tests,
+charts written from scratch kept reproducing layout gaps that the reference set already fixes.
 
 ## Module layout (proven in a test)
 
@@ -23,7 +25,8 @@ src/ibcs/scale.ts                  page scale registry: scale group → px per u
 src/ibcs/charts/marks.ts           Mark type: rect | line | path | text, each with a role and a category
 src/ibcs/charts/<chart>.ts         pure layout functions: (rows, width, px per unit, format) → { width, height, marks, warnings }
 src/ibcs/charts/MarksSvg.tsx       thin renderer: marks → <svg>, hatch patterns in its own <defs>, title/desc for a11y
-src/ibcs/charts/charts.spec.ts     layout unit tests (below)
+src/ibcs/ibcs.test.tsx             layout, renderer and KPI-card unit tests (below)
+src/ibcs/KpiCard.tsx               KPI card (report-shell.md §6)
 ```
 
 Rules:

@@ -55,8 +55,13 @@ def repo_files():
     for path in ROOT.rglob("*"):
         rel = path.relative_to(ROOT)
         if path.is_file() and not rel.parts[0].startswith(".git") and ".remember" not in rel.parts \
-                and "__pycache__" not in rel.parts and rel.name not in {DENYLIST.name, "CLAUDE.local.md"}:
+                and "__pycache__" not in rel.parts and "node_modules" not in rel.parts and rel.name not in {DENYLIST.name, "CLAUDE.local.md"}:
             yield path
+
+
+def md_files(base):
+    """Markdown under base, without installed dependencies (node_modules of a reference package)."""
+    return (p for p in base.rglob("*.md") if "node_modules" not in p.parts)
 
 
 def text_files():
@@ -182,7 +187,7 @@ class Links(unittest.TestCase):
     def test_relative_links_resolve_inside_their_plugin(self):
         problems = []
         for plugin in plugin_dirs():
-            for md in plugin.rglob("*.md"):
+            for md in md_files(plugin):
                 text = md.read_text(encoding="utf-8")
                 for target in MD_LINK.findall(text):
                     if re.match(r"^[a-z]+:", target):
@@ -206,7 +211,7 @@ class Links(unittest.TestCase):
         for plugin in plugin_dirs():
             readme = plugin / "README.md"
             declared = readme.read_text(encoding="utf-8") if readme.exists() else ""
-            for f in plugin.rglob("*.md"):
+            for f in md_files(plugin):
                 text = f.read_text(encoding="utf-8")
                 for skill, other in owner.items():
                     if other != plugin.name and re.search(rf"(?<![\w-]){re.escape(skill)}(?![\w-])", text) \
@@ -303,7 +308,7 @@ class SkillDocs(unittest.TestCase):
     def test_rayfin_up_commands_name_the_item(self):
         """A pasted `rayfin up` without --item-name deploys under the project id to a recorded target."""
         bad = []
-        for path in PLUGINS.rglob("*.md"):
+        for path in md_files(PLUGINS):
             for block in re.findall(r"```[a-z]*\n(.*?)```", path.read_text(encoding="utf-8"), re.S):
                 for line in re.sub(r"\\\n\s*", " ", block).splitlines():   # join \ continuations
                     if "rayfin up" in line and "--item-name" not in line:
