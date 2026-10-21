@@ -56,6 +56,18 @@ Rules:
   visible, never inflated to "look right") with its label carrying the value; the scale band in
   both charts and a footnote name the separate scale. Unit-test: months and Total tier axes at
   the same y for a filter that changes either range.
+  **TS contract** (in the reference components): `columnTiersExtents(rows, …)` returns each
+  tier's data extent for the registry requests; lay out the months and the Total once, take
+  `alignTiers(months, total)` (the union of their px extents per tier), and lay both out again
+  with it as `minTierPx`; the test "aligns a Total chart on its own scale with the months" in
+  `ibcs.test.tsx` is the check. The phone Total-only chart uses the same union, so its tiers stay
+  in the months' order and proportions.
+- **Default sizes** (one rule for web and Power BI, `ibcs-web-charts` SKILL §5): the largest base
+  column about 1.5 × the month pitch when the cell allows it; Δ tiers on the base px per unit;
+  pins at 1 px per percentage point (smaller only when the cell cannot fit them), clipped at
+  ±100 % with an outlier triangle, at least head/2 + 2 px long when they do not round to zero.
+- **Selection band**: the assisting area behind the selected month runs through all tiers; with
+  no selection the page selects the last closed month.
 - Layout functions never compute variances or impact; they draw what the query returned
   (`queries-and-data.md` §3).
 - Hatch pattern ids are unique per chart instance (`useId`), because `url(#id)` breaks across
@@ -64,8 +76,9 @@ Rules:
   the grey of absolute FC), each with its own id (`${chartId}-hatch-good`, …): one shared pattern
   would draw every hatched variance in the same colour.
 - **End legends** (scenario names right of the last column, and right of the Total) sit at their
-  marks' y, never as a fixed list: PY at the triangle tip, BU (or another outlined reference) at
-  the middle of the outline, AC or FC at the middle of the bar; "AC&FC" when the series runs from
+  marks' y, ordered top to bottom, never as a fixed list: PY at the triangle tip, BU (or another
+  outlined reference) at the upper part of its column (top + about a quarter of its height, clear
+  of the primary's name), AC or FC at the middle of the bar; never left of the first month; "AC&FC" when the series runs from
   AC into FC, plain "AC" when the last column is AC. Spread them with a collision shift (minimum
   gap font size + 2 px between centres, kept inside the base tier). The same rule as the Deneb
   end legend (`column-two-tier-variance` legendSide "end") and `ibcs-web-charts` behaviour
@@ -75,7 +88,8 @@ Rules:
   rule instead (names at the first or last row's marks).
 - **Waterfall magnifier** (a zoom box on a part of the bars): the end-bar labels never sit on the
   zoom box's corner or on a connector: reserve label room outside the box (or put the labels
-  above it) and route connectors around the labels.
+  above it) and route connectors around the labels; an end label's box clears max(zoom box top,
+  connector y).
 - Generate the token module from the token file with a script; never hand-copy hex values. The
   copied script's default `--tokens` path points into the skill folder, so always pass the paths
   in a `tokens` npm script:
@@ -125,17 +139,23 @@ behaviour. Without `onSelect` the hit marks render nothing, so static charts sta
 
 - **Month chart**: redraw for the card width, never scroll sideways. Order of reduction: Δ%
   labels to 0 decimals; then absolute labels to the scale's decimals − 1 (never below 0); then
-  thin value labels by measured width (keep first, last, selected, extremes); the category step
+  thin value labels by the collision rule below (keep the Total, the values the key message cites
+  — pass them as `keep` — then selected, first, last, extremes); the category step
   never drops below ≈ 22 px (12 months in ≈ 300 px). One-decimal labels need a step of ≈ 40 px at
   11 px type.
 - **Total**: a Total-only chart under the months: one category, its own scale with the same
-  scale band value, its tiers aligned to the months' tier order, tier names left of the column
+  scale band value, its tiers aligned to the months' tier order and sized with the same
+  `alignTiers` union as on desktop, tier names left of the column
   inside the chart width (not at the far left of a wide box).
-- **Label collisions at narrow steps**: before drawing, test each value label's box against the
-  neighbouring bars' boxes and labels (1.2 em high, measured width); a label that would touch the
-  next bar is shifted (above the bar end, or to the free side) or dropped by the thinning order
-  above, never drawn over a bar. Long category names are cut **from the end** with an ellipsis or
-  wrapped to two lines, never with a middle ellipsis.
+- **Label collisions** (the algorithm, `ibcs-web-charts` behaviour contract §2, implemented in
+  `layoutColumnTiers`): label boxes 1.2 em high and of measured width; labels placed in priority
+  order (Total, cited, selected, first/last, extremes, rest), each tested against every mark of
+  its tier — columns, the reference behind, triangles including the category's own PY triangle,
+  variance bars, pins and heads — and the labels already placed; a hit moves the label once past
+  the mark on its own side, otherwise it is left out (the value stays in the hidden table and the
+  tooltip); never drawn over a bar. Category names thin to every n-th in a regular rhythm, then
+  cut from the end. Long structure names wrap to two lines (`<tspan>`s) when the row step is at
+  least 2.2 × the font size, else they are cut **from the end**; never a middle ellipsis.
 - **Structure chart** (companies): stack the variance tiers under the bars (`ibcs-web-charts`
   behaviour contract §4: bars, then ΔBU, then ΔBU%, each full width on the same category order and
   scale), instead of a horizontally scrolling row.

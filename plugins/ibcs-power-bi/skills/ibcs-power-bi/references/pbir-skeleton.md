@@ -373,5 +373,7 @@ visual (hidden or unmarked report measures). After each publish, look at the ren
   (an internal fab API, not a documented interface: check it after fab updates). Never print or
   log the token. Export a known-good report the same way as a control: if it renders
   and yours does not, the fault is in your report, not in the export.
+  Export PDF, not PNG: PNG export can be disabled for a tenant (seen 2026-10). To look at a page
+  as an image, convert the PDF locally: `pdftoppm -png -r 110 report.pdf page` (poppler).
 - A Deneb visual can be checked before publishing with live data: `ibcs-deneb/scripts/render-previews.mjs
   --visual <visual.json>=<rows.json>` (rows from *Execute Queries* in the page's filter context).

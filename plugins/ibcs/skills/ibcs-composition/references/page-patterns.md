@@ -33,6 +33,10 @@
   landscape screens, **above** it on portrait/A4 — pick one per report type and never mix.
 - Key message 13 pt/17 px, title lines 11 pt/14 px (same size, measure bold), data labels
   9 pt/12 px. Smallest legible size, then use the space for context (CO 1–3).
+- Header rhythm *(ours, one rule for Power BI and apps)*: key message (22 px line height) →
+  12 px → the three title lines (19 px line height, no blank line between them) → 12 px → slicers
+  or chips. In an app, the sticky header row and filter bar are app chrome; the page head itself
+  sits in a header card like the Power BI header card.
 - Slicers in a collapsible pane or a slim strip **below** the header, never over the title.
 - No logo, background band, frame or shadow inside the page's content; branding belongs to the
   app shell. *(ours)* A **page shell** is allowed as the page's frame: a neutral light canvas

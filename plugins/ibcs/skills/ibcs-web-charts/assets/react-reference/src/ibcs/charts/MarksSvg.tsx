@@ -69,7 +69,11 @@ export function MarksSvg({ layout, title, desc, onSelect, standalone }: MarksSvg
           case "text":
             return (
               <text key={i} {...data(m)} x={m.x} y={m.y} textAnchor={m.anchor} dominantBaseline="central" fontSize={m.size} fontWeight={m.weight} fill={m.fill}>
-                {m.text}
+                {m.lines && m.lines.length > 1
+                  ? m.lines.map((l, k) => (
+                      <tspan key={k} x={m.x} dy={k === 0 ? -0.6 * m.size * (m.lines!.length - 1) : 1.2 * m.size}>{l}</tspan>
+                    ))
+                  : m.text}
               </text>
             );
         }

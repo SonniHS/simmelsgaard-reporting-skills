@@ -31,7 +31,7 @@ suggestions; the behaviour is the contract. Rule codes refer to the IBCS® Stand
 | `width` | Fixed px, else the container width (observe resizes). |
 | `polarity` / per-row `impact` | Colour of variances only. Row `impact` from the model wins over row polarity, which wins over chart polarity. |
 | `colorMode` | `color` (default), `cvd` (green → blue-green), `bw` (greys). Affects impact colours only. |
-| `onSelect`, `selectedIndex` | Category zones become focusable buttons. The selected category gets an assisting area (token `color.marker.assistingArea`) behind its category band, drawn before all marks; every mark keeps full opacity (no dimming: a dimmed AC reads like PY). Filtering stays the preferred interaction. |
+| `onSelect`, `selectedIndex` | Category zones become focusable buttons. Default selection on a page: the **last closed month**. The selected category gets an assisting area (token `color.marker.assistingArea`) behind its category band, drawn before all marks; every mark keeps full opacity (no dimming: a dimmed AC reads like PY). Filtering stays the preferred interaction. |
 | `highlight` | A highlighting ellipse (UN 5.1, token `color.marker.highlight`) around the **value label** the key message cites — never around a whole column. One ring per number. Only for numbers that appear in the key message. |
 | hidden data table | On by default; every plotted number, including N/A values. |
 
@@ -50,9 +50,9 @@ bar only). Variance numbers that carry an impact colour use the text tokens
 Series-label placement (OURS): a column or line chart over time names its scenarios at the
 **end**, right of the last period (before a separated Total column), each label level with the
 mark it names at that period and in the same vertical order; when two would come closer than the
-label height + 2 px, push them apart symmetrically and draw a short leader to the mark. Use the
-first period only when the right side has no room (a phone chart that keeps its full width). A
-bar chart names its scenarios once above the top bar. Variance tiers keep their tier name
+label height + 2 px, push them apart symmetrically and draw a short leader to the mark. Only two
+places, one rule for every route (web, Deneb): right of the last month, and right of a Total
+column; never left of the first month. A bar chart names its scenarios once above the top bar. Variance tiers keep their tier name
 (`ΔBU`, `ΔBU%`) at the left of the tier's axis.
 
 Label clearance at the chart edge: plot margins come from **measured** label boxes (value
@@ -107,17 +107,30 @@ Data: period rows `{ period, period2?, closed?, AC?, FC?, PY?, PL?, BU? }`.
   frames aligned.
 - A positive label sits above the taller of the column and the reference behind it.
 - **End legend** (the series names right of the last column, and right of a Total): each name at
-  its mark's y, never a fixed list: PY at the triangle tip (or the PY column's middle), an outlined
-  reference (BU, PL) at the middle of its outline, AC or FC at the middle of the last bar; "AC&FC"
+  its mark's y, never a fixed list, ordered top to bottom: PY at the triangle tip (or the PY
+  column's middle), an outlined reference (BU, PL) at the **upper part** of its column (top + about
+  a quarter of its height: the middle collides with the primary's name), AC or FC at the middle of
+  the last bar; "AC&FC"
   only when the series runs from AC into FC, plain "AC" when the last column is AC. Collision
   shift: names at least font size + 2 px apart (centre to centre), kept inside the base tier,
   each with a short leader when moved far from its mark. One rule for web charts and the Deneb
   template (`column-two-tier-variance` legendSide "end").
-- **Narrow steps** (phone, 390 px): test each value label's box against the neighbouring bars and
-  labels; shift a colliding label (above the bar end, or to the free side) or drop it by the
-  thinning order (keep first, last, selected, extremes), never draw it over the next bar.
-  Category names are cut from the end with an ellipsis or wrapped to two lines, never a middle
-  ellipsis.
+- **Label collisions** (every width, decisive on a phone): each label is a box 1.2 em high and
+  as wide as its measured text (≈ 0.6 em per digit). Place the labels of a tier in priority order
+  — a Total, the values the key message cites, the selected period, first and last, the extremes,
+  the rest — and test each against **every mark of its tier** (columns, the reference behind,
+  triangles including the category's own PY triangle, which reaches half its size above its
+  value, variance bars, pins and heads) and against the labels already placed. A label that hits
+  a mark moves once past it on its own side (above for positive values, below for negative);
+  if it still collides or leaves the tier's label room it is left out (the value stays in the
+  hidden table and the tooltip). The Total and the cited values are always drawn; first, last,
+  selected and extremes win every collision with lower-priority labels. Never draw a label over a
+  bar. Reference implementation: `layoutColumnTiers` in
+  `assets/react-reference` (test "no placed label overlaps …").
+- **Category axis**: all names when they fit the step; otherwise every n-th name in a regular
+  rhythm (the first kept), and a name that still does not fit is cut from the end with an
+  ellipsis, never a middle ellipsis. A second line (`period2`, e.g. the year) under the first
+  period and where it changes, **only** when the periods span two values.
 
 ## 3. Variance chart (absolute bars, relative pins)
 
@@ -130,15 +143,19 @@ absolute variances and a fraction for relative ones; `null` = N/A.
   in the minuend's notation (AC solid, FC hatched, PL outlined). Pins join the `"%"` scale group.
   Stem = `geometry.pin.thicknessRatio` × bar width clamped to `geometry.pin.stemPx` (2–4 px);
   head = `geometry.pin.headRatio` × bar width clamped to `geometry.pin.headPx` (6–10 px).
+  Scale (one rule for every route): **1 px per percentage point** by default (100 px per 1.0),
+  smaller only when the cell cannot fit the tier; the domain is the clipped range (± the outlier
+  limit). A pin that does not round to zero is at least head/2 + 2 px long, so its head never
+  sits on the axis. FC heads are hatched with the token period and stripe share at any size.
 - **Percentage points** (`kind: "pp"`): bar geometry, label `+2.1pp`, joins the `"%"` group.
 - The variance axis shows the **reference** scenario (UN 4.1): PY = solid light thick line, PL/BU
   = two thin parallel lines, FC = hatched band. Tokens `stroke.varianceAxis.*`, `color.axis.*`.
 - Orientation: columns (time, vertical) or bars (structure, horizontal, labels on the left).
 - Labels are signed (`+12`, `-3`, `+13%`); zero — and a value that rounds to zero at the
   visual's decimals — is unsigned, uncoloured and draws no mark.
-- **Outliers** (UN 5.3): relative pins beyond an `outlierLimit` (OURS default ±100 %) are
-  truncated without a head and get an outlier triangle in growth direction; the label shows the
-  full value. Only business-irrelevant relative values may be truncated this way (CH 2.1,
+- **Outliers** (UN 5.3), the one rule for every route (web, Deneb, SVG): relative pins beyond
+  an `outlierLimit` (OURS default ±100 %) are clipped at the limit without a head and get an
+  outlier triangle in growth direction at the clip point; the label shows the full value. Only business-irrelevant relative values may be truncated this way (CH 2.1,
   CH 4.4). Absolute variance bars, totals and "Other" are never truncated: the extent is sized
   to the data, or a scale band or magnifying glass is used (CH 4.2–4.5). State truncation in a
   footnote.
@@ -173,7 +190,9 @@ Data: structure rows `{ category, AC?, FC?, PY?, PL?, BU?, variances?, impact?/i
   (≈ 60 px). Below that width, stack the tiers under the base chart (same row order, category
   labels repeated, each tier keeps its scale) or let the chart scroll horizontally inside its
   own frame — never the page, and never by shrinking one tier's px per unit on its own. Long
-  category labels are shortened in the middle.
+  category names wrap to two lines when the row step is at least 2.2 × the font size (split at
+  the space nearest the middle, one `<tspan>` per line), else they are cut from the end with an
+  ellipsis; never a middle ellipsis.
 
 ## 5. Calculation waterfall
 
@@ -222,8 +241,8 @@ computes it as total − base (the data contract forbids client-side variances).
   inside the overview (two scales in one plot).
   Labels and the magnifier: the base and total labels and the end-bar labels never sit on the
   zoom box's corner or on a connector line; reserve their label room outside the box (or place
-  them above it) and route the connectors around labels. Test: no label box intersects the zoom
-  box outline or a connector.
+  them above it) and route the connectors around labels: an end label's box clears
+  max(zoom box top, connector y). Test: no label box intersects the zoom box outline or a connector.
 - Hatched FC steps in impact colours: one pattern per stripe colour, ids unique per chart.
 
 ## 7. Line chart

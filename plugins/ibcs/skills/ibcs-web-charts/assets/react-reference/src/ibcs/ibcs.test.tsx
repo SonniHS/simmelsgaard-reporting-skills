@@ -7,7 +7,7 @@ import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
-  KpiCard, MarksSvg, alignTiers, formatDelta, formatPercentDelta, formatPp, formatValue, impactFill, impactKey, impactText,
+  KpiCard, MarksSvg, alignTiers, fitLines, overlaps, formatDelta, formatPercentDelta, formatPp, formatValue, impactFill, impactKey, impactText,
   layoutColumnTiers, layoutStructureBars, layoutVarianceWaterfall, markBox, pickScale, pxPerUnit, tokens,
   type ColumnTiersOptions, type Layout, type Mark, type PeriodRow,
 } from "./index";
@@ -166,6 +166,73 @@ describe("column chart with tiers", () => {
   it("rings only the cited value label", () => {
     const h = layoutColumnTiers(months, { ...opts, highlight: { category: "Feb", tier: "delta" } });
     expect(byRole(h, "marker-ellipse")).toHaveLength(1);
+  });
+});
+
+describe("rev-4: labels, legend, pins, bands", () => {
+  const months12: PeriodRow[] = Array.from({ length: 12 }, (_, i) => ({
+    period: ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"][i]!,
+    period2: i < 6 ? "2025" : "2026",
+    closed: i < 9, AC: i < 9 ? (3.5 + (i % 3) * 0.2) * 1e6 : null, FC: i >= 9 ? 3.9e6 : null,
+    BU: 3.7e6, PY: (3.4 + (i % 4) * 0.25) * 1e6, delta: ((i % 5) - 2) * 0.11e6, deltaPct: ((i % 5) - 2) * 0.03,
+  }));
+  const base = { ...opts, ppu: 30 / 1e6 };
+  it("no placed label overlaps a column, triangle, pin or another label of its tier", () => {
+    for (const width of [300, 390, 520, 1000]) {
+      const l = layoutColumnTiers(months12, { ...base, width });
+      const obstacles = l.marks.filter((m) => m.kind !== "text" && /^(col-|triangle-|pin|variance$|outlier)/.test(m.role)).map(markBox);
+      const labels = l.marks.filter((m) => m.kind === "text" && (m.role === "label" || m.role === "variance-label")).map(markBox);
+      for (const b of labels) for (const ob of obstacles) expect(overlaps(b, ob)).toBe(false);
+      for (let a = 0; a < labels.length; a++) for (let b = a + 1; b < labels.length; b++) expect(overlaps(labels[a]!, labels[b]!, 0)).toBe(false);
+    }
+  });
+  it("thinning keeps cited, first and last labels at phone width", () => {
+    const l = layoutColumnTiers(months12, { ...base, width: 300, keep: ["May"] });
+    const cats = new Set(l.marks.filter((m) => m.role === "label").map((m) => m.category));
+    for (const c of ["Jan", "May", "Dec"]) expect(cats.has(c)).toBe(true);
+  });
+  it("category labels thin to a regular rhythm", () => {
+    const long = months12.map((r) => ({ ...r, period: `${r.period} 2026` }));
+    const l = layoutColumnTiers(long, { ...base, width: 300 });
+    const idx = l.marks.filter((m) => m.role === "category" && m.kind === "text" && !/^\d{4}$/.test(m.text)).map((m) => long.findIndex((r) => r.period === m.category));
+    const gaps = new Set(idx.slice(1).map((v, k) => v - idx[k]!));
+    expect(idx[0]).toBe(0);
+    expect(gaps.size).toBe(1);
+  });
+  it("names an outlined reference at the upper part of its column", () => {
+    const l = layoutColumnTiers([{ period: "Jan", AC: 4e6, BU: 4e6 }], { ...base, tiers: [] });
+    const y = (t: string) => (l.marks.find((m) => m.role === "legend" && m.kind === "text" && m.text === t) as { y: number }).y;
+    expect(y("BU")).toBeLessThan(y("AC"));
+  });
+  it("draws a pin that does not round to zero at least head/2 + 2 px long", () => {
+    const l = layoutColumnTiers([{ ...months[0]!, deltaPct: 0.006 }], { ...base, pctPpu: 100 });
+    const pin = rect(l.marks.find((m) => m.role === "pin"));
+    const head = rect(l.marks.find((m) => m.role === "pin-head"));
+    expect(pin.h).toBeGreaterThanOrEqual(head.h / 2 + 2 - 1e-9);
+  });
+  it("defaults pins to 1 px per percentage point", () => {
+    const l = layoutColumnTiers([{ ...months[0]!, deltaPct: 0.2 }], { ...opts, pctPpu: undefined });
+    expect(rect(l.marks.find((m) => m.role === "pin")).h).toBeCloseTo(20);
+  });
+  it("labels the scale band above it at the left edge, inside the box, in the secondary text colour", () => {
+    const l = layoutColumnTiers(months, { ...base, scaleBand: 2e6 });
+    const lab = l.marks.find((m) => m.role === "scale-band-label")!;
+    const band = rect(l.marks.find((m) => m.role === "scale-band"));
+    const b = markBox(lab);
+    expect(lab).toMatchObject({ text: "2.0", fill: tokens.color.text.secondary });
+    expect(b.y + b.h).toBeLessThanOrEqual(band.y + 0.5);
+    expect(b.x).toBeGreaterThanOrEqual(-0.5);
+  });
+  it("prints the year under the first month and where it changes, only when it varies", () => {
+    const l = layoutColumnTiers(months12, base);
+    expect(l.marks.filter((m) => m.kind === "text" && /^20\d\d$/.test(m.text)).map((m) => (m as { text: string }).text)).toEqual(["2025", "2026"]);
+    const one = layoutColumnTiers(months12.map((r) => ({ ...r, period2: "2026" })), base);
+    expect(one.marks.some((m) => m.kind === "text" && m.text === "2026")).toBe(false);
+  });
+  it("wraps a long name to two lines only when the row step allows it", () => {
+    expect(fitLines("Region North West", 12, 70, 28)).toHaveLength(2);
+    expect(fitLines("Region North West", 12, 70, 20)).toHaveLength(1);
+    expect(fitLines("Region North West", 12, 70, 20)[0]).toMatch(/…$/);
   });
 });
 

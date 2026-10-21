@@ -201,19 +201,22 @@ def build_theme(t: dict, variant: str = "standard", file_name: str | None = None
     }
     if fluent:
         ring = mix(text, page_bg, FLUENT["ringInk"])
+        # The card look lives on the shape visual's CONTAINER (background, border with radius in px,
+        # shadow); the shape object itself is transparent with no outline. Tested in the service
+        # (rev 4, 2026-10): the shape object's fill was ignored (cards rendered dark grey), roundEdge 8
+        # rendered at about 20 % of the card height, and `basicShape` with "outline"/"shape" fails
+        # Microsoft's validator, so it is not styled at all.
         card_shape = {
-            "background": [{"show": False}],
-            "padding": [{"top": 0, "bottom": 0, "left": 0, "right": 0}],
-            "fill": [{"fillColor": solid(page_bg), "transparency": 0}],
-            "outline": [{"show": True, "lineColor": solid(ring), "weight": 1}],
-            "shape": [{"tileShape": "rectangleRounded", "roundEdge": FLUENT["radius"]}],
-            "border": [{"show": False}],
+            "background": [{"show": True, "color": solid(page_bg), "transparency": 0}],
+            "border": [{"show": True, "color": solid(ring), "width": 1, "radius": FLUENT["radius"]}],
             "dropShadow": [{"show": True, "preset": "Custom", "position": "Outer", "color": solid(text),
                             "transparency": FLUENT["shadowTransparency"], "shadowDistance": FLUENT["shadowDistance"],
                             "shadowBlur": FLUENT["shadowBlur"], "shadowSpread": 0, "angle": 90}],
+            "padding": [{"top": 0, "bottom": 0, "left": 0, "right": 0}],
+            "fill": [{"show": False, "transparency": 100}],
+            "outline": [{"show": False}],
         }
         visual_styles["shape"] = {"*": card_shape}
-        visual_styles["basicShape"] = {"*": card_shape}
 
     theme = {
         "$schema": SCHEMA_URL,
@@ -334,9 +337,15 @@ def key_check(theme: dict, shell: bool | str = False) -> list[str]:
             errs.append(f"visualStyles.*.*.{obj}.{prop} should be {want}, is {got}")
     if shell == "fluent-cards":
         sh = (theme.get("visualStyles", {}).get("shape", {}).get("*", {}))
-        if (sh.get("dropShadow") or [{}])[0].get("show") is not True or \
-                (sh.get("outline") or [{}])[0].get("show") is not True:
-            errs.append("fluent-cards: visualStyles.shape needs the ring (outline) and the soft shadow")
+        first = lambda obj, prop: (sh.get(obj) or [{}])[0].get(prop)
+        if first("dropShadow", "show") is not True or first("border", "show") is not True \
+                or first("border", "radius") != FLUENT["radius"] or first("background", "show") is not True:
+            errs.append("fluent-cards: visualStyles.shape needs the card on its container: white background, "
+                        "border (ring) with radius, and the soft shadow")
+        if first("outline", "show") is not False or first("fill", "show") is not False:
+            errs.append("fluent-cards: the shape object itself must be transparent without outline")
+        if "basicShape" in theme.get("visualStyles", {}):
+            errs.append("fluent-cards: do not style basicShape (Microsoft's validator rejects its outline/shape)")
     for name, tc in theme.get("textClasses", {}).items():
         if not tc.get("fontFace") or not isinstance(tc.get("fontSize"), (int, float)):
             errs.append(f"textClasses.{name} needs fontFace + numeric fontSize")

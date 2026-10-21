@@ -549,7 +549,7 @@ Power BI route:
   the rows table (columns: the category + `SVG Row`, sorted by `SVG Row`, which leads with a sortable
   `<desc>` holding AC).
 - `grid.imageWidth` = `_W`, `imageHeight` = `_H` (rows) / 30 (header); image column width = `_W` + 20;
-  no rules (page-shell.md §3); the rows table's height = 28 + rows × (`_H` + 2) + 24.
+  no rules (page-shell.md §3); the rows table's height = 17 (its empty header strip) + rows × (`_H` + 2) + 24.
 - `_S` = the page scale group's px per unit (`scale_layout.py`, the same value as the Deneb month
   chart's `pxPerUnit`), so a company bar of 10 mEUR is as long as a month column of 10 mEUR is high.
 

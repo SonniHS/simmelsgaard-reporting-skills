@@ -114,13 +114,15 @@ Fields, knobs and notes per template are in each file's `usermeta.ibcs` and in
   return BLANK when the row's data measure is blank (`IF ( NOT ISBLANK ( [AC] ), … )`).
 - **Units:** values are drawn as delivered. Bind scaled measures (preferred) or set
   `unitDivisor` (1000, 1000000) so labels never show raw values; the unit goes in the title.
-- **Outliers** (UN 5.3, CH 4.4): `pin-relative-variance` knob `clipPct` (or field `ClipPct`)
-  cuts a business-irrelevant relative outlier at that value: no head, full label, a small
-  triangle beyond the label in the growth direction. Absolute columns and bars are never cut
+- **Outliers** (UN 5.3, CH 4.4): one rule for Power BI and web apps. Pins beyond ±100 % (ours;
+  `pin-relative-variance` knob `clipPct`, field `ClipPct`; pin tier knob `pinClip`) are cut at the
+  clip point: no head, a triangle at the clip point in the growth direction, the full value in the
+  label beyond it. Set 0 to switch it off; never cut at a low value such as ±20 %. Absolute columns and bars are never cut
   (CH 2.1): give them their own scale with a **scale band** instead.
 - **Scale band** (CH 4.3): `column-two-tier-variance`, `bar-structure-variance` and
-  `waterfall-variance` knob `scaleBand` (or field `ScaleBand`) draws a light area from the axis to
-  that value with a labelled line; set the same round value in every chart of the unit whose
+  `waterfall-variance` knob `scaleBand` (or field `ScaleBand`) draws a band from the axis to
+  that value (tokens `color.marker.scaleBandFill` / `scaleBandLine`; in the column chart a narrow
+  band at the left edge of the plot with its value label above it, in `color.text.secondary`); set the same round value in every chart of the unit whose
   scales differ (`waterfall-calculation` has the same knob).
 - **Highlighting ellipse** (UN 5.1): `waterfall-variance` knob `highlight` (the row label) or field
   `Highlight` (1 on that row) circles the value label the key message cites. When the base and
@@ -158,8 +160,11 @@ Fields, knobs and notes per template are in each file's `usermeta.ibcs` and in
   shrinks the data under a fixed `pxPerUnit` the base visual's plot drops to its bottom while the
   pin visual stays at its top, and a gap opens between the tiers. In one view the space the data
   does not need stays above the top tier and the tiers never drift apart. `scale_layout.py` sizes
-  it with tier `pins` (member params `pinTier`, `pinPxPerUnit`). Outlier clipping (`clipPct`) is
-  only in `pin-relative-variance`.
+  it with tier `pins` (member params `pinTier`, `pinPxPerUnit`). Pins default to **1 px per
+  percentage point** (`pinPxPerUnit` 1, the cross-tool rule in ibcs-power-bi page-shell.md §5),
+  clip at ±100 % (`pinClip`), draw nothing for a Δ% that rounds to zero and are at least head/2 + 2
+  px long otherwise. The last closed month gets the assisting band through all tiers
+  (`markLastClosed`, default on; a selection wins).
 - **Variance-only tier:** `column-two-tier-variance` knob `showBase: false` draws only the
   variance tier (axis, columns, labels, tier name; with `pinTier` a ΔX + ΔX% pair), e.g. a ΔPY tier
   above an AC vs BU chart that already shows ΔBU, so the base is not drawn twice. Size it with

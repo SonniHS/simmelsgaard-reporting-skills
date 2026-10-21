@@ -227,7 +227,8 @@ def main() -> int:
     ap.add_argument("--param", action="append", default=[], help="knob=value (JSON or text)")
     ap.add_argument("--config", default=str(HERE.parent / "assets" / "config" / "deneb-config.json"))
     ap.add_argument("--pos", help="x,y,width,height (new visuals; default 16,96,600,300)")
-    ap.add_argument("--z", type=int, default=0)
+    ap.add_argument("--z", type=int, default=1000,
+                    help="z order; default 1000 keeps content above the page-shell card shapes (z 0-999)")
     ap.add_argument("--name", help="visual name (new visuals; default random 20-hex)")
     ap.add_argument("--selection", action="store_true", help="enable Deneb cross-filtering (__selected__)")
     ap.add_argument("--no-tooltips", action="store_true")

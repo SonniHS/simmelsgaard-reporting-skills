@@ -52,6 +52,7 @@
       "layout": {
         "valueAxis": "width",
         "fixedPx": 37,
+        "crossFixedPx": 50,
         "plusCategoryLabels": "width of the longest row label in px + 6 (Vega measures the text; about 7 px per character at 12 px Segoe UI); labelWidth does not reserve it",
         "tiers": [
           {
@@ -62,7 +63,7 @@
             ]
           }
         ],
-        "rule": "container width = fixedPx + row labels + (hi − lo) × pxPerUnit + padHigh; measured with Vega-Lite 6.4.3 at ibcsFontSize 12; a highlighting ellipse reaches 5 px beyond its label on each side: keep ibcsLabelPx (right pad) large enough when the highlighted label is the rightmost one"
+        "rule": "container width = fixedPx + row labels + (hi − lo) × pxPerUnit + padHigh; measured with Vega-Lite 6.4.3 at ibcsFontSize 12; a highlighting ellipse reaches 5 px beyond its label on each side: keep ibcsLabelPx (right pad) large enough when the highlighted label is the rightmost one; the other dimension (height) = rows × the row step + crossFixedPx (50: padding top 16 for the scale-band label and bottom 34 for the total-variance marker and its label), which scale_layout.py adds when categoryCount is given"
       },
       "sampleData": "variance-waterfall.json",
       "preview": {

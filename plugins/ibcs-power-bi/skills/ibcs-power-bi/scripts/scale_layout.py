@@ -55,8 +55,20 @@ Optional per template member (the docs' extra paddings, so nothing is cut or squ
                              categoryCount × ibcsCategoryStep[grain] × stepScale + crossFixedPx, so 25
                              bars are not squashed into a 260 px visual; grain = "periodType" param for
                              column templates (default month), structureRow for horizontal ones
-    "crossFixedPx": 30       fixed px of that other dimension (axis, legend row); default 30
+    "crossFixedPx": 30       fixed px of that other dimension (axis, legend row); default: the template's
+                             layout crossFixedPx (waterfall-variance 50), else 30
     "planFootnote": false    line-scenarios without its plan footnote (also params showPL false)
+    "reservePx": {"pins": 8} extra px per tier on top of its range (a reserve for data-bound ranges)
+
+Proportions (one rule for Power BI and web apps): size the base tier so its largest column is about
+1.5 × the category pitch high when the cell allows (pick maxExtentPx accordingly); absolute Δ tiers
+share the base px per unit; pins use 1 px per percentage point (pinPxPerUnit, default 1) unless the
+cell cannot hold the pin range.
+
+Data-bound tier ranges (fields YMax, VarMin/VarMax, PinMin/PinMax under a selection): give "tiers" the
+LARGEST range any single selection produces (e.g. the largest company's months, not the group's), so
+no selection overflows the container; add "reservePx" per tier when a selection may exceed the
+ranges you measured. An "own" member (the Total) reports its own range, px and ownPxPerUnit.
     "trend": {"ends": [v0, v1], "excess": e}
                              line-scenarios with trendArrow: v0/v1 = first and last AC&FC value, e = how
                              far the highest visible value rises above the straight line between them
@@ -204,6 +216,8 @@ def member_parts(m: dict, tdir: Path, group_ppu: float | None = None) -> dict:
             label_px = column
         fixed += label_px
     rng = 0.0
+    own_rng = own_px = 0.0   # an "own" member: its range and px on its own scale (reported, in fixed)
+    reserve = m.get("reservePx") or {}   # optional extra px per tier (data-bound ranges under a selection)
     given = m.get("tiers", {})
     unknown = set(given) - {tier["id"] for tier in lay["tiers"]}
     if unknown:
@@ -238,24 +252,31 @@ def member_parts(m: dict, tdir: Path, group_ppu: float | None = None) -> dict:
             # a tier on its own scale inside the visual (pin tier: px per percentage point)
             tppu = float(params.get(tier["pxPerUnitParam"]) or 0) or sys.exit(
                 f"member {m['id']}: tier {tier['id']!r} needs knob {tier['pxPerUnitParam']} > 0 to be sized")
-        if tppu is None and m.get("own"):
+        own_tier = tppu is None and m.get("own")
+        if own_tier:
             tppu = m.get("basePxPerUnit") or sys.exit(f"member {m['id']}: own scale needs basePxPerUnit")
         if tppu is not None:
             if not tppu:
                 return {"dim": lay["valueAxis"], "range": None, "fixed": fixed, "pending": True}
             fixed += (hi - lo) * float(tppu)
+            if own_tier:
+                own_rng += hi - lo
+                own_px += (hi - lo) * float(tppu)
         else:
             rng += hi - lo
         fixed += px_sum(tier.get("padHigh"), params) + px_sum(tier.get("padLow"), params)
         fixed += extra_high.get(tier["id"], 0.0) + (2 * clip_pad if tier["id"] == "pins" else 0.0)
+        fixed += float(reserve.get(tier["id"], 0) or 0)
         if lo < 0:
             fixed += px_sum(tier.get("padLowIfNegative"), params)
     out = {"dim": lay["valueAxis"], "range": rng, "fixed": fixed}
+    if m.get("own"):
+        out["ownRange"], out["ownPx"] = own_rng, own_px
     if "categoryCount" in m:
         steps = params.get("ibcsCategoryStep") or {}
         grain = "structureRow" if lay["valueAxis"] == "width" else str(params.get("periodType", "month"))
         step = float(steps.get(grain, 24)) * float(params.get("stepScale", 1.5))
-        out["cross"] = math.ceil(int(m["categoryCount"]) * step + float(m.get("crossFixedPx", 30)))
+        out["cross"] = math.ceil(int(m["categoryCount"]) * step + float(m.get("crossFixedPx", lay.get("crossFixedPx", 30))))
     if lay["valueAxis"] == "panelHeight" and m.get("panels"):
         rows = math.ceil(int(m["panels"]) / max(1, int(m.get("columns", 3))))
         header = float(lay.get("panelHeaderTotalsPx" if m.get("panelTotals") else "panelHeaderPx", 16))
@@ -369,12 +390,17 @@ def main() -> int:
     for m in members:
         p = parts[m["id"]]
         plot = p["range"] * ppu
+        # an own-scale member (the Total) reports its own range and px; they are already in "fixed"
+        rng_out, px_out = (p["ownRange"], p["ownPx"]) if "ownRange" in p else (p["range"], plot)
         row = {"id": m["id"], "template": m.get("template", "svg"), "dimension": p["dim"],
-               "dataRange": round(p["range"], 6), "dataPx": round(plot, 1),
+               "dataRange": round(rng_out, 6), "dataPx": round(px_out, 1),
                "containerPx": math.ceil(plot + p["fixed"] - 1e-6),
                "fitsMaxPx": (math.ceil(plot + p["fixed"] - 1e-6) <= m["maxPx"]) if m.get("maxPx") else None}
         if m.get("visual"):
             row["visual"] = m["visual"]
+        if "ownRange" in p:
+            row["ownScale"] = True
+            row["ownPxPerUnit"] = m.get("basePxPerUnit")
         if set_params.get(m["id"]):
             row["setParams"] = set_params[m["id"]]
         if "cross" in p:

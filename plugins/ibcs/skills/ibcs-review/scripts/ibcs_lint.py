@@ -877,9 +877,14 @@ SCALE_FIELD = re.compile(r"max|min|scale|pxperunit|divisor", re.I)
 def lint_deneb_scale(spec: dict, loc: str, dataset: list):
     """Scale knobs of the bundled Deneb templates (ibcs-deneb): one scale mechanism, no blank category."""
     params = {p.get("name"): p.get("value") for p in spec.get("params") or [] if isinstance(p, dict)}
-    if params.get("pxPerUnit") not in (None, 0) and any(params.get(k) not in (None, 0) for k in ("yMax", "xMax")):
+    # With pxPerUnit, yMax is the tier reserve that scale_layout.py alignTiers prints (months and Total
+    # lining up); its companions varMin/varMax/pinMin/pinMax mark such an aligned member.
+    aligned = any(params.get(k) not in (None, 0) for k in ("varMin", "varMax", "pinMin", "pinMax"))
+    if params.get("pxPerUnit") not in (None, 0) and not aligned and \
+            any(params.get(k) not in (None, 0) for k in ("yMax", "xMax")):
         add("G8", "CH 4.1", "S", "check", f"{loc}:params", "pxPerUnit and yMax/xMax both set",
-            "A scale group is px per unit (each chart sized to its own data); yMax/xMax only for equally sized visuals.")
+            "A scale group is px per unit (each chart sized to its own data); yMax/xMax only for equally sized "
+            "visuals, or as the reserve that scale_layout.py alignTiers prints (then set with its tier knobs).")
     if any(SCALE_FIELD.search(f or "") for f in dataset):
         first = (spec.get("transform") or [{}])[0]
         if not (isinstance(first, dict) and "isValid(" in str(first.get("filter", ""))):
@@ -1034,7 +1039,7 @@ def visual_box(vfile: dict, vtl: str, vloc: str, vco: dict) -> dict:
     pos = vfile.get("position") or {}
     pad = {k: obj_prop(vco, "padding", k) for k in ("top", "bottom", "left", "right")}
     pad = {k: float(v) if is_number(v) else 0.0 for k, v in pad.items()}
-    num = {k: float(pos[k]) if is_number(pos.get(k)) else None for k in ("x", "y", "width", "height")}
+    num = {k: float(pos[k]) if is_number(pos.get(k)) else None for k in ("x", "y", "z", "width", "height")}
     return {"type": vtl, "loc": vloc, "pad": pad, **num}
 
 
@@ -1052,6 +1057,14 @@ def lint_page_geometry(boxes: list[dict]):
             add("A2", "SI 1.2", "S", "fail", b["loc"], "visual without a white background on a grey canvas",
                 "Page shell: content sits on a white card: a card shape behind it (--shell fluent-cards) or a white "
                 "visual background (--shell cards), so data never sits on grey.")
+    for b in ok:
+        if b["type"] in BACKGROUND_TYPES or b["z"] is None:
+            continue
+        under = [s for s in shapes if s["z"] is not None and s["z"] >= b["z"] and within(b, s)]
+        if under:
+            add("LINT", "SI 1.2", "M", "fail", b["loc"],
+                f"z {b['z']:g} is not above its card shape (z {max(s['z'] for s in under):g}): the card hides it",
+                "Page shell: card shapes at z 0–999, content at z 1000+ (to_pbir.py --z, default 1000).")
 
     def overlap_x(a, b):
         return min(a["x"] + a["width"], b["x"] + b["width"]) - max(a["x"], b["x"]) > 0
@@ -1129,7 +1142,8 @@ def lint_pbir(path: Path, tokens=None, layouts=None):
                 if hex_to_rgb(col) and saturation(col) < 0.06 and rel_lum(col) > 0.75:
                     canvas = True
                     add("A2", "SI 1.2", "I", "check", f"{ploc}:{obj}", f"neutral canvas {col}",
-                        "Page shell (cards): every visual needs a white background so no data sits on the canvas.")
+                        "Page shell: content sits on a white card, either a card shape behind it (fluent-cards, "
+                        "content transparent) or its own white background (square cards).")
                 else:
                     add("A2", "SI 1.2", "S", "fail", f"{ploc}:{obj}", f"{col} (transparency {transp:g}%)",
                         "White page, or a neutral light canvas behind white cards (page shell); no wallpaper.")

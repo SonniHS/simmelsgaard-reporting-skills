@@ -4,7 +4,7 @@
 import { tokens } from "../tokens.generated";
 import { formatDelta, formatValue, roundsToZero, type NumberScale } from "../format";
 import { impactFill, impactKey, impactText, type ColorMode, type Impact } from "../impact";
-import { lineBox, textWidth, truncateMiddle, type Fill, type Layout, type Mark } from "./marks";
+import { lineBox, textWidth, fitLines, type Fill, type Layout, type Mark } from "./marks";
 import type { Scenario } from "./columnTiers";
 
 export type Bridge = {
@@ -113,7 +113,7 @@ export function layoutVarianceWaterfall(b: Bridge, o: WaterfallOptions): Layout 
       x: right ? X(end) + 3 : X(start) - 3, y: rowY(i), text: valueLabels[i]!, anchor: right ? "start" : "end",
       size, fill: isStep ? impactText(key!, mode) : C.text.primary, weight: i === n - 1 ? T.typography.weight.emphasis : undefined,
     });
-    marks.push({ kind: "text", role: "category", category: labels[i], x: labelCol - 8, y: rowY(i), text: truncateMiddle(labels[i]!, size, labelCol - 8), anchor: "end", size, fill: C.text.primary, weight: i === n - 1 ? T.typography.weight.emphasis : undefined });
+    marks.push({ kind: "text", role: "category", category: labels[i], x: labelCol - 8, y: rowY(i), ...(() => { const lines = fitLines(labels[i]!, size, labelCol - 8, step); return { text: lines.length > 1 ? labels[i]! : lines[0]!, lines: lines.length > 1 ? lines : undefined }; })(), anchor: "end", size, fill: C.text.primary, weight: i === n - 1 ? T.typography.weight.emphasis : undefined });
   }
 
   // total-variance marker: an arrow from the base value to the total value, with the model's Δ

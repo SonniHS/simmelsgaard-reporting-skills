@@ -4,7 +4,7 @@
 import { tokens } from "../tokens.generated";
 import { formatDelta, formatPercentDelta, formatValue, roundsToZero, type NumberScale } from "../format";
 import { impactFill, impactKey, impactText, type ColorMode, type Impact } from "../impact";
-import { clamp, lineBox, textWidth, truncateMiddle, type Fill, type Layout, type Mark } from "./marks";
+import { clamp, lineBox, textWidth, fitLines, type Fill, type Layout, type Mark } from "./marks";
 import type { Scenario } from "./columnTiers";
 
 export type StructureRow = {
@@ -227,7 +227,7 @@ export function layoutStructureBars(input: StructureRow[], o: StructureBarsOptio
         if (o.highlight?.category === r.category && o.highlight.tier === "pct") ring(lx + (pos ? 1 : -1) * textWidth(text, size) / 2, cy, text, r.category);
       }
     }
-    marks.push({ kind: "text", role: "category", category: r.category, x: labelCol - 8, y: cy, text: truncateMiddle(r.category, size, labelCol - 8), anchor: "end", size, fill: C.text.primary, weight });
+    { const lines = fitLines(r.category, size, labelCol - 8, step); marks.push({ kind: "text", role: "category", category: r.category, x: labelCol - 8, y: cy, text: lines.length > 1 ? r.category : lines[0]!, lines: lines.length > 1 ? lines : undefined, anchor: "end", size, fill: C.text.primary, weight }); }
     marks.push({ kind: "rect", role: "hit", category: r.category, x: 0, y: cy - step / 2, w: o.width, h: step, tooltip: `${r.category}: ${primary} ${labelsP[i]}${ref ? `, ${refCode} ${labelsD[i]}, ${refCode}% ${labelsPct[i]}` : ""}` });
   });
 

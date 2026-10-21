@@ -21,6 +21,8 @@ export type Mark =
       size: number;
       fill: string;
       weight?: number;
+      /** Two-line labels: the lines replace `text` (which keeps the full name), centred on `y`. */
+      lines?: string[];
     });
 
 export type Layout = {
@@ -48,9 +50,10 @@ export function markBox(m: Mark): { x: number; y: number; w: number; h: number }
       return { x: Math.min(...xs), y: Math.min(...ys), w: Math.max(...xs) - Math.min(...xs), h: Math.max(...ys) - Math.min(...ys) };
     }
     case "text": {
-      const w = textWidth(m.text, m.size);
+      const lines = m.lines ?? [m.text];
+      const w = Math.max(...lines.map((l) => textWidth(l, m.size)));
       const x = m.anchor === "start" ? m.x : m.anchor === "end" ? m.x - w : m.x - w / 2;
-      return { x, y: m.y - 0.6 * m.size, w, h: 1.2 * m.size };
+      return { x, y: m.y - 0.6 * m.size * lines.length, w, h: 1.2 * m.size * lines.length };
     }
   }
 }
@@ -74,6 +77,29 @@ export function truncateEnd(text: string, size: number, maxPx: number): string {
   const chars = [...text];
   while (chars.length > 1 && textWidth(chars.join("") + "…", size) > maxPx) chars.pop();
   return chars.join("") + "…";
+}
+
+/**
+ * Fit a category name into `maxPx`: one line when it fits; two lines (split at the space nearest the
+ * middle, each cut from the end) when the row step allows them (step ≥ 2.2 × font); else cut from
+ * the end. Never a middle ellipsis.
+ */
+export function fitLines(text: string, size: number, maxPx: number, rowStep: number): string[] {
+  if (textWidth(text, size) <= maxPx) return [text];
+  if (rowStep >= 2.2 * size) {
+    const spaces = [...text.matchAll(/ /g)].map((m) => m.index!);
+    if (spaces.length) {
+      const mid = text.length / 2;
+      const at = spaces.reduce((a, b) => (Math.abs(b - mid) < Math.abs(a - mid) ? b : a));
+      return [truncateEnd(text.slice(0, at), size, maxPx), truncateEnd(text.slice(at + 1), size, maxPx)];
+    }
+  }
+  return [truncateEnd(text, size, maxPx)];
+}
+
+/** Do two boxes overlap (by more than `tol` px)? */
+export function overlaps(a: { x: number; y: number; w: number; h: number }, b: { x: number; y: number; w: number; h: number }, tol = 0.5): boolean {
+  return a.x + a.w - tol > b.x && b.x + b.w - tol > a.x && a.y + a.h - tol > b.y && b.y + b.h - tol > a.y;
 }
 
 /** Shorten a name in the middle (structure-chart rows), keeping its start and end readable. */

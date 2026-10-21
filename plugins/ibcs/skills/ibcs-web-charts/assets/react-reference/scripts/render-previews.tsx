@@ -58,23 +58,26 @@ const mExt = columnTiersExtents(months, { reference: "BU", triangle: "PY" });
 const tExt = columnTiersExtents(total, { reference: "BU", triangle: "PY" });
 const sExt = structureExtents(structure, { reference: "BU" });
 const ppu = pxPerUnit([
-  { unit: "EUR", ...mExt.base, availablePx: 130 },
+  // the largest month column about 1.5 × the month pitch (behaviour contract §5)
+  { unit: "EUR", ...mExt.base, availablePx: Math.round(1.5 * (W.months / 12)) },
   { unit: "EUR", ...mExt.delta, availablePx: 50 },
-  { unit: "EUR:total", ...tExt.base, availablePx: 130 },
+  { unit: "EUR:total", ...tExt.base, availablePx: Math.round(1.5 * (W.months / 12)) },
   { unit: "EUR:ytd", ...sExt.base, availablePx: 180 },
   { unit: "EUR:ytd", min: 0, max: 33.6e6, availablePx: 300 }, // the bridge
-  { unit: "%", ...mExt.pct, availablePx: 40 },
-  { unit: "%", ...sExt.pct, availablePx: 70 },
+  // pins: 1 px per percentage point, shrunk only when a cell cannot fit it
+  { unit: "%", ...mExt.pct, availablePx: 100 * (mExt.pct.max - mExt.pct.min) },
+  { unit: "%", ...sExt.pct, availablePx: 100 },
 ]);
 const scale = pickScale(months.flatMap((r) => [r.AC, r.FC, r.BU]));
 const ytdScale = pickScale([regionTotal.AC]);
-const base = { reference: "BU" as const, triangle: "PY" as const, pctPpu: ppu.get("%")!, scale, polarity: 1 };
+const pct = Math.min(100, ppu.get("%")!);
+const base = { reference: "BU" as const, triangle: "PY" as const, pctPpu: pct, scale, polarity: 1 };
 const m1 = layoutColumnTiers(months, { ...base, width: W.months, ppu: ppu.get("EUR")!, selected: "Sep", highlight: { category: "Sep", tier: "delta" } });
 const t1 = layoutColumnTiers(total, { ...base, width: W.total, ppu: ppu.get("EUR:total")!, scale: pickScale([totAF]), primaryLabel: "AC&FC" });
 const align = alignTiers(m1, t1);
 const monthsL = layoutColumnTiers(months, { ...base, width: W.months, ppu: ppu.get("EUR")!, selected: "Sep", highlight: { category: "Sep", tier: "delta" }, minTierPx: align, scaleBand: 2e6 });
 const totalL = layoutColumnTiers(total, { ...base, width: W.total, ppu: ppu.get("EUR:total")!, scale: pickScale([totAF]), minTierPx: align, scaleBand: 2e6, primaryLabel: "AC&FC" });
-const structL = layoutStructureBars(structure, { width: W.half, reference: "BU", ppu: ppu.get("EUR:ytd")!, pctPpu: ppu.get("%")!, scale: ytdScale, polarity: 1, highlight: { category: "Region West", tier: "delta" } });
+const structL = layoutStructureBars(structure, { width: W.half, reference: "BU", ppu: ppu.get("EUR:ytd")!, pctPpu: pct, scale: ytdScale, polarity: 1, highlight: { category: "Region West", tier: "delta" } });
 const bridgeL = layoutVarianceWaterfall(bridge, { width: W.half, ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1 });
 
 const charts: [string, Layout, string][] = [

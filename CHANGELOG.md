@@ -42,6 +42,17 @@ All notable changes to this marketplace and its plugins. The format follows
 - Stale product facts refreshed against Microsoft Learn (PBIR default, Business Central mirroring,
   org app Git support, fabric-cicd OrgApp support). The leak scan reads every UTF-8 file.
 
+### Changed (first service render, rev 4)
+- One notation for Power BI and web: pins at 1 px per pp with a minimum stem, one outlier rule (clip at
+  ±100 % with a triangle at the clip point), end legends only right of the last month and the Total at
+  their marks' y, the BU name at the upper part of its column, the scale band at the plot's left edge
+  with its value label, the band behind the last closed month, the year label only across two years.
+- Power BI rounded cards: the card look sits on the shape visual's container (the theme's basicShape
+  styling rendered dark and failed the validator); content at z ≥ 1000; header geometry from the real
+  17 px table header; own-scale Totals report their own range; PDF-export fallback for checks.
+- Web reference components: label collision by priority against every mark of the tier, two-line
+  names, a `keep` list for cited values, scale-band label, year line; contract and chart layer updated.
+
 ## [0.1.0] - 2026-10-20
 
 ### Added

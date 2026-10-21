@@ -130,3 +130,24 @@ class Generators(unittest.TestCase):
 
 if __name__ == "__main__":
     unittest.main()
+
+
+class Rev4Defaults(unittest.TestCase):
+    def test_deneb_visuals_default_above_the_card_shapes(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            d = scaffold(Path(tmp))
+            r = add_deneb(d)
+            self.assertEqual(r.returncode, 0, r.stderr)
+            v = json.loads((d / "pages/pg/visuals/v1/visual.json").read_text())
+            self.assertEqual(v["position"]["z"], 1000)
+
+    def test_column_template_cross_tool_knobs(self):
+        t = json.loads(TEMPLATE.read_text())
+        params = {p["name"]: p.get("value") for p in t["params"]}
+        self.assertEqual(params["pinPxPerUnit"], 1)          # one % scale: 1 px per percentage point
+        self.assertEqual(params["pinClip"], 1)               # outliers clip at ±100 %
+        self.assertIs(params["markLastClosed"], True)        # band behind the last closed month
+        self.assertNotIn("legendSide", params)               # one legend placement: at the end
+        self.assertNotIn("legendSide", TEMPLATE.read_text())
+        pins = json.loads((TEMPLATE.parent / "pin-relative-variance.vl.json").read_text())
+        self.assertEqual({p["name"]: p.get("value") for p in pins["params"]}["clipPct"], 1)

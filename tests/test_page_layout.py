@@ -268,11 +268,18 @@ class PageShell(unittest.TestCase):
             self.assertEqual(vs["page"]["*"]["background"][0]["color"]["solid"]["color"].upper(), "#F2F2F2")
             self.assertFalse(vs["*"]["*"]["background"][0]["show"])        # content transparent
             self.assertFalse(vs["*"]["*"]["dropShadow"][0]["show"])        # no shadow on content
+            # the card look sits on the shape's container (rendered in the service, rev 4): the shape
+            # object's fill and roundEdge did not render as intended, basicShape fails the validator
             shape = vs["shape"]["*"]
-            self.assertEqual(shape["shape"][0]["roundEdge"], 8)
+            self.assertEqual(shape["background"][0]["color"]["solid"]["color"].upper(), "#FFFFFF")
+            self.assertEqual(shape["border"][0]["radius"], 8)
+            self.assertEqual(shape["border"][0]["color"]["solid"]["color"].upper(), "#E6E6E6")
             self.assertTrue(shape["dropShadow"][0]["show"])
             self.assertEqual(shape["dropShadow"][0]["transparency"], 88)
-            self.assertEqual(shape["outline"][0]["lineColor"]["solid"]["color"].upper(), "#E6E6E6")
+            self.assertFalse(shape["outline"][0]["show"])
+            self.assertFalse(shape["fill"][0]["show"])
+            self.assertNotIn("shape", shape)
+            self.assertNotIn("basicShape", vs)
 
 
 def shadowed(item, on=True):
@@ -302,6 +309,35 @@ class CardChrome(unittest.TestCase):
             a2 = [x for x in rows(f, "A2") if x["status"] == "fail"]
             self.assertEqual([x for x in a2 if "inside (" in x["location"]], [])
             self.assertEqual(len([x for x in a2 if "outside (" in x["location"]]), 1)
+
+
+class ZOrder(unittest.TestCase):
+    def test_content_below_its_card_shape_fails(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            card = shape("card", 16, 0, 1248, 400)
+            card[1]["position"]["z"] = 0
+            low = deneb("low", "column-two-tier-variance", (32, 40, 600, 300))
+            low[1]["position"]["z"] = 0
+            high = deneb("high", "column-two-tier-variance", (640, 40, 600, 300))
+            high[1]["position"]["z"] = 1000
+            r = report(Path(tmp), {"p1": [card, textbox("title", "Sales in mEUR"), low, high]})
+            _, f, _ = lint(r)
+            hidden = [x for x in rows(f, "LINT") if "not above its card shape" in x["evidence"]]
+            self.assertEqual(len(hidden), 1, hidden)
+            self.assertIn("low (", hidden[0]["location"])
+
+
+class AlignedKnobs(unittest.TestCase):
+    def test_px_per_unit_with_y_max_is_fine_on_an_aligned_member(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = report(Path(tmp), {"p1": [
+                textbox("title", "Sales in mEUR"),
+                deneb("plain", "column-two-tier-variance", (16, 300, 600, 300), {"pxPerUnit": 4, "yMax": 30}),
+                deneb("aligned", "column-two-tier-variance", (640, 300, 200, 300),
+                      {"pxPerUnit": 4, "yMax": 230, "varMin": -21, "varMax": 34})]})
+            _, f, _ = lint(r)
+            both = [x for x in rows(f, "G8") if "both set" in x["evidence"]]
+            self.assertEqual([x["location"].split(" / ")[-1].split(" ")[0] for x in both], ["plain"])
 
 
 class LabelRoom(unittest.TestCase):
@@ -357,6 +393,27 @@ class LabelRoom(unittest.TestCase):
         self.assertAlmostEqual(m["setParams"]["yMax"] * 9, t["setParams"]["yMax"] * 1, places=3)
         self.assertAlmostEqual(m["setParams"]["varMin"] * 9, t["setParams"]["varMin"], places=3)
         self.assertAlmostEqual(m["setParams"]["varMax"] * 9, t["setParams"]["varMax"], places=3)
+
+    def test_own_member_reports_its_range_and_reserve_adds_px(self):
+        group = {"pxPerUnit": 4, "members": [
+            {"id": "m", "template": "column-two-tier-variance", "tiers": {"base": [0, 23], "variance": [-2, 3]}},
+            {"id": "t", "template": "column-two-tier-variance", "own": True, "basePxPerUnit": 0.4,
+             "tiers": {"base": [0, 216], "variance": [0, 2.5]}}]}
+        out, _ = self.layout(group)
+        t = out["members"][1]
+        self.assertAlmostEqual(t["dataRange"], 218.5)
+        self.assertAlmostEqual(t["dataPx"], 87.4)
+        self.assertTrue(t["ownScale"])
+        group["members"][0]["reservePx"] = {"variance": 10}
+        more, _ = self.layout(group)
+        self.assertEqual(more["members"][0]["containerPx"], out["members"][0]["containerPx"] + 10)
+
+    def test_waterfall_height_includes_its_fixed_bands(self):
+        out, _ = self.layout({"pxPerUnit": 5, "members": [
+            {"id": "w", "template": "waterfall-variance", "tiers": {"waterfall": [0, 40]},
+             "longestLabel": "Volume", "categoryCount": 6}]})
+        w = out["members"][0]
+        self.assertGreaterEqual(w["crossPx"], 50)
 
     def test_category_label_band_sets_the_fixed_height(self):
         a, _ = self.layout({"pxPerUnit": 9, "members": [

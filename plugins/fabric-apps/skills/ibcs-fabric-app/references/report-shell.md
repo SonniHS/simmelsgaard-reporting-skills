@@ -57,8 +57,13 @@ drop the canvas tint (white page, cards as plain blocks).
   │ bars AC, BU outline, PY triangle    │ ΔBU │ ΔBU%   (ring on the cited row) │
   │ E1 Company name · E2 Company name · …   (name legend under the chart)       │
   └────────────────────────────────────────────────────────────────────────────┘
-  ┌ footer (full width): ① … ⑧ numbered footnotes · Source … · Data as of … ───┐
+  ┌ footnote card (full width): ① … ⑧ numbered footnotes · Source … · Data as of … ┐
 ```
+
+The sticky header row and the filter bar are **app chrome** (navigation, tools, filters). The
+**page head** — headline, rule, title lines, chips — sits in a header card on the canvas, like the
+Power BI header card (`ibcs-power-bi` page-shell.md §3), with the same vertical rhythm on both
+routes (§5).
 
 ## 2. Required and optional elements
 
@@ -125,6 +130,11 @@ drop the canvas tint (white page, cards as plain blocks).
   option, never cut. **Reset filters** at the right end of the bar.
 
 ## 5. Page head
+
+**Rhythm** (one rule for web and Power BI, top to bottom inside the header card): headline 17 px
+(the key-message token) bold, 22 px line height → 12 px → the three title lines at 14 px (the
+title token, 11 pt in Power BI), 19 px line height, no blank line between them → 12 px → chips
+(Power BI: slicers). The gaps are padding of the next element, never empty space below the card.
 
 - **Headline**: one sentence, bold (weight ≈ 650), numbers a step bolder and tabular. Impact
   colour only on the variance numbers the sentence states (text tokens `goodText`/`badText`,
@@ -214,7 +224,8 @@ behaviour contract §10). The shell adds:
 
 ## 8. Footer
 
-- Full width under the grid: the numbered footnotes in chip order, then "Source: <model and
+- A **footnote card** (the same card surface as the chart cards: radius, ring, shadow, padding 16;
+  square cards by option), full width under the grid, as in Power BI's page shell. Inside it: the numbered footnotes in chip order, then "Source: <model and
   tables>. Data as of <date>; last closed month <month>." and the diagnostics link. Each note is an
   `<li id="note-n" tabIndex={-1}>` so the chip reference (§5) can scroll to and focus it. Every footnote
   shows its whole text: no scroll box, no ellipsis, no footnote column squeezed beside a chart.
@@ -242,13 +253,14 @@ IBCS token CSS** (colours from the tokens via `color-mix`, never hex here). Valu
 | Tabs | padding 7 × 9 px, radius 6 px, gap 2 px | |
 | Filter bar | padding 8–14 × 28 px, gaps 8–14 px, field labels 11 px uppercase | |
 | Page | padding 22 × 28 px, max width 1400 px | |
-| Headline | 18 px, weight 650, line height 1.35, 1.5 px ink rule, 8 px below | |
-| Title lines | 12 px, line height 1.45 | |
+| Header card | card surface, padding 16 px; holds headline, rule, title lines, chips (§5) | same as Power BI's header card |
+| Headline | 17 px, weight 650, line height 22 px, 1.5 px ink rule, 12 px below | the key-message token |
+| Title lines | 14 px, line height 19 px; line 1 muted, line 2 measure bold | the title token (11 pt in Power BI) |
 | Chips | 11.5 px, padding 3 × 10 px, fully rounded | |
 | Grid | 12 columns `minmax(0, 1fr)`, gap 16 px, `align-items: stretch`: cards in one row share the row height, content top-aligned; a row is as tall as its tallest card's content + padding | |
 | Card | padding 16 px; title 13.5 px; subtitle 12 px muted; `position: relative; overflow-x: auto; min-width: 0`; `box-shadow: var(--shell-ring), var(--shell-shadow); border-radius: var(--shell-radius)` | |
 | KPI card | padding 14 × 16 px; value 24 px weight 650; Δ lines 12.5 px; row gap 12 px | |
-| Footer | 11.5 px muted, 22 px above, a rule on top | |
+| Footnote card | card surface, padding 16 px; notes 12 px muted (the footnote token) | §8 |
 | Base text | 13 px, token font stack | |
 
 **Card shape.** Default: rounded cards (the tokens above), the same values as the Power BI shell
@@ -278,7 +290,7 @@ layout function receives that width, never the viewport, and sizes its label roo
 |---|---|
 | ≥ 1280 px | Tabs and tools on one header line, all filters on one line, five KPI cards in one row, month chart and Total side by side |
 | ≈ 1050 px (Fabric portal content width) | Compact tools: icon buttons without text, selects ≈ 112–136 px, tab padding 5 px; the tab row stays one line. Filters may wrap to a second row (never cut a control). KPI cards may wrap 3 + 2. Charts redraw for their width (label thinning by measured width, `ibcs-web-charts`) |
-| ≤ 760 px (phone; test at 390) | Header in two rows: brand, then a page select with the tools (tools wrap, never cut). The filter bar collapses to one toggle with a summary of the active filters. Page padding 14 × 12 px, one grid column, 12 px gap, card padding 12 px, headline 15.5 px. KPI cards two per row, a lone last card spans the row. The Total moves under the months as a Total-only chart (same scale band; chart-layer.md, phone layouts); structure tiers stack under the bars (behaviour contract §4). Label density: shorten Δ% labels to 0 decimals before thinning any label; keep one decimal down to a category step of ≈ 40 px at 11 px type; below that thin by measured width; never scroll the month chart sideways. Every value label is tested against the neighbouring bars (shift or drop, never over a bar); long names are cut from the end or wrapped to two lines, never a middle ellipsis |
+| ≤ 760 px (phone; test at 390) | Header in two rows: brand, then a page select with the tools (tools wrap, never cut). The filter bar collapses to one toggle with a summary of the active filters. Page padding 14 × 12 px, one grid column, 12 px gap, card padding 12 px, headline 15.5 px. KPI cards two per row, a lone last card spans the row. The Total moves under the months as a Total-only chart (same scale band, tiers sized with the same `alignTiers` union as on desktop; chart-layer.md, phone layouts); structure tiers stack under the bars (behaviour contract §4). Label density: shorten Δ% labels to 0 decimals before thinning any label; keep one decimal down to a category step of ≈ 40 px at 11 px type; below that thin by measured width; never scroll the month chart sideways. Every value label is tested against every mark of its tier, including its own PY triangle, in priority order (Total, cited, selected, first/last, extremes, rest; chart-layer.md, label collisions): shift once or leave out, never over a bar; category names thin to every n-th in a regular rhythm; long names wrap to two lines when the row step is ≥ 2.2 × the font size, else they are cut from the end, never a middle ellipsis |
 | Print | Header row, filter bar, tools and the canvas tint hidden; title lines show the state; cards do not break across pages |
 
 ## 11. Recipe: the Key figures page from scratch

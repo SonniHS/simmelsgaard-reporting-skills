@@ -62,6 +62,8 @@ The frame of [report-shell.md](report-shell.md), at 390, ≈ 1050 and 1280 px:
       cites; values tabular and never cut.
 - [ ] Chart cards: title inside; selected month band through all tiers; Total in its own cell
       with its own scale and a scale band; series labels at the end of the series, once.
+- [ ] Header card with the shared rhythm (headline 17/22 px → 12 → title lines 14/19 px → 12 →
+      chips) and a footnote card full width at the end (report-shell §5, §8).
 - [ ] Footer full width: every footnote complete (no scroll box, no ellipsis), source, data as
       of, last closed month.
 - [ ] Card shape: rounded cards by default (radius 8, 1 px ring, soft shadow on a 5 % canvas) or
@@ -69,6 +71,8 @@ The frame of [report-shell.md](report-shell.md), at 390, ≈ 1050 and 1280 px:
       its content + padding; no frame, shadow or radius on charts, tables or text inside a card.
 - [ ] Total next to the months: its base and Δ tiers on its own scale (scale band in both,
       footnote), baselines and tier axes at the months' y; tiny Δ drawn (≥ 1 px) with its label.
+- [ ] End legends right of the last month and right of the Total only, top to bottom, BU at the
+      upper part of its column; no label over a bar or a triangle (collision rule, chart-layer.md).
 - [ ] End legends at their marks' y with ≥ font + 2 px between names; a zero Δ printed unsigned.
 - [ ] In the portal (not only the harness): footnote numbers are visible as text; a tab change
       opens the new page at the top; every chart fills its card's content width.

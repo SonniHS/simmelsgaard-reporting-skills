@@ -5,12 +5,16 @@
 import { tokens } from "../tokens.generated";
 import { formatDelta, formatPercentDelta, formatValue, roundsToZero, type NumberScale } from "../format";
 import { impactFill, impactKey, impactText, type ColorMode, type Impact } from "../impact";
-import { clamp, lineBox, spreadLabels, textWidth, truncateEnd, type Fill, type Layout, type Mark } from "./marks";
+import { clamp, lineBox, markBox, overlaps, spreadLabels, textWidth, truncateEnd, type Fill, type Layout, type Mark } from "./marks";
 
 export type Scenario = "AC" | "FC" | "PY" | "PL" | "BU";
 
 export type PeriodRow = {
   period: string;
+  /** Second label line, e.g. the year; drawn under the first period and where it changes, only when it varies. */
+  period2?: string;
+  /** A Total (or full-year) category inside this chart: its labels win every collision. */
+  total?: boolean;
   /** True up to and including the last closed period; omit to use AC where present, else FC. */
   closed?: boolean;
   AC?: number | null;
@@ -39,13 +43,16 @@ export type ColumnTiersOptions = {
   tiers?: ("pct" | "delta")[];
   /** px per raw unit from the page registry; the base and the Δ tier share it. */
   ppu: number;
-  /** px per 1.0 (= 100 %) from the "%" group, for the pins. */
+  /** px per 1.0 (= 100 %) from the "%" group, for the pins. Default 100 (1 px per percentage point). */
   pctPpu?: number;
   scale: NumberScale;
   pctDecimals?: number;
   polarity?: number;
   colorMode?: ColorMode;
+  /** Category behind which the assisting band runs through all tiers (default in a page: the last closed month). */
   selected?: string;
+  /** Categories whose labels the key message cites: never thinned. */
+  keep?: string[];
   /** Ring the value label the key message cites (UN 5.1). */
   highlight?: { category: string; tier: TierKey };
   /** Pins beyond ±limit (fraction) are truncated with an outlier marker. Default 1 (±100 %). */
@@ -126,7 +133,8 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
       order.includes("delta") ? textWidth(deltaLabel(i), size) : 0,
       order.includes("pct") ? textWidth(pctLabel(i), size) : 0,
     );
-  let left = Math.max(tierNameW, o.scaleBand ? 10 : 0);
+  const bandLabel = o.scaleBand ? formatValue(o.scaleBand, o.scale) : "";
+  let left = Math.max(tierNameW, o.scaleBand ? textWidth(bandLabel, size) + 4 : 0);
   let right = legendW;
   let step = (o.width - left - right) / n;
   left += Math.max(0, edgeW(0) / 2 - step / 2);
@@ -144,13 +152,25 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
     for (const v of vals) if (v != null) { up = Math.max(up, v * ppu); down = Math.max(down, -v * ppu); }
     return { up, down };
   };
-  const pctPpu = o.pctPpu ?? 0;
-  if (order.includes("pct") && !(pctPpu > 0)) warnings.push("pct tier without a px per unit from the \"%\" group");
-  const raw: Record<TierKey, TierPx> = {
-    base: ext(rows.flatMap((r, i) => [prim[i]?.value, r[o.reference], o.triangle ? r[o.triangle] : null]), o.ppu),
-    delta: ext(rows.map((r) => r.delta), o.ppu),
-    pct: ext(rows.map((r) => (r.deltaPct == null ? null : clamp(r.deltaPct, -limit, limit))), pctPpu),
+  const pctPpu = o.pctPpu ?? 100; // 1 px per percentage point unless the cell cannot fit it
+  const headPx = clamp(T.geometry.pin.headRatio * B, T.geometry.pin.headPx.min, T.geometry.pin.headPx.max);
+  // a pin that does not round to zero is at least head/2 + 2 px long, so its head never sits on the axis
+  const pinLen = (v: number) => {
+    const len = Math.abs(clamp(v, -limit, limit)) * pctPpu;
+    return roundsToZero(v, { factor: 0.01, decimals: pctDec }) ? 0 : Math.max(len, headPx / 2 + 2);
   };
+  const raw: Record<TierKey, TierPx> = {
+    base: ext([...rows.flatMap((r, i) => [prim[i]?.value, r[o.reference], o.triangle ? r[o.triangle] : null]), o.scaleBand], o.ppu),
+    delta: ext(rows.map((r) => r.delta), o.ppu),
+    pct: ext(rows.map((r) => (r.deltaPct == null ? null : Math.sign(r.deltaPct) * pinLen(r.deltaPct))), 1),
+  };
+  // a triangle reaches half its size above (and below) its value
+  const triHalf = clamp(T.geometry.triangleSizeRatio * B, T.geometry.triangleSizePx.min, T.geometry.triangleSizePx.max) / 2;
+  if (o.triangle)
+    for (const r of rows) {
+      const v = r[o.triangle];
+      if (v != null) { raw.base.up = Math.max(raw.base.up, v * o.ppu + triHalf); raw.base.down = Math.max(raw.base.down, -v * o.ppu + triHalf); }
+    }
   const tiers = {} as ColumnTiersLayout["tiers"];
   let cursor = 0;
   for (const t of order) {
@@ -165,7 +185,9 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
   }
   for (const t of ["pct", "delta"] as const) if (!tiers[t]) tiers[t] = { up: 0, down: 0, y0: tiers.base.y0 };
   const catY = cursor + box / 2 + 2;
-  const height = cursor + box + 4;
+  const years = rows.map((r) => r.period2 ?? "");
+  const twoYears = new Set(years.filter(Boolean)).size > 1;
+  const height = cursor + box * (twoYears ? 2 : 1) + 4;
   if (tiers.base.up + tiers.base.down < 24) warnings.push("base tier below 24 px: give this chart its own scale group with a scale band");
 
   const marks: Mark[] = [];
@@ -197,18 +219,11 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
     marks.push({ kind: "text", role: "tier-name", x: left - 8, y, text: tierName[t], anchor: "end", size, fill: C.text.primary });
   }
 
-  // label thinning: keep first, last, highest, lowest and the selected one when labels collide
   const valueLabels = rows.map((_, i) => valueLabel(i));
-  const crowded = valueLabels.some((s) => textWidth(s, size) > step - 2);
-  const keep = new Set<number>([0, n - 1, selIdx]);
-  if (crowded) {
-    const vals = prim.map((p, i) => ({ v: p?.value, i })).filter((x) => x.v != null) as { v: number; i: number }[];
-    if (vals.length) {
-      keep.add(vals.reduce((a, b) => (b.v > a.v ? b : a)).i);
-      keep.add(vals.reduce((a, b) => (b.v < a.v ? b : a)).i);
-    }
-    warnings.push("value labels thinned: keep first, last, highest, lowest, selected");
-  }
+  // Label candidates per tier; placed after all marks exist (collision test against every mark of the tier).
+  type Cand = { i: number; t: TierKey; m: Extract<Mark, { kind: "text" }>; above: boolean };
+  const cands: Cand[] = [];
+  const label = (i: number, t: TierKey, m: Extract<Mark, { kind: "text" }>, above: boolean) => cands.push({ i, t, m, above });
 
   const ring = (cxL: number, cyL: number, text: string, category: string) =>
     marks.push({ kind: "ellipse", role: "marker-ellipse", cx: cxL, cy: cyL, rx: textWidth(text, size) / 2 + 6, ry: box / 2 + 3, stroke: C.marker.highlight, strokeWidth: T.stroke.highlightEllipsePx, category });
@@ -240,12 +255,11 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
       marks.push({ kind: "path", role: `triangle-${o.triangle}`, category: r.period, d: `M${xl} ${y} L${xl - w} ${y - triSize / 2} L${xl - w} ${y + triSize / 2} Z`, fill: nt.fill, stroke: nt.stroke ?? C.scenario.ac, strokeWidth: 0.75 });
     }
     // value label above the taller of primary and reference (below for negatives)
-    if (p && (!crowded || keep.has(i))) {
-      const tops = [p.value, refV ?? 0, triV ?? 0];
-      const y = p.value >= 0 ? yOf(Math.max(...tops)) - box / 2 - 1 : yOf(Math.min(...tops, p.value)) + box / 2 + 1;
-      const text = valueLabels[i]!;
-      marks.push({ kind: "text", role: "label", category: r.period, x: c + off / 2, y, text, anchor: "middle", size, fill: C.text.primary });
-      if (o.highlight?.category === r.period && o.highlight.tier === "base") ring(c + off / 2, y, text, r.period);
+    if (p) {
+      const tops = [p.value, refV ?? 0, triV == null ? 0 : triV + triHalf / o.ppu];
+      const bottoms = [p.value, refV ?? 0, triV == null ? 0 : triV - triHalf / o.ppu];
+      const y = p.value >= 0 ? yOf(Math.max(...tops)) - box / 2 - 1 : yOf(Math.min(...bottoms)) + box / 2 + 1;
+      label(i, "base", { kind: "text", role: "label", category: r.period, x: c + off / 2, y, text: valueLabels[i]!, anchor: "middle", size, fill: C.text.primary }, p.value >= 0);
     }
     // 5. absolute variance: same width and px per unit as the base
     if (order.includes("delta") && r.delta != null) {
@@ -259,8 +273,7 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
       }
       const text = formatDelta(d, o.scale);
       const y = d >= 0 || zero ? ty - Math.max(0, d) * o.ppu - box / 2 - 1 : ty - d * o.ppu + box / 2 + 1;
-      marks.push({ kind: "text", role: "variance-label", impact: key, category: r.period, x: c, y, text, anchor: "middle", size, fill: impactText(key, mode) });
-      if (o.highlight?.category === r.period && o.highlight.tier === "delta") ring(c, y, text, r.period);
+      label(i, "delta", { kind: "text", role: "variance-label", impact: key, category: r.period, x: c, y, text, anchor: "middle", size, fill: impactText(key, mode) }, d >= 0 || zero);
     }
     // 6. relative variance pins on the "%" group; N/A draws no pin but keeps its label
     if (order.includes("pct")) {
@@ -268,12 +281,12 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
       const ty = tiers.pct.y0;
       const text = pctLabel(i);
       if (v == null) {
-        marks.push({ kind: "text", role: "variance-label", impact: "none", category: r.period, x: c, y: ty - box / 2 - 2, text, anchor: "middle", size, fill: C.text.primary });
+        label(i, "pct", { kind: "text", role: "variance-label", impact: "none", category: r.period, x: c, y: ty - box / 2 - 2, text, anchor: "middle", size, fill: C.text.primary }, true);
       } else {
         const zero = roundsToZero(v, { factor: 0.01, decimals: pctDec });
         const key = impactKey(v, { impact: r.deltaPctImpact, polarity: o.polarity, isZero: zero });
         const outlier = Math.abs(v) > limit;
-        const end = ty - clamp(v, -limit, limit) * pctPpu;
+        const end = ty - Math.sign(v) * pinLen(v);
         if (!zero) {
           const stem = clamp(T.geometry.pin.thicknessRatio * B, T.geometry.pin.stemPx.min, T.geometry.pin.stemPx.max);
           const fill = impactFill(key, mode)!;
@@ -283,23 +296,81 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
             const dir = v > 0 ? -1 : 1;
             marks.push({ kind: "path", role: "outlier", impact: key, category: r.period, d: `M${c - 5} ${end} L${c + 5} ${end} L${c} ${end + dir * 7} Z`, fill });
           } else if (p) {
-            const head = clamp(T.geometry.pin.headRatio * B, T.geometry.pin.headPx.min, T.geometry.pin.headPx.max);
+            const head = headPx;
             const nt = notation(p.scenario);
             marks.push({ kind: "rect", role: "pin-head", category: r.period, x: c - head / 2, y: end - head / 2, w: head, h: head, fill: nt.fill, stroke: nt.stroke, strokeWidth: nt.stroke ? T.stroke.outlinePx : undefined });
           }
         }
-        const reach = (outlier ? 8 : clamp(T.geometry.pin.headRatio * B, T.geometry.pin.headPx.min, T.geometry.pin.headPx.max) / 2) + 1;
+        const reach = (outlier ? 8 : headPx / 2) + 1;
         const y = v >= 0 || zero ? Math.min(end, ty) - reach - box / 2 : end + reach + box / 2;
-        marks.push({ kind: "text", role: "variance-label", impact: key, category: r.period, x: c, y, text, anchor: "middle", size, fill: impactText(key, mode) });
-        if (o.highlight?.category === r.period && o.highlight.tier === "pct") ring(c, y, text, r.period);
+        label(i, "pct", { kind: "text", role: "variance-label", impact: key, category: r.period, x: c, y, text, anchor: "middle", size, fill: impactText(key, mode) }, v >= 0 || zero);
       }
     }
-    // 8. category label, cut from the end
-    marks.push({ kind: "text", role: "category", category: r.period, x: c, y: catY, text: truncateEnd(r.period, size, step - 2), anchor: "middle", size, fill: C.text.primary });
+  });
+
+  // 7. place the labels: by priority (Total, cited, selected, first/last, extremes, rest), each
+  // tested against every mark of its tier (columns, triangles, pins, heads) and the labels already
+  // placed; a label that hits a mark moves past it once, else it is left out (its value stays in the
+  // hidden table and the tooltip).
+  const cited = new Set([...(o.keep ?? []), ...(o.highlight ? [o.highlight.category] : [])]);
+  const extremes = (vals: (number | null | undefined)[]) => {
+    const idx = vals.map((v, i) => ({ v, i })).filter((x): x is { v: number; i: number } => x.v != null);
+    return idx.length ? [idx.reduce((a, b) => (b.v > a.v ? b : a)).i, idx.reduce((a, b) => (b.v < a.v ? b : a)).i] : [];
+  };
+  const ext3: Record<TierKey, number[]> = {
+    base: extremes(prim.map((p) => p?.value)),
+    delta: extremes(rows.map((r) => r.delta)),
+    pct: extremes(rows.map((r) => r.deltaPct)),
+  };
+  const rank = (c: Cand) => {
+    const r = rows[c.i]!;
+    if (r.total || cited.has(r.period)) return 0;
+    if (c.i === selIdx) return 1;
+    if (c.i === 0 || c.i === rows.length - 1) return 2;
+    if (ext3[c.t].includes(c.i)) return 3;
+    return 4;
+  };
+  const band = (t: TierKey) => ({ top: tiers[t].y0 - tiers[t].up - (t === "pct" ? room + 9 : room), bottom: tiers[t].y0 + tiers[t].down + (t === "pct" ? room + 9 : room) });
+  const obstacleRoles = /^(col-|triangle-|pin|pin-head|variance$|outlier)/;
+  const obstacles = marks.filter((m) => m.kind !== "text" && obstacleRoles.test(m.role)).map(markBox);
+  const placed: { x: number; y: number; w: number; h: number }[] = [];
+  let dropped = 0;
+  for (const c of [...cands].sort((a, b) => rank(a) - rank(b) || a.i - b.i)) {
+    const { top, bottom } = band(c.t);
+    const inside = (bx: ReturnType<typeof markBox>) => bx.y >= top - 0.5 && bx.y + bx.h <= bottom + 0.5 && bx.x >= -0.5 && bx.x + bx.w <= o.width + 0.5;
+    let bx = markBox(c.m);
+    const hits = obstacles.filter((ob) => overlaps(bx, ob));
+    if (hits.length) {
+      // move past the marks it hits, on its own side (above for positive values, below for negative)
+      const y = c.above ? Math.min(...hits.map((h) => h.y)) - box / 2 - 1 : Math.max(...hits.map((h) => h.y + h.h)) + box / 2 + 1;
+      c.m = { ...c.m, y };
+      bx = markBox(c.m);
+    }
+    const free = inside(bx) && !obstacles.some((ob) => overlaps(bx, ob)) && !placed.some((pl) => overlaps(bx, pl, 0));
+    if (!free && rank(c) > 0) { dropped++; continue; }
+    placed.push(bx);
+    marks.push(c.m);
+    if (o.highlight?.category === rows[c.i]!.period && o.highlight.tier === c.t) ring(c.m.x, c.m.y, c.m.text, rows[c.i]!.period);
+  }
+  if (dropped) warnings.push(`${dropped} labels left out to avoid collisions (priority: Total, cited, selected, first and last, extremes)`);
+
+  // 8. category labels: all when they fit, else every n-th in a regular rhythm (first label kept);
+  // names that still do not fit are cut from the end
+  const catW = Math.max(0, ...rows.map((r) => textWidth(r.period, size)));
+  const nth = catW <= step - 2 ? 1 : Math.min(rows.length, Math.ceil((catW + 4) / step));
+  rows.forEach((r, i) => {
+    if (i % nth) return;
+    marks.push({ kind: "text", role: "category", category: r.period, x: cx(i), y: catY, text: truncateEnd(r.period, size, step * nth - 2), anchor: "middle", size, fill: C.text.primary });
+    if (twoYears && years[i] && (i === 0 || years[i] !== years[i - 1]))
+      marks.push({ kind: "text", role: "category", category: r.period, x: cx(i), y: catY + box, text: years[i]!, anchor: "middle", size, fill: C.text.secondary });
   });
 
   // scale band: a light band left of the plot, as tall as the round value on this chart's scale
-  if (o.scaleBand) back.push({ kind: "rect", role: "scale-band", x: left - 7, y: y0 - o.scaleBand * o.ppu, w: 5, h: o.scaleBand * o.ppu, fill: C.marker.scaleBandFill, stroke: C.marker.scaleBandLine, strokeWidth: 0.5 });
+  // with its value above it, at the left edge (never near the end legend)
+  if (o.scaleBand) {
+    back.push({ kind: "rect", role: "scale-band", x: left - 7, y: y0 - o.scaleBand * o.ppu, w: 5, h: o.scaleBand * o.ppu, fill: C.marker.scaleBandFill, stroke: C.marker.scaleBandLine, strokeWidth: 0.5 });
+    marks.push({ kind: "text", role: "scale-band-label", x: left - 2, y: y0 - o.scaleBand * o.ppu - box / 2 - 1, text: bandLabel, anchor: "end", size, fill: C.text.secondary });
+  }
 
   // 4. a tick on the category axis where AC switches to FC
   const firstFc = prim.findIndex((p) => p?.scenario === "FC");
@@ -314,7 +385,9 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
     const items: { text: string; y: number }[] = [];
     if (p) items.push({ text: primaryName, y: yOf(p.value / 2) });
     const refV = r[o.reference];
-    if (refV != null && !(o.reference === "FC" && p?.scenario === "FC")) items.push({ text: o.reference, y: yOf(refV / 2) });
+    // an outlined reference (BU, PL) is named at the upper part of its column, clear of the primary's name
+    const outlined = o.reference === "BU" || o.reference === "PL";
+    if (refV != null && !(o.reference === "FC" && p?.scenario === "FC")) items.push({ text: o.reference, y: yOf(outlined ? refV * 0.75 : refV / 2) });
     const triV = o.triangle ? r[o.triangle] : null;
     if (o.triangle && triV != null) items.push({ text: o.triangle, y: yOf(triV) });
     const top = y0 - tiers.base.up - room + box / 2;

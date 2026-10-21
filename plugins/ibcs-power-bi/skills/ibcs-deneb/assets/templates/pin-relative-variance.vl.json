@@ -152,8 +152,8 @@
     },
     {
       "name": "clipPct",
-      "value": 0,
-      "description": "relative outlier cut (UN 5.3, CH 4.4) as a fraction, e.g. 0.5 = 50%: pins beyond it are cut, have no head, keep their full label and get a growth triangle; 0 = off (field ClipPct wins)"
+      "value": 1,
+      "description": "relative outlier clip (UN 5.3, CH 4.4) as a fraction; default 1 = ±100 % (ours, the same rule in Power BI and web apps): pins beyond it are cut at the clip point, have no head, end in a triangle in the growth direction at the clip point and keep their full label; 0 = off (field ClipPct wins)"
     },
     {
       "name": "naOnNegativeRef",
@@ -743,7 +743,7 @@
           "expr": "!datum._ok ? 'bottom' : (datum._pd >= 0 ? 'bottom' : 'top')"
         },
         "dy": {
-          "expr": "!datum._ok ? -4 : (datum._pd >= 0 ? -1 : 1) * (datum._out ? 2 : headPx / 2 + 2)"
+          "expr": "!datum._ok ? -4 : (datum._pd >= 0 ? -1 : 1) * (datum._out ? headPx + 2 : headPx / 2 + 2)"
         }
       },
       "encoding": {
@@ -757,7 +757,7 @@
       }
     },
     {
-      "description": "outlier marker (UN 5.3, CH 4.4): headless pin cut at the clip value, full value label, small triangle beyond the label pointing in the growth direction, impact colour",
+      "description": "outlier marker (UN 5.3, CH 4.4): headless pin cut at the clip value, a triangle at the clip point pointing in the growth direction, impact colour; the label keeps the full value beyond it",
       "transform": [
         {
           "filter": "datum._ok && datum._out"
@@ -777,7 +777,7 @@
           "expr": "headPx * headPx"
         },
         "yOffset": {
-          "expr": "(datum._p > 0 ? -1 : 1) * (ibcsFontSize + headPx / 2 + 5)"
+          "expr": "(datum._p > 0 ? -1 : 1) * headPx / 2"
         }
       },
       "encoding": {
