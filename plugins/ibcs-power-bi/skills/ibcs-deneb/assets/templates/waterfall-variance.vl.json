@@ -1,12 +1,13 @@
 {
   "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
-  "description": "IBCS vertical variance waterfall (EX 1.1 card 29): reference total (PY/PL) at the top from the axis, the variance by structure element as floating bars (impact colour, signed labels outside), the primary total (AC/FC) at the bottom, assisting lines, and the total variance arrow under the result. Options: scale band (CH 4.3) and a highlighting ellipse on one value (UN 5.1).",
+  "description": "IBCS vertical variance waterfall (EX 1.1 card 29): reference total (PY/PL) at the top from the axis, the variance by structure element as floating bars (impact colour, signed labels outside), the primary total (AC/FC) at the bottom, assisting lines, and the total variance arrow under the result. Options: scale band (CH 4.3), a highlighting ellipse on one value (UN 5.1), and a magnifying glass (CH 4.5) that repeats the steps at a bigger scale beside the overview when they are too short to read on the page scale.",
   "usermeta": {
     "ibcs": {
       "template": "waterfall-variance",
       "cards": [
         "EX 1.1 card 29",
-        "UN 4.1"
+        "UN 4.1",
+        "CH 4.5"
       ],
       "fields": {
         "Category": "text, row label; sort the visual in the intended element/report order (blank labels are dropped)",
@@ -32,7 +33,7 @@
           "TotalValue"
         ]
       ],
-      "notes": "Value is the contribution to the total, not necessarily the source measure delta: for a cost line in a margin bridge bind −ΔCOS with Polarity +1. A cost increase therefore contributes a negative step (unfavourable), and a cost reduction contributes a positive step (favourable). Polarity changes only impact colour; geometry always follows the contribution sign. Include a remainder row (e.g. Rest) so base + Σ contribution = total. If they do not reconcile, the arrow label shows the difference with a '!'. Two waterfalls of one unit: the same pxPerUnit and labelWidth, and each visual's width sized to its own range (usermeta.ibcs.layout). Rounded-zero rule: abs(value) × 10^decimals < 0.5 is labelled 0 without sign and gets no impact colour. Input formats: (1) explicit Kind rows, with base/total values in Value; (2) one model row per element, Value as the signed contribution, optional Kind omitted, and BaseValue/TotalValue measures repeated on element rows. The template uses the first non-null value of each anchor independently in visual row order, creates each missing anchor once, and keeps explicit base/total rows when present. baseLabel/totalLabel name only the synthesized bars. Repeated anchor measures must be constant in the current filter context. Blank categories and rows whose Value, BaseValue and TotalValue are all null are dropped; zero is a value, and an anchor-only row is retained. PxPerUnit alone do not retain an unknown N/A member. Scale band (CH 4.3): set scaleBand (or bind ScaleBand) to the same round value in every chart of the unit whose scales differ (e.g. a waterfall by month next to one by entity at another px per unit). Highlight (UN 5.1): knob highlight = the row label, or field Highlight = 1 on that row, draws the blue ellipse around its value label; one highlighted value per chart, the one the key message names. With pxPerUnit = 0 the scale leaves room for the widest label (measured like bar-structure-variance) beyond the 34 px right padding, so labels are never cut at the visual edge. Short bars (small values under a fixed pxPerUnit): a base or total label that does not fit inside its bar sits right of the bar in the text colour, and a negative variance label that would come closer than valueLabelGap px to the category axis moves to the far (right) end of its bar, so value labels never run into the category labels. Scenario names: the base and total bars are named once. When their row label (Category) already contains the scenario code (refScenario / minuend as a word, e.g. 'PY', 'AC 2026'), the extra legend text at the bar is left out; with neutral labels ('Start', 'Result') it is drawn.",
+      "notes": "Value is the contribution to the total, not necessarily the source measure delta: for a cost line in a margin bridge bind −ΔCOS with Polarity +1. A cost increase therefore contributes a negative step (unfavourable), and a cost reduction contributes a positive step (favourable). Polarity changes only impact colour; geometry always follows the contribution sign. Include a remainder row (e.g. Rest) so base + Σ contribution = total. If they do not reconcile, the arrow label shows the difference with a '!'. Two waterfalls of one unit: the same pxPerUnit and labelWidth, and each visual's width sized to its own range (usermeta.ibcs.layout). Rounded-zero rule: abs(value) × 10^decimals < 0.5 is labelled 0 without sign and gets no impact colour. Input formats: (1) explicit Kind rows, with base/total values in Value; (2) one model row per element, Value as the signed contribution, optional Kind omitted, and BaseValue/TotalValue measures repeated on element rows. The template uses the first non-null value of each anchor independently in visual row order, creates each missing anchor once, and keeps explicit base/total rows when present. baseLabel/totalLabel name only the synthesized bars. Repeated anchor measures must be constant in the current filter context. Blank categories and rows whose Value, BaseValue and TotalValue are all null are dropped; zero is a value, and an anchor-only row is retained. PxPerUnit alone do not retain an unknown N/A member. Scale band (CH 4.3): set scaleBand (or bind ScaleBand) to the same round value in every chart of the unit whose scales differ (e.g. a waterfall by month next to one by entity at another px per unit). Highlight (UN 5.1): knob highlight = the row label, or field Highlight = 1 on that row, draws the blue ellipse around its value label; one highlighted value per chart, the one the key message names. With pxPerUnit = 0 the scale leaves room for the widest label (measured like bar-structure-variance) beyond the 34 px right padding, so labels are never cut at the visual edge. Short bars (small values under a fixed pxPerUnit): a base or total label that does not fit inside its bar sits right of the bar in the text colour, and a negative variance label that would come closer than valueLabelGap px to the category axis moves to the far (right) end of its bar, so value labels never run into the category labels. Scenario names: the base and total bars are named once. When their row label (Category) already contains the scenario code (refScenario / minuend as a word, e.g. 'PY', 'AC 2026'), the extra legend text at the bar is left out; with neutral labels ('Start', 'Result') it is drawn. Form (A-29, IBCS v2.0 p. 112, STD): one row per element with horizontal bars; the reference total on top (scenario name above it), the primary total at the bottom (name below), floating contributions in impact colours with signed labels (right of growth, left of a drop), assisting lines between the bar ends, and the total variance as a horizontal arrow below the primary bar from the reference level to the primary level, labelled 'ΔPY' and the value; never an extra bar. A time decomposition (ΔPY by month) is a different card: template waterfall-variance-time (A-11). Magnifying glass (CH 4.5, p. 74): IBCS asks to mark the zoomed part, connect it to a second chart at a bigger scale and state that scale (STD). Here (OURS): when the largest contribution is below magnifyBelow (5 %) of the base, the steps are drawn again in a panel magnifyPx wide right of the overview, rows aligned, at factor k (the smallest of 1, 2, 5, 10, 20, 50 … that makes the largest step ≥ magnifyMinPx px, capped to fit), starting at the lowest running total with a zigzag axis break, captioned 'Steps ×k' in the secondary text colour, with a marker (the steps' range ± 3 px, highlight colour, 1 px, no fill) around the steps in the overview and connectors (0.75 px, highlight colour) along its top and bottom edges to the panel. Narrow containers: put the panel in a second visual below (svg-skeletons two-visual pattern); this template keeps it beside. Base, total and the overview steps keep the page px per unit; step labels are drawn in the panel only, inside its frame, so none touches the marker or a connector. Size the container magnifyPx + 24 px wider (scale_layout.py member option magnify: true).",
       "knobs": [
         "refScenario",
         "minuend",
@@ -44,10 +45,14 @@
         "xMax",
         "pxPerUnit",
         "ibcsLabelPx",
+        "ibcsCharWidth",
         "baseLabel",
         "totalLabel",
         "scaleBand",
-        "highlight"
+        "highlight",
+        "magnifyBelow",
+        "magnifyPx",
+        "magnifyMinPx"
       ],
       "layout": {
         "valueAxis": "width",
@@ -63,7 +68,8 @@
             ]
           }
         ],
-        "rule": "container width = fixedPx + row labels + (hi − lo) × pxPerUnit + padHigh; measured with Vega-Lite 6.4.3 at ibcsFontSize 12; a highlighting ellipse reaches 5 px beyond its label on each side: keep ibcsLabelPx (right pad) large enough when the highlighted label is the rightmost one; the other dimension (height) = rows × the row step + crossFixedPx (50: padding top 16 for the scale-band label and bottom 34 for the total-variance marker and its label), which scale_layout.py adds when categoryCount is given"
+        "rule": "container width = fixedPx + row labels + (hi − lo) × pxPerUnit + padHigh; measured with Vega-Lite 6.4.3 at ibcsFontSize 12; a highlighting ellipse reaches 5 px beyond its label on each side: keep ibcsLabelPx (right pad) large enough when the highlighted label is the rightmost one; the other dimension (height) = rows × the row step + crossFixedPx (50: padding top 16 for the scale-band label and bottom 34 for the total-variance marker and its label), which scale_layout.py adds when categoryCount is given",
+        "magnifyPx": "magnifyPx + 24 more px of width when the magnifier is active (scale_layout.py member option magnify: true)"
       },
       "sampleData": "variance-waterfall.json",
       "preview": {
@@ -136,6 +142,22 @@
             "height": 260
           },
           "note": "Short bars under a fixed pxPerUnit: base and total labels that do not fit inside their bar sit right of it, and a negative variance label that would reach the category labels moves to the far end of its bar."
+        },
+        {
+          "suffix": "-magnifier",
+          "sampleData": "waterfall-variance-magnifier.json",
+          "params": {
+            "refScenario": "PY",
+            "baseLabel": "PY",
+            "totalLabel": "AC",
+            "pxPerUnit": 1.5,
+            "labelWidth": 70
+          },
+          "preview": {
+            "width": 600,
+            "height": 230
+          },
+          "note": "Small steps on a page scale (largest step < 5 % of the base): the magnifier panel repeats them at ×k beside the overview; base and total keep the page px per unit."
         }
       ]
     }
@@ -230,6 +252,21 @@
       "description": "row label (Category, or baseLabel / totalLabel for the synthesized bars) whose value label gets the blue highlighting ellipse (UN 5.1): the value the key message cites; '' = none. The field Highlight (1 on the row) does the same from the model"
     },
     {
+      "name": "magnifyBelow",
+      "value": 0.05,
+      "description": "magnifying glass (CH 4.5, p. 74): when the largest contribution is smaller than this share of the base (OURS: 0.05 = 5 %), the steps get a second panel at a bigger scale (×k) right of the overview; base and total stay at the page scale. 0 = off"
+    },
+    {
+      "name": "magnifyPx",
+      "value": 170,
+      "description": "width in px of the magnifier panel (its labels included); the overview keeps magnifyPx + 24 px free on the right for it"
+    },
+    {
+      "name": "magnifyMinPx",
+      "value": 40,
+      "description": "the factor k is the smallest of 1, 2, 5, 10, 20, 50 … that makes the largest step at least this long in the panel (OURS), capped so the steps fit the panel"
+    },
+    {
       "name": "stepScale",
       "value": 1.5,
       "description": "multiplies the category step (ibcsCategoryStep), keep it identical for every chart of the page"
@@ -281,6 +318,10 @@
     {
       "name": "ibcsTextOnDark",
       "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsTextSecondary",
+      "value": "#595959"
     },
     {
       "name": "ibcsBackground",
@@ -644,8 +685,138 @@
       "as": "_room"
     },
     {
-      "calculate": "datum._ppu > 0 ? max(datum._xmax + max(ibcsLabelPx, datum._room) / datum._ppu, width / datum._ppu) : datum._xmax + datum._room * datum._xmax / max(width - datum._room, 1)",
+      "calculate": "datum._k == 'variance' && isValid(datum._val) ? abs(datum._val) : 0",
+      "as": "_absStep"
+    },
+    {
+      "calculate": "datum._k == 'variance' ? min(datum._x0, datum._x1) : null",
+      "as": "_sLo"
+    },
+    {
+      "calculate": "datum._k == 'variance' ? max(datum._x0, datum._x1) : null",
+      "as": "_sHi"
+    },
+    {
+      "calculate": "datum._k == 'variance' ? datum._i : 1e9",
+      "as": "_sFirst"
+    },
+    {
+      "calculate": "datum._k == 'variance' ? datum._i : -1",
+      "as": "_sLast"
+    },
+    {
+      "calculate": "datum._k == 'variance' ? length(datum._lbl) : 0",
+      "as": "_sLblLen"
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_absStep",
+          "as": "_maxStep"
+        },
+        {
+          "op": "min",
+          "field": "_sLo",
+          "as": "_lo"
+        },
+        {
+          "op": "max",
+          "field": "_sHi",
+          "as": "_hi"
+        },
+        {
+          "op": "argmin",
+          "field": "_sFirst",
+          "as": "_fStep"
+        },
+        {
+          "op": "argmax",
+          "field": "_sLast",
+          "as": "_lStep"
+        },
+        {
+          "op": "max",
+          "field": "_sLblLen",
+          "as": "_sLblMax"
+        }
+      ]
+    },
+    {
+      "calculate": "magnifyBelow > 0 && datum._maxStep > 0 && isValid(datum._base) && datum._base != 0 && datum._maxStep < magnifyBelow * abs(datum._base) && datum._lStep._i >= datum._fStep._i",
+      "as": "_mag"
+    },
+    {
+      "calculate": "datum._mag ? magnifyPx + 24 : 0",
+      "as": "_extra"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? max(datum._xmax + (max(ibcsLabelPx, datum._room) + datum._extra) / datum._ppu, width / datum._ppu) : datum._xmax + (datum._room + datum._extra) * datum._xmax / max(width - datum._room - datum._extra, 1)",
       "as": "_xhi"
+    },
+    {
+      "calculate": "width / datum._xhi",
+      "as": "_ppx"
+    },
+    {
+      "calculate": "width - magnifyPx",
+      "as": "_PL"
+    },
+    {
+      "calculate": "datum._sLblMax * ibcsFontSize * ibcsCharWidth + 6",
+      "as": "_LW"
+    },
+    {
+      "calculate": "max(1e-9, (datum._hi - datum._lo) * datum._ppx)",
+      "as": "_spanPx"
+    },
+    {
+      "calculate": "magnifyMinPx / max(1e-9, datum._maxStep * datum._ppx)",
+      "as": "_kNeed"
+    },
+    {
+      "calculate": "max(1, (magnifyPx - 2 * datum._LW) / datum._spanPx)",
+      "as": "_kCap"
+    },
+    {
+      "calculate": "pow(10, floor(log(datum._kNeed) / LN10))",
+      "as": "_kE"
+    },
+    {
+      "calculate": "datum._kNeed / datum._kE <= 1 ? datum._kE : datum._kNeed / datum._kE <= 2 ? 2 * datum._kE : datum._kNeed / datum._kE <= 5 ? 5 * datum._kE : 10 * datum._kE",
+      "as": "_kUp"
+    },
+    {
+      "calculate": "pow(10, floor(log(datum._kCap) / LN10))",
+      "as": "_kE2"
+    },
+    {
+      "calculate": "datum._kCap / datum._kE2 >= 5 ? 5 * datum._kE2 : datum._kCap / datum._kE2 >= 2 ? 2 * datum._kE2 : datum._kE2",
+      "as": "_kDown"
+    },
+    {
+      "calculate": "max(1, datum._kUp <= datum._kCap ? datum._kUp : datum._kDown)",
+      "as": "_K"
+    },
+    {
+      "calculate": "datum._PL + datum._LW",
+      "as": "_P0"
+    },
+    {
+      "calculate": "datum._P0 + (min(datum._x0, datum._x1) - datum._lo) * datum._ppx * datum._K",
+      "as": "_pa"
+    },
+    {
+      "calculate": "datum._P0 + (max(datum._x0, datum._x1) - datum._lo) * datum._ppx * datum._K",
+      "as": "_pb"
+    },
+    {
+      "calculate": "datum._P0 + (datum._x1 - datum._lo) * datum._ppx * datum._K",
+      "as": "_pEnd"
+    },
+    {
+      "calculate": "'Steps ×' + format(datum._K, ',')",
+      "as": "_kLbl"
     },
     {
       "calculate": "datum._tot - datum._base",
@@ -662,6 +833,20 @@
     {
       "calculate": "(abs(datum._delta) * pow(10, decimals) < 0.5 ? format(0, datum._fa) : format(datum._delta, datum._fv)) + (datum._mismatch ? '!' : '')",
       "as": "_dlbl"
+    },
+    {
+      "window": [
+        {
+          "op": "lead",
+          "field": "_k",
+          "as": "_nextK"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_i"
+        }
+      ]
     }
   ],
   "layer": [
@@ -966,6 +1151,9 @@
       "description": "halo behind variance labels, so assisting lines running behind a label do not cut through it",
       "transform": [
         {
+          "filter": "!(datum._mag && datum._k == 'variance')"
+        },
+        {
           "filter": "datum._k == 'variance'"
         },
         {
@@ -1012,6 +1200,9 @@
     {
       "description": "base/total labels inside the bar (centred), right of the bar when it is too short for the label; variance labels outside in the direction of the change; a negative variance label that would sit on the vertical assisting line from the base end moves left of that line, and one that would come closer than valueLabelGap px to the category axis (into the category label column) moves to the far end of its bar",
       "transform": [
+        {
+          "filter": "!(datum._mag && datum._k == 'variance')"
+        },
         {
           "calculate": "datum._k == 'variance' ? (datum._val >= 0 ? datum._x1 : datum._x1) : datum._x1 / 2",
           "as": "_lx"
@@ -1290,6 +1481,9 @@
       "description": "highlighting ellipse (UN 5.1) around the value label the key message cites (knob highlight or field Highlight); drawn after the labels, outline only",
       "transform": [
         {
+          "filter": "!(datum._mag && datum._k == 'variance')"
+        },
+        {
           "filter": "datum._hl && datum._lbl != ''"
         },
         {
@@ -1326,6 +1520,383 @@
         "x": {
           "field": "_lx",
           "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "magnifier (CH 4.5): marker around the zoomed steps in the overview (base and total stay outside it)",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._mag"
+        }
+      ],
+      "mark": {
+        "type": "rect",
+        "fill": null,
+        "stroke": {
+          "expr": "ibcsHighlight"
+        },
+        "strokeWidth": 1
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "scale('x', datum._lo) - 3"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "scale('x', datum._hi) + 3"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._fStep._key) + bandwidth('y') / 2 - bw / 2 - 3"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "scale('y', datum._lStep._key) + bandwidth('y') / 2 + bw / 2 + 3"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: connectors along the top and bottom edges of the marker, straight to the panel's corners (rows are aligned, so they run between rows, never through a label)",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._mag"
+        },
+        {
+          "calculate": "[0, 1]",
+          "as": "_c2"
+        },
+        {
+          "flatten": [
+            "_c2"
+          ]
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsHighlight"
+        },
+        "strokeWidth": 0.75
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "scale('x', datum._hi) + 3"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "datum._PL"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._c2 == 0 ? scale('y', datum._fStep._key) + bandwidth('y') / 2 - bw / 2 - 3 : scale('y', datum._lStep._key) + bandwidth('y') / 2 + bw / 2 + 3"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "datum._c2 == 0 ? scale('y', datum._fStep._key) + bandwidth('y') / 2 - bw / 2 - 3 : scale('y', datum._lStep._key) + bandwidth('y') / 2 + bw / 2 + 3"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: panel frame, rows aligned with the overview",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._mag"
+        }
+      ],
+      "mark": {
+        "type": "rect",
+        "fill": null,
+        "stroke": {
+          "expr": "ibcsHighlight"
+        },
+        "strokeWidth": 1
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._PL"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "width - 1"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._fStep._key) + bandwidth('y') / 2 - bw / 2 - 3"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "scale('y', datum._lStep._key) + bandwidth('y') / 2 + bw / 2 + 3"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: caption 'Steps ×k' above the panel in the secondary text colour at label size: the panel's scale is stated (CH 4.5); right-aligned over the panel, clear of the zigzag on the origin line",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._mag"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "right",
+        "baseline": "bottom",
+        "dy": -2,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsTextSecondary"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "width - 1"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._fStep._key) + bandwidth('y') / 2 - bw / 2 - 3"
+          }
+        },
+        "text": {
+          "field": "_kLbl"
+        }
+      }
+    },
+    {
+      "description": "magnifier: the panel's value origin (the lowest running total of the steps) as an axis line",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._mag"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxis"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAxisWidth"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._P0"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._fStep._key) + bandwidth('y') / 2 - bw / 2 - 3"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "scale('y', datum._lStep._key) + bandwidth('y') / 2 + bw / 2 + 3"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: zigzag axis break at the top end of the panel's origin line, on the frame: the panel does not start at zero",
+      "transform": [
+        {
+          "filter": "datum._i == 1 && datum._mag"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "filled": false,
+        "opacity": 1,
+        "stroke": {
+          "expr": "ibcsAxis"
+        },
+        "strokeWidth": 1,
+        "fill": {
+          "expr": "ibcsBackground"
+        },
+        "shape": "M0,-1L-0.5,-0.5L0.5,0L-0.5,0.5L0,1",
+        "size": 120
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._P0"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "scale('y', datum._fStep._key) + bandwidth('y') / 2 - bw / 2 - 3"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: assisting lines between the steps in the panel",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance' && datum._nextK == 'variance'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAssist"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAssistWidth"
+        },
+        "yOffset": {
+          "expr": "bw / 2"
+        },
+        "y2Offset": {
+          "expr": "-bw / 2"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "y2": {
+          "field": "_next"
+        },
+        "x": {
+          "value": {
+            "expr": "datum._pEnd"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: the steps at ×k, impact colours (hatched under FC), at least 1 px",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance'"
+        }
+      ],
+      "mark": {
+        "type": "bar",
+        "height": {
+          "expr": "bw"
+        },
+        "fill": {
+          "expr": "minuend == 'FC' ? pbiPatternSVG(ibcsHatch, datum._c, ibcsFCGround) : datum._c"
+        },
+        "stroke": {
+          "expr": "minuend == 'FC' ? datum._c : null"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        },
+        "opacity": 1
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "value": {
+            "expr": "datum._pa"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "datum._pb - datum._pa < 1 && isValid(datum._c) ? datum._pa + 1 : datum._pb"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: step labels in the panel only, signed, right of growth and left of a drop",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance'"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "baseline": "middle",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "align": {
+          "expr": "datum._val >= 0 || !isValid(datum._c) ? 'left' : 'right'"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "value": {
+            "expr": "datum._val >= 0 || !isValid(datum._c) ? datum._pb + 3 : datum._pa - 3"
+          }
+        },
+        "text": {
+          "field": "_lbl"
+        }
+      }
+    },
+    {
+      "description": "magnifier: highlighting ellipse on a step label in the panel",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance' && datum._hl"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "filled": false,
+        "opacity": 1,
+        "stroke": {
+          "expr": "ibcsHighlight"
+        },
+        "strokeWidth": {
+          "expr": "ibcsHighlightWidth"
+        },
+        "shape": {
+          "expr": "'M-1,0A1,' + format((ibcsFontSize / 2 + 4) / ((length(datum._lbl) * ibcsFontSize * 0.55) / 2 + 5), '.3f') + ' 0 1,0 1,0A1,' + format((ibcsFontSize / 2 + 4) / ((length(datum._lbl) * ibcsFontSize * 0.55) / 2 + 5), '.3f') + ' 0 1,0 -1,0Z'"
+        },
+        "size": {
+          "expr": "pow((length(datum._lbl) * ibcsFontSize * 0.55) + 10, 2)"
+        }
+      },
+      "encoding": {
+        "y": {
+          "field": "_key",
+          "type": "nominal",
+          "sort": "ascending"
+        },
+        "x": {
+          "value": {
+            "expr": "datum._val >= 0 || !isValid(datum._c) ? datum._pb + 3 + length(datum._lbl) * ibcsFontSize * 0.55 / 2 : datum._pa - 3 - length(datum._lbl) * ibcsFontSize * 0.55 / 2"
+          }
         }
       }
     },

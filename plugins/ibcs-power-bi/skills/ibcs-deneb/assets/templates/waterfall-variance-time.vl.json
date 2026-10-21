@@ -1,0 +1,1362 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v6.json",
+  "description": "IBCS horizontal variance waterfall over time (EX 1.1 card 11): reference column, periodic variances as floating columns (impact colour, signed labels), result column, broken category axis, vertical total-variance arrow; magnifying glass (CH 4.5) for short variances.",
+  "usermeta": {
+    "ibcs": {
+      "template": "waterfall-variance-time",
+      "cards": [
+        "EX 1.1 card 11",
+        "UN 4.1",
+        "CH 4.5"
+      ],
+      "fields": {
+        "Category": "text: column label (the reference period, each period, the result period); sort the visual in time order with the reference first and the result last (blank labels are dropped)",
+        "Kind": "text: base | variance | total (blank = variance)",
+        "Value": "measure: base = reference value (e.g. PY year); variance = the period's signed contribution (ΔPY of the month); total = result value (AC or AC&FC year)",
+        "Polarity": "optional measure 1 / -1 / 0; else the polarity knob",
+        "PxPerUnit": "optional measure, same value on every row: px per display unit for the page's scale group; wins over pxPerUnit"
+      },
+      "requiredFields": [
+        "Category",
+        "Kind",
+        "Value"
+      ],
+      "notes": "Form (A-11, IBCS v2.0 p. 104, STD): a horizontal variance waterfall over time: the reference column, the periodic variances as floating columns in impact colours (signed labels above growth, below a drop), then the result column; the category axis is broken into the groups reference | periods | result; assisting lines join the column ends; the total variance is a vertical arrow right of the result column from the reference level to the result level, labelled 'ΔPY' and the value. Structure decompositions use waterfall-variance (A-29), calculations waterfall-calculation (A-28). Rounded-zero rule: a variance that rounds to 0 at decimals is labelled 0 without sign, gets no colour and no mark. Base + Σ variances must equal the total; otherwise the arrow label ends with '!'. Magnifying glass (CH 4.5, p. 74, STD: mark the zoomed part, connect it to a second chart at a bigger scale, state the scale); OURS: when the largest periodic variance is below magnifyBelow (5 %) of the reference, the variances are drawn again at ×k in a tier magnifyPx high below the overview, columns at the periods' x, starting at the lowest running total with a zigzag axis break (k = the smallest of 1, 2, 5, 10, 20, 50 … that makes the largest one ≥ magnifyMinPx px, capped to fit), captioned 'Steps ×k' in the secondary text colour; a marker (their range ± 3 px, highlight colour, 1 px, no fill) around them in the overview and connectors (0.75 px) along its left and right edges. Reference, result and the overview variances keep the page px per unit; the variance labels move into the tier.",
+      "knobs": [
+        "refScenario",
+        "minuend",
+        "polarity",
+        "decimals",
+        "unitDivisor",
+        "pxPerUnit",
+        "ibcsLabelPx",
+        "ibcsCharWidth",
+        "groupGap",
+        "stepScale",
+        "magnifyBelow",
+        "magnifyPx",
+        "magnifyMinPx"
+      ],
+      "layout": {
+        "valueAxis": "height",
+        "fixedPx": 50,
+        "crossFixedPx": 138,
+        "tiers": [
+          {
+            "id": "waterfall",
+            "range": "min(0, running sum) … max(base, running sum, total)",
+            "padHigh": [
+              "ibcsLabelPx"
+            ]
+          }
+        ],
+        "magnifyPx": "magnifyPx + 24 more px of HEIGHT when the magnifier is active (the tier below the overview; scale_layout.py member option magnify: true)",
+        "rule": "container height = fixedPx (padding top 8 + category label and scenario name lines 42) + (hi − lo) × pxPerUnit + ibcsLabelPx, plus magnifyPx + 24 + 42 when magnified; width = (periods + 2 + 2 × groupGap) × ibcsCategoryStep['month'] × stepScale + crossFixedPx (left 8, right 68 for the arrow and its label)"
+      },
+      "sampleData": "waterfall-variance-time.json",
+      "preview": {
+        "width": 520,
+        "height": 260
+      },
+      "previewVariants": [
+        {
+          "suffix": "-magnifier",
+          "sampleData": "waterfall-variance-time-magnifier.json",
+          "params": {
+            "pxPerUnit": 3
+          },
+          "preview": {
+            "width": 620,
+            "height": 460
+          },
+          "note": "Monthly ΔPY of a year on the page scale (largest < 5 % of PY): the variances are repeated at ×k in the panel right of the overview."
+        }
+      ]
+    }
+  },
+  "data": {
+    "name": "dataset"
+  },
+  "width": "container",
+  "height": "container",
+  "padding": {
+    "left": 70,
+    "right": 68,
+    "top": 8,
+    "bottom": 42
+  },
+  "params": [
+    {
+      "name": "refScenario",
+      "value": "PY",
+      "description": "name and notation of the reference column: 'PY' (solid light) or a plan code such as 'PL' or 'BU' (outlined)"
+    },
+    {
+      "name": "minuend",
+      "value": "AC",
+      "description": "name and notation of the result column: 'AC' (solid) or 'FC' (hatched); FC steps are hatched in their impact colour"
+    },
+    {
+      "name": "polarity",
+      "value": 1,
+      "description": "1 higher is better, -1 lower is better, 0 neutral (blue): impact colour only (a Polarity field per row wins)"
+    },
+    {
+      "name": "decimals",
+      "value": 1,
+      "description": "decimals of every value label (display units); also the precision of the rounded-zero rule"
+    },
+    {
+      "name": "unitDivisor",
+      "value": 1,
+      "description": "divides every value before drawing and labelling (1 = already scaled)"
+    },
+    {
+      "name": "pxPerUnit",
+      "value": 0,
+      "description": "px per display unit on the value axis for the page's scale group; 0 = fit the container. Size the container to the data (scale_layout.py)"
+    },
+    {
+      "name": "ibcsLabelPx",
+      "value": 20,
+      "description": "label room in px above the highest column (pxPerUnit > 0 only)"
+    },
+    {
+      "name": "ibcsCharWidth",
+      "value": 0.6,
+      "description": "estimated width of one label character as a share of ibcsFontSize"
+    },
+    {
+      "name": "groupGap",
+      "value": 0.6,
+      "description": "gap between the groups reference | periods | result, in category steps: the category axis is broken there (A-11)"
+    },
+    {
+      "name": "stepScale",
+      "value": 1.5,
+      "description": "multiplies the category step (ibcsCategoryStep), keep it identical for every chart of the page"
+    },
+    {
+      "name": "magnifyBelow",
+      "value": 0.05,
+      "description": "magnifying glass (CH 4.5, p. 74): when the largest periodic variance is smaller than this share of the reference (OURS: 0.05), the variances are drawn again at ×k in a panel right of the overview; 0 = off"
+    },
+    {
+      "name": "magnifyPx",
+      "value": 150,
+      "description": "height in px of the magnifier tier below the overview (its labels included); the overview gives up magnifyPx + 24 px of height for it"
+    },
+    {
+      "name": "magnifyMinPx",
+      "value": 40,
+      "description": "k is the smallest of 1, 2, 5, 10, 20, 50 … that makes the largest variance at least this tall in the tier (OURS), capped so the variances fit the tier"
+    },
+    {
+      "name": "ibcsAC",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsPY",
+      "value": "#A6A6A6"
+    },
+    {
+      "name": "ibcsPLFill",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsPLStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCStripe",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsFCGround",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsFCStroke",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsGood",
+      "value": "#8CB400"
+    },
+    {
+      "name": "ibcsBad",
+      "value": "#FF0000"
+    },
+    {
+      "name": "ibcsNeutral",
+      "value": "#0064FF"
+    },
+    {
+      "name": "ibcsText",
+      "value": "#000000"
+    },
+    {
+      "name": "ibcsBackground",
+      "value": "#FFFFFF"
+    },
+    {
+      "name": "ibcsAxis",
+      "value": "#404040"
+    },
+    {
+      "name": "ibcsAssist",
+      "value": "#808080"
+    },
+    {
+      "name": "ibcsAssistArea",
+      "value": "#F2F2F2"
+    },
+    {
+      "name": "ibcsHighlight",
+      "value": "#0064FF"
+    },
+    {
+      "name": "ibcsBarRatio",
+      "value": 0.6667
+    },
+    {
+      "name": "ibcsOutline",
+      "value": 1
+    },
+    {
+      "name": "ibcsAxisWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsAssistWidth",
+      "value": 1
+    },
+    {
+      "name": "ibcsLineAbs",
+      "value": 3
+    },
+    {
+      "name": "ibcsFontSize",
+      "value": 12
+    },
+    {
+      "name": "ibcsFmtAbs",
+      "value": ",.1f"
+    },
+    {
+      "name": "ibcsFmtVar",
+      "value": "+,.1f"
+    },
+    {
+      "name": "ibcsHatch",
+      "value": "diagonal-stripe-3"
+    },
+    {
+      "name": "ibcsCategoryStep",
+      "value": {
+        "year": 32,
+        "quarter": 28,
+        "month": 24,
+        "week": 16,
+        "day": 12,
+        "structureRow": 20
+      }
+    },
+    {
+      "name": "ibcsTextSecondary",
+      "value": "#595959"
+    }
+  ],
+  "transform": [
+    {
+      "filter": "isValid(datum['Category']) && datum['Category'] !== ''"
+    },
+    {
+      "filter": "isValid(datum['Value'])"
+    },
+    {
+      "window": [
+        {
+          "op": "row_number",
+          "as": "_i"
+        }
+      ]
+    },
+    {
+      "calculate": "!isValid(datum['Kind']) || datum['Kind'] == '' ? 'variance' : lower(datum['Kind'])",
+      "as": "_k"
+    },
+    {
+      "calculate": "datum['Value'] / unitDivisor",
+      "as": "_val"
+    },
+    {
+      "calculate": "datum._k == 'total' ? 0 : datum._val",
+      "as": "_contrib"
+    },
+    {
+      "window": [
+        {
+          "op": "sum",
+          "field": "_contrib",
+          "as": "_cum"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_i"
+        }
+      ],
+      "frame": [
+        null,
+        0
+      ]
+    },
+    {
+      "calculate": "datum._k == 'variance' ? datum._cum - datum._val : 0",
+      "as": "_y0"
+    },
+    {
+      "calculate": "datum._k == 'total' ? datum._val : datum._cum",
+      "as": "_y1"
+    },
+    {
+      "calculate": "(datum._k == 'variance' || datum._k == 'total' ? 1 : 0) + (datum._k == 'total' ? 1 : 0)",
+      "as": "_gaps"
+    },
+    {
+      "calculate": "datum._i - 1 + datum._gaps * groupGap",
+      "as": "_pos"
+    },
+    {
+      "calculate": "isValid(datum['Polarity']) ? datum['Polarity'] : polarity",
+      "as": "_pol"
+    },
+    {
+      "calculate": "abs(datum._val) * pow(10, decimals) < 0.5",
+      "as": "_zero"
+    },
+    {
+      "calculate": "datum._zero ? null : datum._pol == 0 ? ibcsNeutral : (datum._val * datum._pol > 0 ? ibcsGood : ibcsBad)",
+      "as": "_c"
+    },
+    {
+      "calculate": "replace(ibcsFmtAbs, /[.][0-9]+/, '.' + decimals)",
+      "as": "_fa"
+    },
+    {
+      "calculate": "replace(ibcsFmtVar, /[.][0-9]+/, '.' + decimals)",
+      "as": "_fv"
+    },
+    {
+      "calculate": "datum._k == 'variance' ? (datum._zero ? format(0, datum._fa) : format(datum._val, datum._fv)) : format(datum._val, datum._fa)",
+      "as": "_lbl"
+    },
+    {
+      "calculate": "datum._k == 'base' ? datum._val : null",
+      "as": "_baseV"
+    },
+    {
+      "calculate": "datum._k == 'total' ? datum._val : null",
+      "as": "_totV"
+    },
+    {
+      "calculate": "datum._k == 'variance' ? datum._val : 0",
+      "as": "_varV"
+    },
+    {
+      "calculate": "datum._k == 'variance' ? abs(datum._val) : 0",
+      "as": "_absStep"
+    },
+    {
+      "calculate": "datum._k == 'variance' ? min(datum._y0, datum._y1) : null",
+      "as": "_sLo"
+    },
+    {
+      "calculate": "datum._k == 'variance' ? max(datum._y0, datum._y1) : null",
+      "as": "_sHi"
+    },
+    {
+      "calculate": "datum._k == 'variance' ? 1 : 0",
+      "as": "_isStep"
+    },
+    {
+      "window": [
+        {
+          "op": "sum",
+          "field": "_isStep",
+          "as": "_j"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_i"
+        }
+      ],
+      "frame": [
+        null,
+        0
+      ]
+    },
+    {
+      "joinaggregate": [
+        {
+          "op": "max",
+          "field": "_baseV",
+          "as": "_base"
+        },
+        {
+          "op": "max",
+          "field": "_totV",
+          "as": "_tot"
+        },
+        {
+          "op": "sum",
+          "field": "_varV",
+          "as": "_sumVar"
+        },
+        {
+          "op": "max",
+          "field": "_pos",
+          "as": "_posMax"
+        },
+        {
+          "op": "max",
+          "field": "_y1",
+          "as": "_hiA"
+        },
+        {
+          "op": "max",
+          "field": "_y0",
+          "as": "_hiB"
+        },
+        {
+          "op": "min",
+          "field": "_y1",
+          "as": "_loA"
+        },
+        {
+          "op": "min",
+          "field": "_y0",
+          "as": "_loB"
+        },
+        {
+          "op": "max",
+          "field": "_absStep",
+          "as": "_maxStep"
+        },
+        {
+          "op": "min",
+          "field": "_sLo",
+          "as": "_slo"
+        },
+        {
+          "op": "max",
+          "field": "_sHi",
+          "as": "_shi"
+        },
+        {
+          "op": "sum",
+          "field": "_isStep",
+          "as": "_nSteps"
+        }
+      ]
+    },
+    {
+      "calculate": "max(datum._hiA, datum._hiB, 0)",
+      "as": "_hi"
+    },
+    {
+      "calculate": "min(datum._loA, datum._loB, 0)",
+      "as": "_lo"
+    },
+    {
+      "calculate": "magnifyBelow > 0 && datum._maxStep > 0 && isValid(datum._base) && datum._base != 0 && datum._maxStep < magnifyBelow * abs(datum._base)",
+      "as": "_mag"
+    },
+    {
+      "calculate": "width",
+      "as": "_ovW"
+    },
+    {
+      "calculate": "datum._ovW / (datum._posMax + 1)",
+      "as": "_step"
+    },
+    {
+      "calculate": "min(datum._step, ibcsCategoryStep['month'] * stepScale * 2) * ibcsBarRatio",
+      "as": "_bw"
+    },
+    {
+      "calculate": "(datum._pos + 0.5) * datum._step",
+      "as": "_cx"
+    },
+    {
+      "window": [
+        {
+          "op": "lead",
+          "field": "_cx",
+          "as": "_nextCx"
+        },
+        {
+          "op": "lead",
+          "field": "_k",
+          "as": "_nextK"
+        }
+      ],
+      "sort": [
+        {
+          "field": "_i"
+        }
+      ]
+    },
+    {
+      "calculate": "isValid(datum['PxPerUnit']) && datum['PxPerUnit'] > 0 ? datum['PxPerUnit'] : pxPerUnit",
+      "as": "_ppu"
+    },
+    {
+      "calculate": "ibcsFontSize * 1.2 + 4",
+      "as": "_room"
+    },
+    {
+      "calculate": "height - (datum._mag ? magnifyPx + 24 + 42 : 0)",
+      "as": "_ovH"
+    },
+    {
+      "calculate": "datum._ppu > 0 ? max(datum._hi + max(ibcsLabelPx, datum._room) / datum._ppu, datum._lo + datum._ovH / datum._ppu) : datum._hi + datum._room * (datum._hi - datum._lo) / max(datum._ovH - datum._room, 1)",
+      "as": "_yhi"
+    },
+    {
+      "calculate": "datum._ovH / (datum._yhi - datum._lo)",
+      "as": "_ppy"
+    },
+    {
+      "calculate": "(datum._yhi - datum._y0) * datum._ppy",
+      "as": "_py0"
+    },
+    {
+      "calculate": "(datum._yhi - datum._y1) * datum._ppy",
+      "as": "_py1"
+    },
+    {
+      "calculate": "datum._yhi * datum._ppy",
+      "as": "_pyZero"
+    },
+    {
+      "calculate": "datum._tot - datum._base",
+      "as": "_delta"
+    },
+    {
+      "calculate": "abs(datum._base + datum._sumVar - datum._tot) > 0.5 * pow(10, -decimals)",
+      "as": "_mismatch"
+    },
+    {
+      "calculate": "!isValid(datum._delta) || abs(datum._delta) * pow(10, decimals) < 0.5 ? null : datum._pol == 0 ? ibcsNeutral : (datum._delta * datum._pol > 0 ? ibcsGood : ibcsBad)",
+      "as": "_dc"
+    },
+    {
+      "calculate": "(abs(datum._delta) * pow(10, decimals) < 0.5 ? format(0, datum._fa) : format(datum._delta, datum._fv)) + (datum._mismatch ? '!' : '')",
+      "as": "_dlbl"
+    },
+    {
+      "calculate": "datum._ovH + 42 + 24",
+      "as": "_TT"
+    },
+    {
+      "calculate": "max(1e-9, (datum._shi - datum._slo) * datum._ppy)",
+      "as": "_spanPx"
+    },
+    {
+      "calculate": "magnifyMinPx / max(1e-9, datum._maxStep * datum._ppy)",
+      "as": "_kNeed"
+    },
+    {
+      "calculate": "max(1, (magnifyPx - 2 * (ibcsFontSize * 1.2 + 4)) / datum._spanPx)",
+      "as": "_kCap"
+    },
+    {
+      "calculate": "pow(10, floor(log(datum._kNeed) / LN10))",
+      "as": "_kE"
+    },
+    {
+      "calculate": "datum._kNeed / datum._kE <= 1 ? datum._kE : datum._kNeed / datum._kE <= 2 ? 2 * datum._kE : datum._kNeed / datum._kE <= 5 ? 5 * datum._kE : 10 * datum._kE",
+      "as": "_kUp"
+    },
+    {
+      "calculate": "pow(10, floor(log(datum._kCap) / LN10))",
+      "as": "_kE2"
+    },
+    {
+      "calculate": "datum._kCap / datum._kE2 >= 5 ? 5 * datum._kE2 : datum._kCap / datum._kE2 >= 2 ? 2 * datum._kE2 : datum._kE2",
+      "as": "_kDown"
+    },
+    {
+      "calculate": "max(1, datum._kUp <= datum._kCap ? datum._kUp : datum._kDown)",
+      "as": "_K"
+    },
+    {
+      "calculate": "datum._TT + ibcsFontSize * 1.2 + 4",
+      "as": "_PT"
+    },
+    {
+      "calculate": "datum._PT + (datum._shi - datum._slo) * datum._ppy * datum._K",
+      "as": "_PB"
+    },
+    {
+      "calculate": "datum._PT + (datum._shi - max(datum._y0, datum._y1)) * datum._ppy * datum._K",
+      "as": "_pTop"
+    },
+    {
+      "calculate": "datum._PT + (datum._shi - min(datum._y0, datum._y1)) * datum._ppy * datum._K",
+      "as": "_pBot"
+    },
+    {
+      "calculate": "datum._PT + (datum._shi - datum._y1) * datum._ppy * datum._K",
+      "as": "_pEnd"
+    },
+    {
+      "calculate": "'Steps ×' + format(datum._K, ',')",
+      "as": "_kLbl"
+    },
+    {
+      "calculate": "datum._lo + height / datum._ppy",
+      "as": "_yTop"
+    }
+  ],
+  "layer": [
+    {
+      "description": "hidden value scale at the drawn px per unit (the marks are placed in px; this scale lets tools read the chart's px per unit)",
+      "mark": {
+        "type": "point",
+        "opacity": 0
+      },
+      "encoding": {
+        "x": {
+          "value": 0
+        },
+        "y": {
+          "field": "_yTop",
+          "type": "quantitative",
+          "scale": {
+            "zero": true,
+            "nice": false
+          },
+          "axis": null
+        }
+      }
+    },
+    {
+      "mark": {
+        "type": "point",
+        "opacity": 0
+      },
+      "encoding": {
+        "x": {
+          "value": 0
+        },
+        "y": {
+          "field": "_lo",
+          "type": "quantitative"
+        }
+      }
+    },
+    {
+      "description": "category axis per group, broken between reference | periods | result (A-11)",
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxis"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAxisWidth"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx - datum._step / 2 + (datum._k == 'variance' ? 0 : datum._step * 0.1)"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "datum._cx + datum._step / 2 - (datum._k == 'variance' ? 0 : datum._step * 0.1)"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._pyZero"
+          }
+        }
+      }
+    },
+    {
+      "description": "assisting lines between column ends, at the running level",
+      "transform": [
+        {
+          "filter": "isValid(datum._nextCx) && datum._k != 'total'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAssist"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAssistWidth"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx + datum._bw / 2"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "datum._nextCx - datum._bw / 2"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._py1"
+          }
+        }
+      }
+    },
+    {
+      "description": "columns: reference notation, floating periodic variances in impact colour (hatched under FC; at least 1 px), result in primary notation",
+      "mark": {
+        "type": "rect",
+        "tooltip": true,
+        "fill": {
+          "expr": "datum._k == 'base' ? (refScenario == 'PY' ? ibcsPY : ibcsPLFill) : datum._k == 'total' ? (minuend == 'FC' ? pbiPatternSVG(ibcsHatch, ibcsFCStripe, ibcsFCGround) : ibcsAC) : (minuend == 'FC' ? pbiPatternSVG(ibcsHatch, datum._c, ibcsFCGround) : datum._c)"
+        },
+        "stroke": {
+          "expr": "datum._k == 'base' ? (refScenario == 'PY' ? null : ibcsPLStroke) : datum._k == 'total' ? (minuend == 'FC' ? ibcsFCStroke : null) : (minuend == 'FC' ? datum._c : null)"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx - datum._bw / 2"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "datum._cx + datum._bw / 2"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "min(datum._py0, datum._py1)"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "max(datum._py0, datum._py1, min(datum._py0, datum._py1) + (datum._k == 'variance' && isValid(datum._c) ? 1 : 0))"
+          }
+        },
+        "tooltip": [
+          {
+            "field": "Category",
+            "type": "nominal"
+          },
+          {
+            "field": "_lbl",
+            "title": "value"
+          }
+        ]
+      }
+    },
+    {
+      "description": "value labels: above a column, below a negative variance; signed variances; in the magnifier tier instead when magnified",
+      "transform": [
+        {
+          "filter": "!(datum._mag && datum._k == 'variance')"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "baseline": {
+          "expr": "datum._k == 'variance' && datum._val < 0 && !datum._zero ? 'top' : 'bottom'"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._k == 'variance' && datum._val < 0 && !datum._zero ? max(datum._py0, datum._py1) + 3 : min(datum._py0, datum._py1) - 3"
+          }
+        },
+        "text": {
+          "field": "_lbl"
+        }
+      }
+    },
+    {
+      "description": "category labels under the overview",
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "baseline": "top",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._ovH + 4"
+          }
+        },
+        "text": {
+          "field": "Category"
+        }
+      }
+    },
+    {
+      "description": "scenario names under the reference and result columns (only when the label does not already name the scenario)",
+      "transform": [
+        {
+          "filter": "datum._k != 'variance'"
+        },
+        {
+          "calculate": "datum._k == 'base' ? refScenario : minuend",
+          "as": "_sc"
+        },
+        {
+          "filter": "!test(regexp('(^|[^A-Za-z])' + datum._sc + '([^A-Za-z]|$)'), toString(datum['Category']))"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "baseline": "top",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._ovH + ibcsFontSize + 7"
+          }
+        },
+        "text": {
+          "field": "_sc"
+        }
+      }
+    },
+    {
+      "description": "total variance: vertical arrow right of the result column, from the reference level to the result level",
+      "transform": [
+        {
+          "filter": "datum._k == 'total'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "datum._dc"
+        },
+        "strokeWidth": {
+          "expr": "ibcsLineAbs"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx + datum._bw / 2 + 10"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "(datum._yhi - datum._base) * datum._ppy"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "(datum._yhi - datum._tot) * datum._ppy"
+          }
+        }
+      }
+    },
+    {
+      "description": "assisting line at the reference level from the result column to the arrow",
+      "transform": [
+        {
+          "filter": "datum._k == 'total'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAssist"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAssistWidth"
+        },
+        "strokeDash": [
+          3,
+          2
+        ]
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx + datum._bw / 2"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "datum._cx + datum._bw / 2 + 14"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "(datum._yhi - datum._base) * datum._ppy"
+          }
+        }
+      }
+    },
+    {
+      "description": "arrowhead at the result level",
+      "transform": [
+        {
+          "filter": "datum._k == 'total' && isValid(datum._dc)"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "filled": true,
+        "opacity": 1,
+        "size": 60,
+        "strokeWidth": 0,
+        "fill": {
+          "expr": "datum._dc"
+        },
+        "shape": {
+          "expr": "datum._delta < 0 ? 'triangle-down' : 'triangle-up'"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx + datum._bw / 2 + 10"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "(datum._yhi - datum._tot) * datum._ppy"
+          }
+        }
+      }
+    },
+    {
+      "description": "arrow label: ΔPY and the total variance, right of the arrow",
+      "transform": [
+        {
+          "filter": "datum._k == 'total'"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "left",
+        "baseline": "middle",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "lineHeight": {
+          "expr": "ibcsFontSize + 1"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx + datum._bw / 2 + 16"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "(datum._yhi - (datum._base + datum._tot) / 2) * datum._ppy"
+          }
+        },
+        "text": {
+          "value": {
+            "expr": "['Δ' + refScenario, datum._dlbl]"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier (CH 4.5): marker around the variances in the overview (their range ± 3 px, highlight colour, 1 px, no fill)",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance' && datum._j == 1"
+        }
+      ],
+      "mark": {
+        "type": "rect",
+        "fill": null,
+        "stroke": {
+          "expr": "ibcsHighlight"
+        },
+        "strokeWidth": 1
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx - datum._step / 2"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "datum._cx - datum._step / 2 + datum._nSteps * datum._step"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "(datum._yhi - datum._shi) * datum._ppy - 3"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "(datum._yhi - datum._slo) * datum._ppy + 3"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: connectors (0.75 px, highlight colour) along the marker's left and right edges down to the tier: they run between category labels, never through one",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance' && datum._j == 1"
+        },
+        {
+          "calculate": "[0, 1]",
+          "as": "_c2"
+        },
+        {
+          "flatten": [
+            "_c2"
+          ]
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsHighlight"
+        },
+        "strokeWidth": 0.75
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._c2 == 0 ? datum._cx - datum._step / 2 : datum._cx - datum._step / 2 + datum._nSteps * datum._step"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "(datum._yhi - datum._slo) * datum._ppy + 3"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "datum._TT"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: tier frame below the overview, at the periods' x",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance' && datum._j == 1"
+        }
+      ],
+      "mark": {
+        "type": "rect",
+        "fill": null,
+        "stroke": {
+          "expr": "ibcsHighlight"
+        },
+        "strokeWidth": 1
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx - datum._step / 2"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "datum._cx - datum._step / 2 + datum._nSteps * datum._step"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._TT"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "datum._TT + magnifyPx"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: caption 'Steps ×k' in the secondary text colour at label size, left of the tier: the tier's scale is stated (CH 4.5)",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance' && datum._j == 1"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "right",
+        "baseline": "top",
+        "dx": -6,
+        "dy": 2,
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsTextSecondary"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx - datum._step / 2"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._TT"
+          }
+        },
+        "text": {
+          "field": "_kLbl"
+        }
+      }
+    },
+    {
+      "description": "magnifier: the tier's value origin (the lowest running total of the variances) as an axis line, extended left of the tier for the zigzag break",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance' && datum._j == 1"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAxis"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAxisWidth"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx - datum._step / 2 - 16"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "datum._cx - datum._step / 2 + datum._nSteps * datum._step - 4"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._PB"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: zigzag axis break left of the tier, on its origin line: the tier does not start at zero",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance' && datum._j == 1"
+        }
+      ],
+      "mark": {
+        "type": "point",
+        "filled": false,
+        "opacity": 1,
+        "stroke": {
+          "expr": "ibcsAxis"
+        },
+        "strokeWidth": 1,
+        "shape": "M-1,0L-0.5,-0.5L0,0.5L0.5,-0.5L1,0",
+        "size": 120,
+        "fill": {
+          "expr": "ibcsBackground"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx - datum._step / 2 - 8"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._PB"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: assisting lines between the variances in the tier",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance' && datum._nextK == 'variance'"
+        }
+      ],
+      "mark": {
+        "type": "rule",
+        "stroke": {
+          "expr": "ibcsAssist"
+        },
+        "strokeWidth": {
+          "expr": "ibcsAssistWidth"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx + datum._bw / 2"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "datum._nextCx - datum._bw / 2"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._pEnd"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: the periodic variances at ×k, at the periods' x",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance'"
+        }
+      ],
+      "mark": {
+        "type": "rect",
+        "fill": {
+          "expr": "minuend == 'FC' ? pbiPatternSVG(ibcsHatch, datum._c, ibcsFCGround) : datum._c"
+        },
+        "stroke": {
+          "expr": "minuend == 'FC' ? datum._c : null"
+        },
+        "strokeWidth": {
+          "expr": "ibcsOutline"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx - datum._bw / 2"
+          }
+        },
+        "x2": {
+          "value": {
+            "expr": "datum._cx + datum._bw / 2"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._pTop"
+          }
+        },
+        "y2": {
+          "value": {
+            "expr": "max(datum._pBot, datum._pTop + (isValid(datum._c) ? 1 : 0))"
+          }
+        }
+      }
+    },
+    {
+      "description": "magnifier: variance labels in the tier only, signed, above growth and below a drop",
+      "transform": [
+        {
+          "filter": "datum._mag && datum._k == 'variance'"
+        }
+      ],
+      "mark": {
+        "type": "text",
+        "align": "center",
+        "fontSize": {
+          "expr": "ibcsFontSize"
+        },
+        "fill": {
+          "expr": "ibcsText"
+        },
+        "baseline": {
+          "expr": "datum._val < 0 && !datum._zero ? 'top' : 'bottom'"
+        }
+      },
+      "encoding": {
+        "x": {
+          "value": {
+            "expr": "datum._cx"
+          }
+        },
+        "y": {
+          "value": {
+            "expr": "datum._val < 0 && !datum._zero ? datum._pBot + 3 : datum._pTop - 3"
+          }
+        },
+        "text": {
+          "field": "_lbl"
+        }
+      }
+    }
+  ],
+  "config": {
+    "view": {
+      "stroke": null
+    }
+  }
+}

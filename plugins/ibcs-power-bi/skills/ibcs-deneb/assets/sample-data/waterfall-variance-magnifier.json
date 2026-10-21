@@ -1,0 +1,9 @@
+[
+ {"Category": "PY", "Kind": "base", "Value": 162.4},
+ {"Category": "North", "Kind": "variance", "Value": 2.1},
+ {"Category": "West", "Kind": "variance", "Value": -3.4},
+ {"Category": "South", "Kind": "variance", "Value": 1.2},
+ {"Category": "East", "Kind": "variance", "Value": -0.6},
+ {"Category": "Other", "Kind": "variance", "Value": 0.02},
+ {"Category": "AC", "Kind": "total", "Value": 161.72}
+]

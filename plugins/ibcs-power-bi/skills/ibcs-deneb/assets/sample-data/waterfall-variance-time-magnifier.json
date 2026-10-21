@@ -1,0 +1,72 @@
+[
+ {
+  "Category": "PY 2025",
+  "Kind": "base",
+  "Value": 48.0
+ },
+ {
+  "Category": "Jan",
+  "Kind": "variance",
+  "Value": 0.6
+ },
+ {
+  "Category": "Feb",
+  "Kind": "variance",
+  "Value": -0.4
+ },
+ {
+  "Category": "Mar",
+  "Kind": "variance",
+  "Value": 0.9
+ },
+ {
+  "Category": "Apr",
+  "Kind": "variance",
+  "Value": 0.3
+ },
+ {
+  "Category": "May",
+  "Kind": "variance",
+  "Value": -0.8
+ },
+ {
+  "Category": "Jun",
+  "Kind": "variance",
+  "Value": 1.1
+ },
+ {
+  "Category": "Jul",
+  "Kind": "variance",
+  "Value": 0.2
+ },
+ {
+  "Category": "Aug",
+  "Kind": "variance",
+  "Value": -0.3
+ },
+ {
+  "Category": "Sep",
+  "Kind": "variance",
+  "Value": 0.7
+ },
+ {
+  "Category": "Oct",
+  "Kind": "variance",
+  "Value": 0.5
+ },
+ {
+  "Category": "Nov",
+  "Kind": "variance",
+  "Value": -0.2
+ },
+ {
+  "Category": "Dec",
+  "Kind": "variance",
+  "Value": 0.0004
+ },
+ {
+  "Category": "AC 2026",
+  "Kind": "total",
+  "Value": 50.6004
+ }
+]

@@ -5,7 +5,8 @@ import type { ImpactKey } from "../impact";
 /** A solid colour, or the FC hatch with its stripe colour (one pattern per stripe colour). */
 export type Fill = string | { hatch: string };
 
-type Base = { role: string; category?: string; impact?: ImpactKey };
+/** `group: "zoom"` marks the magnifier panel of a waterfall (rendered as data-group). */
+type Base = { role: string; category?: string; impact?: ImpactKey; group?: "zoom" };
 
 export type Mark =
   | (Base & { kind: "rect"; x: number; y: number; w: number; h: number; fill?: Fill; stroke?: string; strokeWidth?: number; tooltip?: string })

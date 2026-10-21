@@ -52,6 +52,7 @@ Shared conventions:
 - [6. Budget progress bar (BAC, budget to date, AC to date)](#6-budget-progress-bar-bac-budget-to-date-ac-to-date)
 - [7. Key message with impact-coloured numbers](#7-key-message-with-impact-coloured-numbers)
 - [8. One row per category with all tiers, plus a header row](#8-one-row-per-category-with-all-tiers-plus-a-header-row)
+- [9. Variance waterfall with a magnifying glass (two visuals)](#9-variance-waterfall-with-a-magnifying-glass-two-visuals)
 - [Shared row geometry (GEOM) and px per unit](#shared-row-geometry-geom-and-px-per-unit)
 - [Preview harness](#preview-harness)
 
@@ -648,6 +649,73 @@ Rules:
 - `_S` is the page's px per unit, never a per-measure `MAXX` fit: the block must read on the same
   scale as the month chart (UN 4.1). Δ% pins have their own scale `_SP` (one per page).
 - Rows sort by AC descending via the `<desc>` sort key (`sort_measure` in the table recipe).
+
+## 9. Variance waterfall with a magnifying glass (two visuals)
+
+The form and the rule are the Deneb templates' (`ibcs-deneb` SKILL.md, "Variance waterfalls"): a
+structure bridge is card 29 (IBCS v2.0 p. 112, STD), the total variance an arrow below the result
+bar. When the steps are too short to read on the page scale (OURS: the largest step < 5 % of the
+base, the Deneb knob `magnifyBelow`), CH 4.5 (p. 74, STD) asks to mark the zoomed part, connect it to
+a second chart at a bigger scale and state that scale. In SVG-in-DAX that second chart is a
+**second image column of the same rows**, so the zoomed steps sit on the same row y as the overview:
+
+- Visual 1, the overview: the bridge rows table of skeleton 8's shape (one SVG per row:
+  base, steps, total) at the page px per unit `_S`, steps without labels when magnified.
+- Visual 2, the magnifier: a second image column (or a second `tableEx` placed edge to edge on the
+  right, same row height) whose SVG draws only the steps at `_S × _K`, from the lowest running total
+  `_Lo`, with the signed label; base and total rows stay empty. A header row above it states the
+  scale: "Steps ×k" in `color.text.secondary`, and draws the zigzag axis break at the origin.
+- The marker: every step row draws its part of a 1 px box in the highlight colour around the steps'
+  range ± 3 px in the overview (left and right edges in every step row, the top edge in the first
+  step row, the bottom edge in the last); connectors (0.75 px) run from the box's top and bottom
+  edges to the magnifier's frame in the first and last step rows. Set the table's row padding and
+  grid to 0 (page-shell.md §3) so the row SVGs touch and the box reads as one shape.
+- `_K`: the smallest of 1, 2, 5, 10, 20, 50 … with `_MaxStep × _S × _K ≥ 40` px (OURS), lowered to the
+  next such value when the steps' span would not fit the magnifier's width.
+
+```dax
+-- GEOM of the magnifier (identical in the row and header measures). 'Bridge'[Kind] = base | variance | total;
+-- [Bridge Value] = base/total value or the SIGNED step; [Bridge Start] = running total before the row.
+VAR _S = 2.2  VAR _W = 170  VAR _H = 28  VAR _Lab = 36           -- page px per unit, panel width, row height, label room
+VAR _Base = CALCULATE ( [Bridge Value], REMOVEFILTERS ( 'Bridge' ), 'Bridge'[Kind] = "base" )
+VAR _Steps =
+    CALCULATETABLE (
+        ADDCOLUMNS ( VALUES ( 'Bridge'[Element] ), "@v", [Bridge Value], "@s", [Bridge Start] ),
+        REMOVEFILTERS ( 'Bridge' ), 'Bridge'[Kind] = "variance" )
+VAR _MaxStep = MAXX ( _Steps, ABS ( [@v] ) )
+VAR _Lo = MINX ( _Steps, MIN ( [@s], [@s] + [@v] ) )
+VAR _Hi = MAXX ( _Steps, MAX ( [@s], [@s] + [@v] ) )
+VAR _Mag = NOT ISBLANK ( _Base ) && _MaxStep > 0 && _MaxStep < 0.05 * ABS ( _Base )   -- OURS: magnifyBelow
+VAR _Need = 40 / ( _MaxStep * _S )
+VAR _E = POWER ( 10, FLOOR ( LOG10 ( _Need ), 1 ) )
+VAR _F = _Need / _E
+VAR _KUp = _E * SWITCH ( TRUE (), _F <= 1, 1, _F <= 2, 2, _F <= 5, 5, 10 )
+VAR _Cap = ( _W - 2 * _Lab ) / ( ( _Hi - _Lo ) * _S )
+VAR _E2 = POWER ( 10, FLOOR ( LOG10 ( _Cap ), 1 ) )
+VAR _KDown = _E2 * SWITCH ( TRUE (), _Cap / _E2 >= 5, 5, _Cap / _E2 >= 2, 2, 1 )
+VAR _K = MAX ( 1, IF ( _KUp <= _Cap, _KUp, _KDown ) )
+
+-- SVG Magnifier Row: one step at ×_K; base/total rows and _Mag = FALSE return BLANK
+VAR _Kind = SELECTEDVALUE ( 'Bridge'[Kind] )
+VAR _V = [Bridge Value]  VAR _St = [Bridge Start]
+VAR _X0 = _Lab + ( MIN ( _St, _St + _V ) - _Lo ) * _S * _K
+VAR _X1 = _Lab + ( MAX ( _St, _St + _V ) - _Lo ) * _S * _K
+VAR _T = _H * 0.5
+VAR _Lbl = <the signed label of skeleton 1: a step that rounds to 0 is "0.0", unsigned and uncoloured>
+VAR _Fill = <the impact colour of skeleton 1; no rect when the step rounds to 0>
+RETURN
+    IF ( _Mag && _Kind = "variance",
+        "data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='" & _W & "' height='" & _H & "'>"
+            & "<line x1='" & _Lab & "' y1='0' x2='" & _Lab & "' y2='" & _H & "' stroke='#404040'/>"     -- origin at _Lo
+            & "<rect x='" & _X0 & "' y='" & ( _H - _T ) / 2 & "' width='" & MAX ( 1, _X1 - _X0 ) & "' height='" & _T & "' fill='" & _Fill & "'/>"
+            & "<text x='" & IF ( _V >= 0, _X1 + 3, _X0 - 3 ) & "' y='" & _H / 2 & "' dominant-baseline='central' text-anchor='"
+            & IF ( _V >= 0, "start", "end" ) & "' font-size='12' font-family='Segoe UI'>" & _Lbl & "</text></svg>" )
+```
+
+The header measure draws the caption `"Steps ×" & FORMAT ( _K, "#,0" )` right-aligned and a zigzag
+(`<polyline points='…'>`) on the origin line. Not verified in the Power BI service (as of 2026-10):
+whether stacked `tableEx` rows render without a gap at every zoom level; prefer the Deneb templates
+(`waterfall-variance`, `waterfall-variance-time`), which draw overview and magnifier in one visual.
 
 ## Shared row geometry (GEOM) and px per unit
 

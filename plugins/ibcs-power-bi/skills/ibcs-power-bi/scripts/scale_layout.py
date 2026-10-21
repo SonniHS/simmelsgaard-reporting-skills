@@ -59,6 +59,10 @@ Optional per template member (the docs' extra paddings, so nothing is cut or squ
                              layout crossFixedPx (waterfall-variance 50), else 30
     "planFootnote": false    line-scenarios without its plan footnote (also params showPL false)
     "reservePx": {"pins": 8} extra px per tier on top of its range (a reserve for data-bound ranges)
+    "magnify": true          waterfall-variance / waterfall-variance-time with the magnifying glass active
+                             (largest step < magnifyBelow × base): adds the panel, magnifyPx + 24 px (and the
+                             time template's 42 px label band), to the value-axis dimension for the time
+                             template (tier below) or to the width for waterfall-variance (panel beside)
 
 Proportions (one rule for Power BI and web apps): size the base tier so its largest column is about
 1.5 × the category pitch high when the cell allows (pick maxExtentPx accordingly); absolute Δ tiers
@@ -269,6 +273,10 @@ def member_parts(m: dict, tdir: Path, group_ppu: float | None = None) -> dict:
         fixed += float(reserve.get(tier["id"], 0) or 0)
         if lo < 0:
             fixed += px_sum(tier.get("padLowIfNegative"), params)
+    if m.get("magnify") and "magnifyPx" in params:
+        # the CH 4.5 magnifier panel: beside the overview (waterfall-variance, width = its value axis)
+        # or a tier below it (waterfall-variance-time, height = its value axis, plus its label band)
+        fixed += float(params["magnifyPx"]) + 24 + (42 if lay["valueAxis"] == "height" else 0)
     out = {"dim": lay["valueAxis"], "range": rng, "fixed": fixed}
     if m.get("own"):
         out["ownRange"], out["ownPx"] = own_rng, own_px

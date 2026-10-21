@@ -193,6 +193,10 @@ be one white strip, and with column width < `imageWidth` + 20 it draws a stray "
   order, never on the scale band or its line (column-two-tier-variance does this by itself).
 - **Waterfalls** have a fixed bottom band (category axis and its labels, about 27 px) that is part
   of the template's layout metadata, so `scale_layout.py` includes it; do not add it again.
+  When the magnifying glass is active (largest step < 5 % of the base, OURS), give the member
+  `"magnify": true`: `waterfall-variance` grows by `magnifyPx` + 24 px in width (the panel beside),
+  `waterfall-variance-time` by `magnifyPx` + 66 px in height (the tier below). A bridge on the page
+  scale whose steps would be 1–9 px is exactly this case: magnify it, never give it its own scale.
 - Value labels need room at the right end of bars (and left of negative ones): give
   `scale_layout.py` the longest formatted label (`longestValueLabel`); it names the knob to raise.
 - Two-column blocks (e.g. bars by company left, Δ and Δ% right) stay in one card: one Deneb

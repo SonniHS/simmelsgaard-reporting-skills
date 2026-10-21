@@ -15,7 +15,7 @@ description: >
 
 # IBCS Deneb templates
 
-Status (as of 2026-10): **10 templates done and render-checked** against the IBCS v2.0 figures
+Status (as of 2026-10): **11 templates done and render-checked** against the IBCS v2.0 figures
 (previews in `${CLAUDE_SKILL_DIR}/assets/previews/`). An end-to-end test ran the column and pin
 templates in a live-connected report in the Power BI service; not opened in Desktop by this
 plugin; see "Not verified".
@@ -36,7 +36,8 @@ arithmetic sign, polarity only selects the colour (good / bad / **neutral blue**
 | `pin-relative-variance.vl.json` | `pin-time` | card 8; UN 4.1 | `pin-relative-variance{,-pl,-cost,-wide,-outlier}.png` |
 | `bar-structure-variance.vl.json` | `bar-triangles` / `grouped-bar` (+ triangle tier) + `variance-bar` tier | cards 23–25; EX 4.2; CO 4.2 | `bar-structure-variance{,-py-overlap,-bu-py-triangle,-scale-band}.png` |
 | `waterfall-calculation.vl.json` | `calculation-waterfall` | card 28 | `waterfall-calculation.png` |
-| `waterfall-variance.vl.json` | `variance-waterfall-structure` | card 29 | `waterfall-variance{,-scale-band-highlight}.png` |
+| `waterfall-variance.vl.json` | `variance-waterfall-structure` | card 29; CH 4.5 | `waterfall-variance{,-scale-band-highlight,-magnifier}.png` |
+| `waterfall-variance-time.vl.json` | `variance-waterfall-time` | card 11; CH 4.5 | `waterfall-variance-time{,-magnifier}.png` |
 | `small-multiples-columns.vl.json` | `small-multiples` of `grouped-column` | CO 5.1; CH 4.1 | `small-multiples-columns{,-totals}.png` |
 | `line-scenarios.vl.json` | `line` / `line-grouped` | cards 12, 15; UN 3.2 | `line-scenarios{,-trend}.png` |
 | `stacked-columns.vl.json` | `stacked-column` | A-2; D9 (scenario on the lowest segment) | `stacked-columns.png` |
@@ -124,6 +125,26 @@ Fields, knobs and notes per template are in each file's `usermeta.ibcs` and in
   that value (tokens `color.marker.scaleBandFill` / `scaleBandLine`; in the column chart a narrow
   band at the left edge of the plot with its value label above it, in `color.text.secondary`); set the same round value in every chart of the unit whose
   scales differ (`waterfall-calculation` has the same knob).
+- **Variance waterfalls: one form per card** (the same in web apps, `ibcs-web-charts`). A
+  structure decomposition (by company, product, price/volume/mix) is card 29 (IBCS v2.0 p. 112,
+  STD): rows with horizontal bars, the reference on top, the result at the bottom, the total
+  variance as a horizontal **arrow below the result bar** (`waterfall-variance`). A time
+  decomposition (ΔPY by month) is card 11 (p. 104, STD): reference column | periodic variances |
+  result column on a broken category axis, the total variance as a vertical **arrow right of the
+  result column** (`waterfall-variance-time`). Never an extra bar or column for the total variance.
+  Calculation (card 28) and growth (card 10) waterfalls keep grey/black contributions.
+- **Magnifying glass** (CH 4.5, p. 74, STD: mark the zoomed part, connect it to a second chart at a
+  bigger scale, state that scale). Both variance waterfalls: knob `magnifyBelow` (OURS, default
+  0.05): when the largest step is below 5 % of the base, the steps are drawn again at ×k, k the
+  smallest of 1, 2, 5, 10, 20, 50 … that makes the largest step ≥ `magnifyMinPx` (40) px (OURS).
+  The panel starts at the lowest running total with a zigzag axis break and the caption
+  "Steps ×k" (secondary text colour); a marker (the steps' range ± 3 px, highlight colour, 1 px,
+  no fill) and 0.75 px connectors along its edges link it to the overview. Card 29: the panel
+  beside the overview, rows at the same y; card 11: a tier below, columns at the periods' x.
+  Base, total and the overview steps keep the page px per unit (the 1–9 px hairline steps of a
+  shared scale become this case); step labels move into the panel. Size the container with
+  `scale_layout.py` member option `"magnify": true`. In a narrow container put the panel in a
+  second visual (the SVG-DAX two-visual pattern, `svg-skeletons.md`).
 - **Highlighting ellipse** (UN 5.1): `waterfall-variance` knob `highlight` (the row label) or field
   `Highlight` (1 on that row) circles the value label the key message cites. When the base and
   total bars carry the same label, use the field.

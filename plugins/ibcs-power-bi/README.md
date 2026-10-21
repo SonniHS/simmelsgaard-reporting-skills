@@ -3,9 +3,9 @@
 Build Power BI reports that follow the IBCS® Standards. The plugin decides, per chart or table,
 the cheapest route that reaches the IBCS notation — a native visual with exact `visual.json`
 properties, a Deneb (Vega-Lite) template, an SVG-in-DAX measure, or a certified visual — and ships
-the pieces: a report theme generated from the IBCS design tokens, ten token-driven Deneb
+the pieces: a report theme generated from the IBCS design tokens, eleven token-driven Deneb
 templates with previews (two-tier variance columns, pins, structure bars with triangles,
-calculation and variance waterfalls, small multiples, scenario lines, stacked columns, a relative
+calculation waterfalls, variance waterfalls by structure and over time with a magnifying glass, small multiples, scenario lines, stacked columns, a relative
 scatter, columns by forecast version), scripts to sync your
 organisation's token overrides and inject templates into PBIR, a scaffold for a live-connected
 PBIP report, report-level measure rules for shared models that must not change, SVG measure

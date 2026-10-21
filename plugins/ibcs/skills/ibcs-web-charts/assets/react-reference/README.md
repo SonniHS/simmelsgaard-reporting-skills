@@ -19,10 +19,11 @@ Institute.
 | `src/ibcs/charts/marks.ts` | Mark primitives with roles, text boxes (1.2 em), end-cut and middle-cut names, label spreading | §8 |
 | `src/ibcs/charts/columnTiers.ts` | Columns over time: AC solid, FC hatched after the last closed period, overlapped reference, triangle, ΔREF bars on the base px per unit, ΔREF% pins with px clamps and outliers, end legend at the marks, selection band, highlight ring, scale band, and `alignTiers` for a Total on its own scale | contract §2–3 |
 | `src/ibcs/charts/structureBars.ts` | Bars by category: triangle or overlapped reference, Δ and Δ% tiers, remainder gap, bold total, legend once above the top row | contract §4 |
-| `src/ibcs/charts/varianceWaterfall.ts` | Bridge: base in reference notation, steps by impact (FC hatched), connectors, total-variance marker from the model's Δ, reconciliation warnings | contract §6 |
+| `src/ibcs/charts/varianceWaterfall.ts` | Structure bridge (A-29, rows): base in reference notation, steps by impact (FC hatched), connectors, the total-variance arrow below AC from the model's Δ, reconciliation warnings, and the CH 4.5 magnifier (`magnifyBelow`, `magnifierFactor`) | contract §6 |
+| `src/ibcs/charts/timeWaterfall.ts` | Time bridge (A-11, columns): reference \| periods \| AC on a broken axis, the vertical total-variance arrow right of AC, magnifier tier below | contract §6 |
 | `src/ibcs/charts/MarksSvg.tsx` | Thin renderer: hatch patterns per stripe colour with ids unique per instance, `data-role` / `data-impact`, title, hidden data table, focusable category zones | §7–8 |
 | `src/ibcs/KpiCard.tsx` | KPI card on a Fluent card surface (or square): name with (i), unit line, value, Δ lines with text tokens, pp for ratios, ring on the cited Δ | contract §10 |
-| `src/ibcs/ibcs.test.tsx` | One test per rule of `references/testing.md` (30 tests) | testing |
+| `src/ibcs/ibcs.test.tsx` | One test per rule of `references/testing.md` (47 tests) | testing |
 | `scripts/render-previews.tsx` | Renders `previews/*.svg` and `previews/page.html` from generic sample data | |
 
 Layout functions are pure: `layout(rows, options) → { width, height, marks, warnings, table }`. They
@@ -66,7 +67,7 @@ For a Fabric app, the `ibcs-fabric-app` skill (plugin `fabric-apps`) says where 
 
 Add chart types (line chart, small multiples, tables, a waterfall magnifier, phone stacking of
 structure tiers) as new layout functions next to these, with tests by role. What is deliberately
-left out: line charts, tables, small multiples, the magnifying glass, and stacking structure tiers
+left out: line charts, tables, small multiples, calculation and growth waterfalls, and stacking structure tiers
 on a phone (the layout warns instead).
 
 ## Develop

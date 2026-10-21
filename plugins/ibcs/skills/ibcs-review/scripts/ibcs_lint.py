@@ -898,7 +898,8 @@ def lint_deneb_scale(spec: dict, loc: str, dataset: list):
 DENEB_VALUE_AXIS = {"column-two-tier-variance": "height", "column-version-axis": "height",
                     "stacked-columns": "height", "line-scenarios": "height",
                     "small-multiples-columns": "height", "bar-structure-variance": "width",
-                    "waterfall-variance": "width", "waterfall-calculation": "width"}
+                    "waterfall-variance": "width", "waterfall-calculation": "width",
+                    "waterfall-variance-time": "height"}
 DOMAIN_FIELD = re.compile(r"^(?:YMax|YMin|XMax|XMin|VarMin|VarMax)$")
 DOMAIN_KNOBS = ("yMax", "xMax", "varMin", "varMax")
 CHAR_PX = 7          # ≈ px per character at 9–12 pt Segoe UI (scale_layout.py uses the same estimate)

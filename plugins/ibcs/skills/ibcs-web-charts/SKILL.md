@@ -23,7 +23,7 @@ is [ibcs-review](../ibcs-review/SKILL.md).
 It describes **what a conforming chart component does**, so you can build one with any React/SVG
 stack or bend an existing library into shape. For React it ships a lean, tested reference set in
 `${CLAUDE_SKILL_DIR}/assets/react-reference/` (README there): column chart with variance tiers and
-pins (plus Total alignment), structure bars with triangles and Δ tiers, variance waterfall, KPI
+pins (plus Total alignment), structure bars with triangles and Δ tiers, variance waterfalls (A-29 rows, A-11 columns, with the CH 4.5 magnifier), KPI
 card, number formatting with the rounded-zero rule, and a page scale registry. **Copy its
 `src/ibcs/` into the app and extend it** — new chart types as new layout functions with tests —
 instead of writing these from scratch; read its README first. All colours,
@@ -60,7 +60,7 @@ and `null` for "no value". Full field lists and edge cases: `references/behaviou
 | Variance columns (ΔPY, ΔPL) and vertical pins (ΔPY%) | **Variance rows**: `category`, `value` (absolute raw, or relative as a fraction, `null` = N/A), minuend scenario, optional `impact` (−1/0/+1) |
 | Bar chart by structure (countries, products) with variance tiers | **Structure rows**: `category`, scenarios, optional model variances per tier, `impact`, flags for remainder ("Other") and total |
 | Calculation waterfall (P&L) | **Calculation rows**: `label`, `kind` (base / delta / subtotal / total), **signed** `value` |
-| Variance waterfall (bridge PY → AC) | `base` (scenario + value), `steps` (label, signed delta, impact), `total` |
+| Variance waterfall (bridge PY → AC): structure decomposition A-29 as rows, time decomposition A-11 as columns; magnifier when the steps are small (contract §6) | `base` (scenario + value), `steps` (label, signed delta, impact), `total`, `variance` (the model's total Δ) |
 | Line chart | Period rows; the AC&FC series switches from AC to FC after the last closed period |
 | Small multiples | A list of panels, each with its own period or structure rows, **one shared scale** |
 | Variance table, time-series table, statement (P&L) | **Table rows**: `id`, `label`, `kind` (detail / subtotal / total / remainder / of-which / ratio), `level`, values per column key, `polarity`, `impacts` |

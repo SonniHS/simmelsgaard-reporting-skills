@@ -1,0 +1,72 @@
+[
+ {
+  "Category": "PY",
+  "Kind": "base",
+  "Value": 30.0
+ },
+ {
+  "Category": "Jan",
+  "Kind": "variance",
+  "Value": 3.2
+ },
+ {
+  "Category": "Feb",
+  "Kind": "variance",
+  "Value": -1.4
+ },
+ {
+  "Category": "Mar",
+  "Kind": "variance",
+  "Value": 2.6
+ },
+ {
+  "Category": "Apr",
+  "Kind": "variance",
+  "Value": 1.1
+ },
+ {
+  "Category": "May",
+  "Kind": "variance",
+  "Value": -2.3
+ },
+ {
+  "Category": "Jun",
+  "Kind": "variance",
+  "Value": 4.0
+ },
+ {
+  "Category": "Jul",
+  "Kind": "variance",
+  "Value": 0.6
+ },
+ {
+  "Category": "Aug",
+  "Kind": "variance",
+  "Value": -1.2
+ },
+ {
+  "Category": "Sep",
+  "Kind": "variance",
+  "Value": 2.1
+ },
+ {
+  "Category": "Oct",
+  "Kind": "variance",
+  "Value": 1.4
+ },
+ {
+  "Category": "Nov",
+  "Kind": "variance",
+  "Value": -0.8
+ },
+ {
+  "Category": "Dec",
+  "Kind": "variance",
+  "Value": 1.7
+ },
+ {
+  "Category": "AC",
+  "Kind": "total",
+  "Value": 41.0
+ }
+]

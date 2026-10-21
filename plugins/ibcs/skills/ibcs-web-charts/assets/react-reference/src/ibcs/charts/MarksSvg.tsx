@@ -23,7 +23,7 @@ export function MarksSvg({ layout, title, desc, onSelect, standalone }: MarksSvg
   const stripes = [...new Set(layout.marks.flatMap((m) => ("fill" in m && m.fill && typeof m.fill === "object" ? [m.fill.hatch] : [])))];
   const patternId = (stripe: string) => `${id}-hatch-${stripes.indexOf(stripe)}`;
   const paint = (f: Fill | undefined) => (f == null ? "none" : typeof f === "string" ? f : `url(#${patternId(f.hatch)})`);
-  const data = (m: Mark) => ({ "data-role": m.role, "data-impact": m.impact, "data-category": m.category });
+  const data = (m: Mark) => ({ "data-role": m.role, "data-impact": m.impact, "data-category": m.category, "data-group": m.group });
 
   const svg = (
     <svg

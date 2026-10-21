@@ -5,7 +5,7 @@ IBCS scenario notation, overlapped references, variance pins or a page-wide scal
 from the **reference components** of the `ibcs-web-charts` skill (plugin `ibcs`):
 the folder `react-reference/src/ibcs/` in that skill's assets holds the format, impact and scale modules, the marks and the
 renderer, the column chart with variance tiers and Total alignment (`alignTiers`), structure bars,
-the variance waterfall and the KPI card, with 30 unit tests. Copy that folder to `src/ibcs/` in
+the variance waterfalls (structure A-29 rows and time A-11 columns, each with the CH 4.5 magnifier) and the KPI card, with their unit tests. Copy that folder to `src/ibcs/` in
 the app (it matches the module layout below), regenerate `tokens.generated.ts` with the project's
 overrides, run its tests, and extend it: a new chart type is a new layout function next to the
 others, with tests by role. Do not rewrite what it already implements; in end-to-end tests,
@@ -86,10 +86,15 @@ Rules:
 - **Structure-chart legend header** (scenario names above the bars): at least 1 em between names
   and clear of the first row's markers (triangle, outline end); when crowded, use the end-legend
   rule instead (names at the first or last row's marks).
-- **Waterfall magnifier** (a zoom box on a part of the bars): the end-bar labels never sit on the
-  zoom box's corner or on a connector: reserve label room outside the box (or put the labels
-  above it) and route connectors around the labels; an end label's box clears max(zoom box top,
-  connector y).
+- **Waterfalls** take one form per decomposition (`ibcs-web-charts` behaviour contract §6): a
+  structure decomposition as rows (A-29, `layoutVarianceWaterfall`), a time decomposition as
+  columns on a broken axis (A-11, `layoutTimeWaterfall`), each with the total variance as an arrow
+  (below the AC bar; right of the AC column), never as an extra bar. When the largest step is below
+  5 % of the base (OURS, `magnifyBelow`), the reference functions add the CH 4.5 magnifier: the
+  zoomed range outlined in the overview, a steps-only panel at ×k (beside with aligned rows, or
+  below on a phone; for columns a tier below, each column under its period) with a "Steps ×k"
+  caption and connectors; base and total stay on the page scale. End labels never sit on the zoom
+  box or a connector (an end label's box clears max(zoom box top, connector y)); the tests check it.
 - Generate the token module from the token file with a script; never hand-copy hex values. The
   copied script's default `--tokens` path points into the skill folder, so always pass the paths
   in a `tokens` npm script:

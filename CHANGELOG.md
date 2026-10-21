@@ -53,6 +53,14 @@ All notable changes to this marketplace and its plugins. The format follows
 - Web reference components: label collision by priority against every mark of the tier, two-line
   names, a `keep` list for cited values, scale-band label, year line; contract and chart layer updated.
 
+### Changed (waterfalls)
+- One form per waterfall type in every renderer, chosen by the category type: structure decompositions
+  as rows (card A-29, total variance as an arrow below AC), time decompositions as columns (card A-11,
+  new Deneb template `waterfall-variance-time`, web `layoutTimeWaterfall`, arrow right of AC).
+- Magnifying glass (CH 4.5) in web, Deneb and SVG-DAX (two-visual pattern): a steps-only panel at ×k
+  when the largest step is under 5 % of the base (our default, knob `magnifyBelow`); base and total
+  stay on the page scale.
+
 ## [0.1.0] - 2026-10-20
 
 ### Added

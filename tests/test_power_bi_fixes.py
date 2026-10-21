@@ -151,3 +151,44 @@ class Rev4Defaults(unittest.TestCase):
         self.assertNotIn("legendSide", TEMPLATE.read_text())
         pins = json.loads((TEMPLATE.parent / "pin-relative-variance.vl.json").read_text())
         self.assertEqual({p["name"]: p.get("value") for p in pins["params"]}["clipPct"], 1)
+
+
+class Waterfalls(unittest.TestCase):
+    """S1: one form per waterfall card, the total variance as an arrow, a CH 4.5 magnifier."""
+
+    TEMPLATES = SKILLS / "ibcs-deneb/assets/templates"
+    SCALE_LAYOUT = SKILLS / "ibcs-power-bi/scripts/scale_layout.py"
+
+    def spec(self, name):
+        return json.loads((self.TEMPLATES / f"{name}.vl.json").read_text(encoding="utf-8"))
+
+    def test_both_variance_waterfalls_have_an_arrow_and_a_magnifier(self):
+        for name, card in (("waterfall-variance", "EX 1.1 card 29"), ("waterfall-variance-time", "EX 1.1 card 11")):
+            s = self.spec(name)
+            meta = s["usermeta"]["ibcs"]
+            self.assertIn(card, meta["cards"])
+            self.assertIn("CH 4.5", meta["cards"])
+            params = {p["name"]: p.get("value") for p in s["params"]}
+            self.assertEqual(params["magnifyBelow"], 0.05, name)   # OURS, a knob
+            self.assertIn("magnifyBelow", meta["knobs"])
+            descs = " | ".join(layer.get("description", "") for layer in s["layer"])
+            self.assertIn("arrow", descs, name)
+            self.assertIn("zigzag", descs, name)
+            self.assertNotIn("variance bar", descs.lower(), name)   # never an extra bar/column
+            # the overview's step labels move into the panel when magnified
+            self.assertIn("datum._mag", json.dumps(s["layer"]))
+
+    def test_magnified_waterfalls_reserve_the_panel(self):
+        def size(member):
+            with tempfile.TemporaryDirectory() as tmp:
+                g = Path(tmp) / "g.json"
+                g.write_text(json.dumps({"pxPerUnit": 3, "members": [member]}))
+                p = subprocess.run([sys.executable, "-I", "-B", str(self.SCALE_LAYOUT), str(g), "--json"],
+                                   capture_output=True, text=True)
+            self.assertEqual(p.returncode, 0, p.stderr)
+            return json.loads(p.stdout)["members"][0]["containerPx"]
+
+        bar = {"id": "b", "template": "waterfall-variance", "tiers": {"waterfall": [0, 165]}, "longestLabel": "North"}
+        self.assertEqual(size(dict(bar, magnify=True)) - size(bar), 170 + 24)
+        col = {"id": "t", "template": "waterfall-variance-time", "tiers": {"waterfall": [0, 52]}}
+        self.assertEqual(size(dict(col, magnify=True)) - size(col), 150 + 24 + 42)

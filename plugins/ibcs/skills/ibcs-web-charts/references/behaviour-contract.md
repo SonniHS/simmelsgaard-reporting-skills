@@ -214,35 +214,66 @@ Data: `{ label, kind: "base" | "delta" | "subtotal" | "total", value }`, delta `
 
 ## 6. Variance waterfall (bridge)
 
-Data: `{ base: { label, scenario, value }, steps: [{ label, delta, impact?, remainder? }], total: { label, scenario, value }, variance: { code, value, impact } }`.
+Data: `{ base: { label, scenario, value }, steps: [{ label, delta, impact?, remainder?, fc? }], total: { label, scenario, value }, variance: { code, value, impact } }`.
 
 `variance` is the model's total Δ (e.g. ΔPY with its impact) from the same query; the chart never
 computes it as total − base (the data contract forbids client-side variances).
 
-- Base in reference notation (e.g. PY), steps coloured by impact (FC steps hatched), total in AC
-  (or FC) notation. Variance bridges colour by impact; only calculation waterfalls use greys.
-- A total-variance marker (arrow plus "ΔPY −2.1") between base and total, from `variance`.
-- Orientation bars (structure contributions) or columns (time, PY → Q1..Q4 → AC).
-- Warn when base + Σ steps ≠ total, or `variance.value` ≠ total − base (OURS tolerance 0.5 %);
-  offer a remainder step. Steps come from `Ibcs.DeltaMember` (or the same query-scoped member
-  rule) so discontinued and new members count.
-- Magnifying glass (CH 4.5) when the largest step is shorter than the minimum readable bar
-  (OURS: 8 px) on the page scale. Geometry: the overview keeps base, total and the steps on the
-  page px/unit; beside it (columns) or below it (bars) a detail panel draws only the steps on a
-  factor scale `k` = the smallest of 1, 2, 5, 10, 20, 50 … that makes the largest step ≥ 40 px,
-  starting from the running total at the first step (cut axis: a zigzag break mark on the value
-  axis, the panel header "Steps ×k"). Connector lines join each step in the overview to its row
-  in the panel; labels sit in the panel only. Bars: when the cell is wide enough for the overview
-  plus the panel with its label rooms, put the panel **beside** the overview with its step rows on
-  the same y as the overview rows (category labels once, at the left; OURS) — the default "below"
-  repeats every label and leaves a wide cell half empty. At phone width the panel goes below the
-  overview.
-  Without room for a panel, keep the page scale and rely on the step labels; never enlarge steps
-  inside the overview (two scales in one plot).
-  Labels and the magnifier: the base and total labels and the end-bar labels never sit on the
-  zoom box's corner or on a connector line; reserve their label room outside the box (or place
-  them above it) and route the connectors around labels: an end label's box clears
-  max(zoom box top, connector y). Test: no label box intersects the zoom box outline or a connector.
+**One canonical form per decomposition, chosen by the category type** (the same in every renderer:
+web, Deneb, SVG-DAX). Tags: STD = stated by IBCS v2.0 (page), FIG = measured from an IBCS figure,
+OURS = our default.
+
+| Decomposition | Card | Form |
+|---|---|---|
+| Structure (companies, products, drivers such as price / volume / mix) | A-29 (STD, p. 112) | Vertical: one row per element, horizontal bars |
+| Time (ΔPY by month or quarter) | A-11 (STD, p. 104) | Horizontal: columns over a broken category axis |
+| Calculation (P&L lines) | A-28 | §5: grey additions, AC-coloured subtractions, never impact colours |
+| Growth / stock (opening, changes, closing) | A-10 | Its own card, grey and black, never impact colours |
+
+**A-29, structure** (`layoutVarianceWaterfall`):
+
+- The reference base bar on top in its scenario notation (PY light, PL/BU outlined, FC hatched),
+  the AC (or FC) total bar at the bottom; their names in the category column (STD).
+- Contributions float from the running total, coloured by impact (FC steps hatched in the impact
+  colour), signed labels left of negative bars and right of positive ones (STD); a remainder row
+  when the elements do not add up (OURS: warn above 0.5 % and offer it).
+- Assisting lines join the bar ends (STD).
+- The total variance is a **horizontal arrow below the total bar**, from the reference level to the
+  AC level, labelled with the code and value ("ΔPY −2.1"), in the impact colour (STD). Never an
+  extra bar or column.
+- Steps come from `Ibcs.DeltaMember` (or the same query-scoped member rule) so discontinued and new
+  members count.
+
+**A-11, time** (`layoutTimeWaterfall`):
+
+- Columns: the reference column, the floating periodic Δ columns, then the AC column (STD); the
+  category axis is **broken** into the groups reference | periods | AC, with a gap between the
+  groups (STD; gap of half a step, OURS).
+- Signed Δ labels above rising and below falling columns; value labels above the two end columns.
+- The total variance is a **vertical arrow right of the AC column**, from the reference level to
+  the AC level, with its label to the right (STD).
+
+**Magnifier (CH 4.5, STD p. 74).** IBCS asks to mark the zoomed part, link it to a second chart at a
+larger scale, and state that chart's scale. Our implementation:
+
+- Trigger (OURS, knob `magnifyBelow`): the largest contribution is below **5 % of the base**. Also
+  warn when the largest step is below 8 px on the page scale and no magnifier is drawn.
+- Factor `k` (OURS): the smallest of 1, 2, 5, 10, 20, 50 … that makes the largest step ≥ 40 px.
+- The overview keeps base, total and the steps on the **page** px per unit (never enlarge steps
+  inside it: two scales in one plot). The zoomed range is outlined (`zoom-box`, the highlight
+  colour) and joined to the panel by connectors (`magnifier-connector`).
+- The panel draws the **steps only**, at k × the page scale, from the lowest running total, with a
+  cut value axis (zigzag) and the caption "Steps ×k" (STD: state the scale). Step labels sit in the
+  panel only.
+- A-29: the panel goes **beside** the overview with its rows on the same y (names once, at the left)
+  when the cell is wide enough; otherwise (phone) **below**, with the names repeated. A-11: a steps
+  tier **below** the overview, each column under its period.
+- Labels never sit on the zoom box or a connector: connectors run along the box's edges and above
+  the panel caption, clear of the end labels and the variance arrow; an end label's box clears
+  max(zoom box top, connector y). Test: no label box intersects the box outline or a connector.
+- Without room for any panel, keep the page scale, rely on the step labels and warn.
+
+- Warn when base + Σ steps ≠ total, or `variance.value` ≠ total − base (OURS tolerance 0.5 %).
 - Hatched FC steps in impact colours: one pattern per stripe colour, ids unique per chart.
 
 ## 7. Line chart

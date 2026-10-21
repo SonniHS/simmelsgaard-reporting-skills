@@ -14,7 +14,7 @@ AC, on rounded cards. Source and tests:
 
 ## Deneb templates for Power BI
 
-The `ibcs-deneb` skill (plugin `ibcs-power-bi`): ten token-driven Vega-Lite templates, previewed
+The `ibcs-deneb` skill (plugin `ibcs-power-bi`): eleven token-driven Vega-Lite templates, previewed
 with the Vega version that Deneb 2.0 bundles. More variants (narrow, all-negative, outliers, scale
 bands) are in [the previews folder](../plugins/ibcs-power-bi/skills/ibcs-deneb/assets/previews/),
 and the knobs of each template are in
@@ -26,6 +26,8 @@ and the knobs of each template are in
 | ![Two charts in one scale group: the smaller one is shorter, never stretched](../plugins/ibcs-power-bi/skills/ibcs-deneb/assets/previews/column-two-tier-variance-scale-group.png) | Months and a Total on their own scales with aligned tiers |
 | ![Structure bars with triangles, ΔBU bars and ΔBU% pins](../plugins/ibcs-power-bi/skills/ibcs-deneb/assets/previews/bar-structure-variance-bu-py-triangle.png) | Structure bars with triangles, ΔBU bars and ΔBU% pins |
 | ![Variance waterfall (bridge) from PY to AC](../plugins/ibcs-power-bi/skills/ibcs-deneb/assets/previews/waterfall-variance.png) | Variance waterfall (bridge) from PY to AC |
+| ![Bridge with a magnifier](../plugins/ibcs-power-bi/skills/ibcs-deneb/assets/previews/waterfall-variance-magnifier.png) | Bridge whose steps are under 5 % of the base: a steps-only panel at ×k (CH 4.5) |
+| ![Time bridge](../plugins/ibcs-power-bi/skills/ibcs-deneb/assets/previews/waterfall-variance-time.png) | Variance waterfall over time (card A-11): PY, monthly Δ, AC |
 | ![Calculation waterfall (P&L)](../plugins/ibcs-power-bi/skills/ibcs-deneb/assets/previews/waterfall-calculation.png) | Calculation waterfall (P&L) |
 | ![Line chart: AC&FC with PY and BU](../plugins/ibcs-power-bi/skills/ibcs-deneb/assets/previews/line-scenarios.png) | Line chart: AC&FC with PY and BU |
 | ![Relative variance pins](../plugins/ibcs-power-bi/skills/ibcs-deneb/assets/previews/pin-relative-variance.png) | Relative variance pins |

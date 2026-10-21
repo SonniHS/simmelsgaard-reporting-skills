@@ -22,7 +22,7 @@ Write at least one test per rule; each is a few lines with any test runner (Vite
 | Shared scale | Two charts of one unit with different extents get the same px per unit; the smaller chart is shorter. Absolute variance tier uses the base unit; pins use `"%"`. |
 | Fixed scale | A fixed px per unit is used exactly; the chart grows and warns. |
 | Outliers | A flagged relative value (pin) does not set the extent, is truncated with a marker, keeps its full label. An `outlier` flag on an absolute bar or total is ignored with a warning. |
-| Waterfalls | Running totals; subtotal mismatch and bridge mismatch raise warnings. |
+| Waterfalls | Running totals; subtotal mismatch and bridge mismatch raise warnings; the form follows the decomposition (structure rows A-29, time columns A-11) and the total variance is an arrow, not a bar; below the magnifier threshold the steps appear again in a panel at ×k (the smallest of 1, 2, 5, 10 … giving ≥ 40 px) while base and total keep the page scale; no label box meets the zoom box outline or a connector. |
 | Formatting | One factor and decimals per scale group; an explicit spec `display` wins over the automatic rule; signed variances; `pp`; separators from the tokens or the chosen locale. |
 | Labels | Thinning keeps first, last, highest, lowest. |
 

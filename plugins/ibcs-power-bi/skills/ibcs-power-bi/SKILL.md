@@ -85,7 +85,7 @@ footnoted compromise:
 | `kpi-cards` (B-T-KPI) | SVG KPI card measures in one `tableEx` ([ibcs-svg-dax](../ibcs-svg-dax/SKILL.md) skeleton 4) | the new card cannot colour Δ and Δ% by polarity with a rounded-zero rule, nor lay out several comparisons per card |
 | `pin-time`, `pin-structure` | Deneb (chart) / SVG (table) | no native pin head, no N/A rule |
 | multi-tier (CO 4.2) | Deneb `column-two-tier-variance` (ΔX% pins as a third tier: `pinTier`; a second variance tier alone: `showBase: false`) / `bar-structure-variance` | one scale guaranteed; all tiers in one visual cannot drift apart under filtering |
-| `calculation-waterfall`, `variance-waterfall-structure` | Deneb | native waterfall is column-only and colours by sign |
+| `calculation-waterfall`, `variance-waterfall-structure`, `variance-waterfall-time` | Deneb (`waterfall-calculation`, `waterfall-variance` card 29, `waterfall-variance-time` card 11) | native waterfall is column-only, colours by sign and has no total-variance arrow or magnifying glass (CH 4.5) |
 | `small-multiples` | native (shared axis) or Deneb | native is fine without FC |
 | `line`, `line-grouped` | native for AC/PY; Deneb when FC/PL markers matter | no hatched or hollow markers natively |
 | `table-variance`, `table-time` | native matrix + SVG columns | scenario header rules need SVG or a footnote |

@@ -8,7 +8,7 @@ import { fileURLToPath } from "node:url";
 import { renderToStaticMarkup } from "react-dom/server";
 import {
   KpiCard, MarksSvg, alignTiers, fitLines, overlaps, formatDelta, formatPercentDelta, formatPp, formatValue, impactFill, impactKey, impactText,
-  layoutColumnTiers, layoutStructureBars, layoutVarianceWaterfall, markBox, pickScale, pxPerUnit, tokens,
+  layoutColumnTiers, layoutStructureBars, layoutTimeWaterfall, layoutVarianceWaterfall, magnifierFactor, markBox, pickScale, pxPerUnit, tokens,
   type ColumnTiersOptions, type Layout, type Mark, type PeriodRow,
 } from "./index";
 
@@ -279,6 +279,128 @@ describe("variance waterfall", () => {
   it("warns when the bridge does not reconcile", () => {
     const l = layoutVarianceWaterfall({ ...bridge, total: { ...bridge.total, value: 12e6 } }, { width: 520, ppu: 30 / 1e6, scale });
     expect(l.warnings.join()).toMatch(/remainder/);
+  });
+
+  // Small contributions next to a large base: the magnifier case (CH 4.5; 5 % trigger is OURS).
+  const small = {
+    base: { label: "PY", scenario: "PY" as const, value: 40e6 },
+    steps: [{ label: "Volume", delta: 0.6e6 }, { label: "Price", delta: 0.3e6 }, { label: "Mix", delta: -0.2e6 }, { label: "Currency", delta: -0.1e6 }],
+    total: { label: "AC", scenario: "AC" as const, value: 40.6e6 },
+    variance: { code: "ΔPY", value: 0.6e6 },
+  };
+  const zo = { ppu: 8 / 1e6, scale };
+  const inZoom = (l: Layout) => l.marks.filter((m) => m.group === "zoom");
+  it("magnifies when the largest step is below 5 % of the base, with the smallest k from 1, 2, 5, 10 …", () => {
+    expect(magnifierFactor(0.6e6 * zo.ppu)).toBe(10); // 4.8 px → ×10 = 48 px ≥ 40
+    expect(magnifierFactor(25)).toBe(2);
+    expect(magnifierFactor(40)).toBe(1);
+    const l = layoutVarianceWaterfall(small, { width: 760, ...zo });
+    expect(byRole(l, "zoom-box")).toHaveLength(1);
+    expect(byRole(l, "magnifier-caption").map((m) => (m.kind === "text" ? m.text : ""))).toEqual(["Steps ×10"]);
+    expect(byRole(l, "magnifier-connector")).toHaveLength(2);
+    expect(layoutVarianceWaterfall(bridge, { width: 520, ppu: 30 / 1e6, scale }).marks.some((m) => m.role === "zoom-box")).toBe(false);
+    expect(layoutVarianceWaterfall(small, { width: 760, ...zo, magnifyBelow: 0 }).marks.some((m) => m.role === "zoom-box")).toBe(false);
+  });
+  it("keeps base and total on the page scale and draws the steps ×k in the panel only", () => {
+    const l = layoutVarianceWaterfall(small, { width: 760, ...zo });
+    expect(rect(l.marks.find((m) => m.role === "bar-PY")).w).toBeCloseTo(40e6 * zo.ppu);
+    expect(rect(l.marks.find((m) => m.role === "bar-AC")).w).toBeCloseTo(40.6e6 * zo.ppu);
+    const panelVol = rect(inZoom(l).find((m) => m.role === "variance" && m.category === "Volume"));
+    expect(panelVol.w).toBeCloseTo(0.6e6 * zo.ppu * 10);
+    // step labels only in the panel
+    const stepLabels = l.marks.filter((m) => m.role === "variance-label" && m.category && m.category !== "AC" && m.category !== "PY");
+    expect(stepLabels.every((m) => m.group === "zoom")).toBe(true);
+  });
+  it("aligns the panel rows with the overview rows when it sits beside, and moves it below on a phone", () => {
+    const l = layoutVarianceWaterfall(small, { width: 760, ...zo });
+    for (const cat of ["Volume", "Price", "Mix", "Currency"]) {
+      const ov = rect(l.marks.find((m) => m.role === "variance" && m.category === cat && !m.group));
+      const pz = rect(inZoom(l).find((m) => m.role === "variance" && m.category === cat));
+      expect(pz.y).toBeCloseTo(ov.y);
+      expect(pz.x).toBeGreaterThan(ov.x);
+    }
+    const phone = layoutVarianceWaterfall(small, { width: 390, ppu: 5 / 1e6, scale });
+    expect(phone.warnings).toEqual([]);
+    const box = rect(phone.marks.find((m) => m.role === "zoom-box"));
+    const pz = rect(inZoom(phone).find((m) => m.role === "variance" && m.category === "Volume"));
+    expect(pz.y).toBeGreaterThan(box.y + box.h);
+    expect(inZoom(phone).some((m) => m.role === "category")).toBe(true); // names repeated below
+  });
+  it("puts no label on the zoom box outline or a connector, and keeps labels inside the chart", () => {
+    for (const [width, ppu] of [[390, 5 / 1e6], [760, zo.ppu]] as const) {
+      const l = layoutVarianceWaterfall(small, { width, ppu, scale });
+      expect(l.warnings).toEqual([]);
+      const zb = rect(l.marks.find((m) => m.role === "zoom-box"));
+      const edges = [
+        { x: zb.x, y: zb.y, w: zb.w, h: 0 }, { x: zb.x, y: zb.y + zb.h, w: zb.w, h: 0 },
+        { x: zb.x, y: zb.y, w: 0, h: zb.h }, { x: zb.x + zb.w, y: zb.y, w: 0, h: zb.h },
+        ...byRole(l, "magnifier-connector").map(markBox),
+      ];
+      for (const t of l.marks.filter((m) => m.kind === "text")) {
+        const b = markBox(t);
+        for (const e of edges) expect(overlaps(b, e), `${(t as { text: string }).text} at ${width}`).toBe(false);
+        expect(b.x).toBeGreaterThanOrEqual(-0.5);
+        expect(b.x + b.w).toBeLessThanOrEqual(l.width + 0.5);
+        expect(b.y + b.h).toBeLessThanOrEqual(l.height + 0.5);
+      }
+    }
+  });
+});
+
+describe("time waterfall (A-11)", () => {
+  const byQuarter = {
+    base: { label: "PY", scenario: "PY" as const, value: 10e6 },
+    steps: [{ label: "Q1", delta: 0.8e6 }, { label: "Q2", delta: -0.3e6 }, { label: "Q3", delta: 0.5e6 }, { label: "Q4", delta: 0.0002e6 }],
+    total: { label: "AC", scenario: "AC" as const, value: 11.0002e6 },
+    variance: { code: "ΔPY", value: 1.0002e6 },
+  };
+  const l = layoutTimeWaterfall(byQuarter, { width: 520, ppu: 12 / 1e6, scale });
+  it("draws reference | periods | AC on a broken axis with floating Δ columns", () => {
+    expect(byRole(l, "axis")).toHaveLength(3);
+    expect(byRole(l, "col-PY")).toHaveLength(1);
+    expect(byRole(l, "col-AC")).toHaveLength(1);
+    const q2 = rect(l.marks.find((m) => m.role === "variance" && m.category === "Q2"));
+    expect(q2.fill).toBe(C.variance.bad);
+    expect(q2.h).toBeCloseTo(0.3e6 * 12 / 1e6);
+    // Q4 rounds to zero: no column, an unsigned label
+    expect(l.marks.some((m) => m.role === "variance" && m.category === "Q4" && m.kind === "rect")).toBe(false);
+    expect(l.marks.find((m) => m.role === "variance-label" && m.category === "Q4")).toMatchObject({ text: "0.0", impact: "none" });
+  });
+  it("draws the total variance as a vertical arrow right of the AC column", () => {
+    const ac = rect(l.marks.find((m) => m.role === "col-AC"));
+    const arrow = l.marks.find((m) => m.role === "variance" && m.kind === "line");
+    expect(arrow?.kind === "line" && arrow.x1 === arrow.x2 && arrow.x1 > ac.x + ac.w).toBe(true);
+    expect(byRole(l, "variance-label").some((m) => m.kind === "text" && m.text === "ΔPY +1.0")).toBe(true);
+  });
+  const tinyQ = { ...byQuarter, base: { ...byQuarter.base, value: 100e6 }, total: { ...byQuarter.total, value: 101.0002e6 }, variance: { code: "ΔPY", value: 1.0002e6 } };
+  const tiny = layoutTimeWaterfall(tinyQ, { width: 520, ppu: 1.2 / 1e6, scale });
+  it("keeps every label inside the chart, clear of the zoom box and the connectors", () => {
+    for (const lay of [l, tiny]) {
+      expect(lay.warnings).toEqual([]);
+      const zb = lay.marks.find((m) => m.role === "zoom-box");
+      const edges = zb && zb.kind === "rect"
+        ? [{ x: zb.x, y: zb.y, w: zb.w, h: 0 }, { x: zb.x, y: zb.y + zb.h, w: zb.w, h: 0 }, { x: zb.x, y: zb.y, w: 0, h: zb.h }, { x: zb.x + zb.w, y: zb.y, w: 0, h: zb.h }, ...byRole(lay, "magnifier-connector").map(markBox)]
+        : [];
+      for (const m of lay.marks.filter((x) => x.kind === "text")) {
+        const b = markBox(m);
+        expect(b.x).toBeGreaterThanOrEqual(-0.5);
+        expect(b.x + b.w).toBeLessThanOrEqual(lay.width + 0.5);
+        expect(b.y).toBeGreaterThanOrEqual(-0.5);
+        expect(b.y + b.h).toBeLessThanOrEqual(lay.height + 0.5);
+        for (const e of edges) expect(overlaps(b, e), (m as { text: string }).text).toBe(false);
+      }
+    }
+  });
+  it("magnifies small periodic Δ in a tier below, each column under its period, base and AC on the page scale", () => {
+    expect(byRole(tiny, "magnifier-caption").map((m) => (m.kind === "text" ? m.text : ""))).toEqual([`Steps ×${magnifierFactor(0.8e6 * 1.2 / 1e6)}`]);
+    const k = magnifierFactor(0.8e6 * 1.2 / 1e6);
+    const ov = rect(tiny.marks.find((m) => m.role === "variance" && m.category === "Q1" && !m.group));
+    const pz = rect(tiny.marks.find((m) => m.role === "variance" && m.category === "Q1" && m.group === "zoom"));
+    expect(pz.x).toBeCloseTo(ov.x);
+    expect(pz.h).toBeCloseTo(0.8e6 * 1.2 / 1e6 * k);
+    expect(pz.y).toBeGreaterThan(ov.y + ov.h);
+    expect(rect(tiny.marks.find((m) => m.role === "col-PY")).h).toBeCloseTo(100e6 * 1.2 / 1e6);
+    expect(tiny.marks.filter((m) => m.role === "variance-label" && /^Q/.test(m.category ?? "")).every((m) => m.group === "zoom")).toBe(true);
   });
 });
 

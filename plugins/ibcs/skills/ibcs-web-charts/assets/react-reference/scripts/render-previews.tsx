@@ -8,7 +8,7 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 import {
   KpiCard, MarksSvg, alignTiers, cardSurface, columnTiersExtents, layoutColumnTiers, layoutStructureBars,
-  layoutVarianceWaterfall, pickScale, pxPerUnit, structureExtents, tokens, type Layout, type PeriodRow,
+  layoutTimeWaterfall, layoutVarianceWaterfall, pickScale, pxPerUnit, structureExtents, tokens, type Layout, type PeriodRow,
 } from "../src/ibcs";
 
 const out = join(fileURLToPath(new URL(".", import.meta.url)), "../previews");
@@ -80,11 +80,35 @@ const totalL = layoutColumnTiers(total, { ...base, width: W.total, ppu: ppu.get(
 const structL = layoutStructureBars(structure, { width: W.half, reference: "BU", ppu: ppu.get("EUR:ytd")!, pctPpu: pct, scale: ytdScale, polarity: 1, highlight: { category: "Region West", tier: "delta" } });
 const bridgeL = layoutVarianceWaterfall(bridge, { width: W.half, ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1 });
 
+// Small contributions next to a large base: the magnifier case (CH 4.5). Costs: polarity -1.
+const costBridge = {
+  base: { label: "BU", scenario: "BU" as const, value: 7.70e6 },
+  steps: [
+    { label: "Personnel", delta: 0.21e6 },
+    { label: "Rent", delta: -0.04e6 },
+    { label: "IT services", delta: 0.09e6 },
+    { label: "Travel", delta: -0.11e6 },
+  ],
+  total: { label: "AC", scenario: "AC" as const, value: 7.85e6 },
+  variance: { code: "ΔBU", value: 0.15e6 },
+};
+const costL = layoutVarianceWaterfall(costBridge, { width: W.half, ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: -1 });
+// A time decomposition (A-11): PY → ΔPY by quarter → AC, small steps, magnifier tier below.
+const quarterBridge = {
+  base: { label: "PY", scenario: "PY" as const, value: 30.0e6 },
+  steps: [{ label: "Q1", delta: 0.42e6 }, { label: "Q2", delta: -0.13e6 }, { label: "Q3", delta: 0.47e6 }],
+  total: { label: "AC", scenario: "AC" as const, value: 30.76e6 },
+  variance: { code: "ΔPY", value: 0.76e6 },
+};
+const quarterL = layoutTimeWaterfall(quarterBridge, { width: W.half, ppu: ppu.get("EUR:ytd")!, scale: ytdScale, polarity: 1 });
+
 const charts: [string, Layout, string][] = [
   ["column-tiers", monthsL, "Revenue in mEUR, 2026 AC&FC vs BU and PY, by month"],
   ["column-tiers-total", totalL, "Revenue in mEUR, 2026 AC&FC vs BU and PY, total (own scale)"],
   ["structure-bars", structL, "Revenue in mEUR, Jan..Sep 2026 AC vs BU, by region"],
   ["variance-waterfall", bridgeL, "Revenue in mEUR, Jan..Sep 2026 PY to AC"],
+  ["variance-waterfall-magnifier", costL, "Operating costs in mEUR, Jan..Sep 2026 BU to AC, by cost type"],
+  ["time-waterfall", quarterL, "Revenue in mEUR, Jan..Sep 2026 PY to AC, by quarter"],
 ];
 for (const [name, layout, title] of charts) {
   for (const w of layout.warnings) console.warn(`${name}: ${w}`);
@@ -120,6 +144,10 @@ const page = (
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
       <Card title="Revenue in mEUR" sub="Jan..Sep 2026 AC vs BU, by region"><MarksSvg layout={structL} title={charts[2]![2]} /></Card>
       <Card title="Revenue in mEUR" sub="Jan..Sep 2026, PY to AC"><MarksSvg layout={bridgeL} title={charts[3]![2]} /></Card>
+    </div>
+    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
+      <Card title="Operating costs in mEUR" sub="Jan..Sep 2026, BU to AC, by cost type (steps magnified)"><MarksSvg layout={costL} title={charts[4]![2]} /></Card>
+      <Card title="Revenue in mEUR" sub="Jan..Sep 2026, PY to AC, by quarter (steps magnified)"><MarksSvg layout={quarterL} title={charts[5]![2]} /></Card>
     </div>
     <footer style={{ fontSize: 12, color: tokens.color.text.secondary }}>¹ The Total has its own scale; the blue scale band is 2.0 mEUR in both charts. Sample data.</footer>
   </main>
