@@ -64,7 +64,8 @@ would otherwise show something the IBCS Standards advise against.
    normal relative variance.
 5. **Polarity selects colour only.** `VarianceDirection` +1 (more is better), −1 (less is
    better), 0 (neutral → blue). Never multiply a plotted value by it; geometry follows the
-   arithmetic sign of the displayed variance. A variance of exactly 0 gets no colour.
+   arithmetic sign of the displayed variance. A variance that is 0, or rounds to 0 at the
+   displayed scale and decimals, gets no colour and no sign.
 6. **Store in P&L sign, compare in display sign.** Amounts are stored revenue +, cost − (so
    subtotals are plain sums); `[Report Value]` multiplies by `'Report Line'[DisplaySign]` so
    revenue, cost and profit lines appear as an IBCS P&L shows them (costs positive). All Δ
@@ -72,7 +73,10 @@ would otherwise show something the IBCS Standards advise against.
    PL 20.8, AC 20.0 → ΔPL −0.8, ΔPL% −3.8 %, impact good (green), bar drawn to the left.
 7. **One scale per object**, values unscaled; scaling happens in format strings; unit in the
    title (`mEUR`).
-8. **Variances always signed** in format strings (`+#,0;-#,0;0`).
+8. **Variances signed** in format strings (`+#,0;-#,0;0`), except a variance that rounds to
+   zero at the displayed scale: it prints unsigned (`0.0`, never `+0.0`). The Δ items pass
+   `SELECTEDMEASURE ()` into `Ibcs.DeltaFormat` / `Ibcs.DeltaPctFormat` for that
+   ([dax-patterns.md](references/dax-patterns.md) §1, §6).
 9. **Every visible number is an explicit measure**; `discourageImplicitMeasures` on.
 10. **IBCS column order**: PY, PL/BU, FC, AC, then variances (calc-item ordinals).
 
@@ -108,7 +112,7 @@ would otherwise show something the IBCS Standards advise against.
 | Scenario/variance logic | Calc group | Excel/fixed exports → thin explicit measures that call the calc items |
 | Period views | Second calc group, lower precedence | Calendar-based time intelligence once GA (preview as of Oct 2026) |
 | PY | `SAMEPERIODLASTYEAR` (Gregorian/shifted) | 4-4-5, 13 periods → `FiscalPeriodSeq` offset |
-| Variance colour | `fx Variance Colour` measure (field-value formatting) | Custom IBCS visuals that read `VarianceDirection` themselves |
+| Variance colour | `fx Variance Colour` (bars, markers) and `fx Variance Text Colour` (numbers) measures, field-value formatting | Custom IBCS visuals that read `VarianceDirection` themselves |
 | P&L table rows | `Report Line` + bridge + `Report Value` | Pure account drill → flattened account hierarchy |
 | Scale | `Scale` slicer + format expressions | No slicer wanted → `fx Auto Scale` per visual |
 | Forecast | Latest version by default, `FC Version` picker | Several FC series at once → items per version or a FC-version column on the visual |

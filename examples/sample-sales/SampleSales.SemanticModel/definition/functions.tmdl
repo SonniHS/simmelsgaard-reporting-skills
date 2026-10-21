@@ -57,7 +57,7 @@ function 'Ibcs.ScaleFormat' =
 			scale,
 			"bn", IF ( signed, "+#,0.0,,,;-#,0.0,,,;0.0", "#,0.0,,," ),
 			"m", IF ( signed, "+#,0.0,,;-#,0.0,,;0.0", "#,0.0,," ),
-			"k", IF ( signed, "+#,0,;-#,0,;0", "#,0," ),
+			"k", IF ( signed, "+#,0.0,;-#,0.0,;0.0", "#,0.0," ),
 			IF ( signed, "+#,0;-#,0;0", "#,0" )
 		)
 
@@ -70,17 +70,42 @@ function 'Ibcs.ValueFormat' =
 			Ibcs.ScaleFormat ( scale, FALSE )
 		)
 
-/// Format string for absolute variances: signed and scaled, or signed percentage points for ratio measures.
+/// Divisor of a unit scale ("1", "k", "m", "bn").
+function 'Ibcs.ScaleDivisor' =
+		( scale : STRING ) =>
+		SWITCH ( scale, "bn", 1e9, "m", 1e6, "k", 1e3, 1 )
+
+/// Decimals printed at a unit scale (one decimal when scaled).
+function 'Ibcs.ScaleDecimals' =
+		( scale : STRING ) =>
+		IF ( scale IN { "bn", "m", "k" }, 1, 0 )
+
+/// Text colour of an impact (contrast-safe *Text tokens, for font colours): good, bad, neutral; BLANK stays BLANK. Use Ibcs.ImpactColour for bars and markers only.
+function 'Ibcs.ImpactTextColour' =
+		( impact ) =>
+		IF ( NOT ISBLANK ( impact ), SWITCH ( impact, 1, "#5A7A00", -1, "#D00000", 0, "#0064FF" ) )
+
+/// Format string for absolute variances: signed and scaled, or signed percentage points for ratio measures; unsigned when the value rounds to zero at the printed scale (a zero variance has no sign).
 function 'Ibcs.DeltaFormat' =
-		( measureName : STRING, measureFormat : STRING, scale : STRING ) =>
+		( value, measureName : STRING, measureFormat : STRING, scale : STRING ) =>
+		VAR isRatio = Ibcs.IsRatioFormat ( measureFormat )
+		VAR shown = IF ( isRatio, ROUND ( value, 1 ), ROUND ( value / Ibcs.ScaleDivisor ( scale ), Ibcs.ScaleDecimals ( scale ) ) )
+		RETURN
+			SWITCH (
+				TRUE (),
+				Ibcs.IsHelper ( measureName ), measureFormat,
+				isRatio && shown = 0, "0.0"" pp""",
+				isRatio, "+0.0"" pp"";-0.0"" pp"";0.0"" pp""",
+				shown = 0, IF ( scale IN { "bn", "m", "k" }, "0.0", "0" ),
+				Ibcs.ScaleFormat ( scale, TRUE )
+			)
+
+/// Format string for relative variances; unsigned when the value rounds to zero at one decimal.
+function 'Ibcs.DeltaPctFormat' =
+		( value, measureName : STRING, measureFormat : STRING ) =>
 		SWITCH (
 			TRUE (),
 			Ibcs.IsHelper ( measureName ), measureFormat,
-			Ibcs.IsRatioFormat ( measureFormat ), "+0.0"" pp"";-0.0"" pp"";0.0"" pp""",
-			Ibcs.ScaleFormat ( scale, TRUE )
+			ROUND ( value, 3 ) = 0, "0.0%",
+			"+0.0%;-0.0%;0.0%"
 		)
-
-/// Format string for relative variances.
-function 'Ibcs.DeltaPctFormat' =
-		( measureName : STRING, measureFormat : STRING ) =>
-		IF ( Ibcs.IsHelper ( measureName ), measureFormat, "+0.0%;-0.0%;0.0%" )

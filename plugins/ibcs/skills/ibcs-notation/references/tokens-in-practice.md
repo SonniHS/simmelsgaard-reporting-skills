@@ -133,20 +133,12 @@ after formatting (Excel/Power BI format strings take separators from the report 
 
 ### CSS (custom properties)
 
-Generate a stylesheet once from the effective tokens rather than writing values by hand:
-
-```python
-css = {
-  "--ibcs-ac": "color.scenario.ac", "--ibcs-py": "color.scenario.py",
-  "--ibcs-pl-fill": "color.scenario.pl.fill", "--ibcs-pl-stroke": "color.scenario.pl.stroke",
-  "--ibcs-good": "color.variance.good", "--ibcs-bad": "color.variance.bad",
-  "--ibcs-neutral": "color.variance.neutral", "--ibcs-highlight": "color.marker.highlight",
-  "--ibcs-scale-band": "color.marker.scaleBandFill", "--ibcs-text": "color.text.primary",
-  "--ibcs-label-size": "typography.size.label.px",
-}
-lines = [f"  {k}: {value(tokens, p)}{'px' if p.endswith('.px') else ''};" for k, p in css.items()]
-print(":root {\n" + "\n".join(lines) + "\n}")
-```
+Generate the stylesheet from the effective tokens rather than writing values by hand:
+`node scripts/gen_tokens.mjs --out src/ibcs/tokens.generated.css` writes one `--ibcs-<path>`
+property per token, named after its path with dots as dashes: `--ibcs-color-scenario-ac`,
+`--ibcs-color-variance-good`, `--ibcs-color-variance-goodText`,
+`--ibcs-typography-size-label-px`. Use these names in `var()`; do not mix them with a
+hand-written shorter naming, or `var()` resolves to nothing.
 
 Put the FC hatch from `pattern.fcHatch.svgTemplate` into one `<defs>` per page and reference it
 with `fill="url(#ibcs-fc-hatch)"`. For no-colour output (print, `forced-colors`), switch the
@@ -175,8 +167,12 @@ missing alias target or an unknown extension exits with code 2. Copy the script 
 the base tokens or the overrides change; commit the generated file or generate it in the build.
 
 Chart components import the generated module and never contain literals. Format numbers with
-`Intl.NumberFormat` (or d3-format with `number.format.<kind>.d3`), then replace the group
-separator with `number.separator.thousands` (U+202F) and prepend "+" for variances only.
+`Intl.NumberFormat`, or d3-format with an **unsigned** pattern (`number.format.absolute.d3`,
+`.ratio.d3`), then replace the group separator with `number.separator.thousands` (U+202F) and add
+"+" only to a variance whose value, rounded at the displayed decimals, is > 0; a value that rounds
+to 0 stays unsigned. Do not prepend "+" to the signed d3 tokens (`variance`, `relativeVariance`,
+`percentagePoints` already contain it, and print `+0.0` for 0.04). Reference implementation:
+`formatValue()` in the formatting reference of the `ibcs-web-charts` skill ([formatting-a11y-print.md](../../ibcs-web-charts/references/formatting-a11y-print.md)).
 
 ### Vega-Lite / Deneb
 
@@ -198,12 +194,12 @@ compromises.
 
 | Need | Token path | Power BI (theme / visual.json) | Vega-Lite / Deneb | CSS / SVG |
 |---|---|---|---|---|
-| AC fill | `color.scenario.ac` | `dataColors[0]`; `dataPoint.fill` for the AC measure | `color: {value}` / scale range | `--ibcs-ac` |
-| PY fill | `color.scenario.py` | `dataColors[1]`; series `dataPoint.fill` | scale range | `--ibcs-py` |
+| AC fill | `color.scenario.ac` | `dataColors[0]`; `dataPoint.fill` for the AC measure | `color: {value}` / scale range | `--ibcs-color-scenario-ac` |
+| PY fill | `color.scenario.py` | `dataColors[1]`; series `dataPoint.fill` | scale range | `--ibcs-color-scenario-py` |
 | PL outlined | `color.scenario.pl.fill` + `.stroke`, `stroke.outlinePx` | white fill + `borderShow`, `borderColor`, `borderSize` | `fill`, `stroke`, `strokeWidth` | `fill` / `stroke` |
 | FC hatch | `pattern.fcHatch.*`, `color.scenario.fc.*` | not native → SVG measure / Deneb-Vega / certified visual | stripe layer or Vega/SVG `<pattern>` | `svgTemplate` in `<defs>` |
 | Stacked shades | `color.scenario.stackGrays` | `dataColors[3..]` | `scale.range` | — |
-| Impact colours | `color.variance.good/bad/neutral` | theme `good`/`bad`/`neutral`; colour measure for conditional formatting | `condition` on `datum.impact` | `--ibcs-good` … |
+| Impact colours | `color.variance.good/bad/neutral` | theme `good`/`bad`/`neutral`; colour measure for conditional formatting | `condition` on `datum.impact` | `--ibcs-color-variance-good` … |
 | CVD / B&W | `color.variance.cvd.*`, `color.variance.bw.*` | alternate theme | alternate config | print / `forced-colors` stylesheet |
 | Highlight | `color.marker.highlight` | ellipse shape / SVG | unfilled `point` or ellipse path | `<ellipse fill="none">` |
 | Scale band | `color.marker.scaleBandFill/Line` | constant line + shaded area | `rect` y = 0..band | `<rect>` |
@@ -227,8 +223,9 @@ compromises.
 ```
 // colour only — geometry (bar direction, position) always uses delta itself
 shown  = round(delta, displayDecimals)             // at the visual's factor and decimals
-color  = polarity == 0        ? neutral            // blue
-       : shown == 0           ? none               // no bar; unsigned "0.0" in default colour — never "bad"
+color  = shown == 0           ? none               // FIRST: no bar; unsigned "0.0" in default colour — never bad or neutral
+       : modelImpact != null  ? modelImpact        // the model's Impact column wins over polarity
+       : polarity == 0        ? neutral            // blue
        : delta * polarity > 0 ? good : bad
 relVar = ref == null or ref <= 0 ? "N/A"           // OURS operational rule for "not interpretable"
        : (value - ref) / ref                       // signed ref, never ABS

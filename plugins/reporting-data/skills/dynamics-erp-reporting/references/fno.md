@@ -184,6 +184,7 @@ SELECT  gjae.recid                     AS GlLineRecId,
         gjae.transactioncurrencyamount AS AmountTC,
         gjae.transactioncurrencycode   AS CurrencyTC,
         l.accountingcurrency           AS CurrencyLC,
+        gje.postinglayer               AS PostingLayerValue, -- integer enum: filter on this
         pl.LocalizedLabel              AS PostingLayer,
         pt.LocalizedLabel              AS FiscalPeriodType
 FROM    generaljournalaccountentry gjae
@@ -210,12 +211,27 @@ SELECT  s.GlLineRecId, s.PostingDate, s.Voucher,
                                                       -- a missed label lookup (NULL) keeps the row in the
                                                       -- P&L instead of dropping it; check: no NULL FiscalPeriodType
 FROM    silver.fno_gl_line s
-JOIN    silver.fno_ledger_dimension ld ON ld.LedgerDimensionRecId = s.LedgerDimensionRecId
+LEFT JOIN silver.fno_ledger_dimension ld ON ld.LedgerDimensionRecId = s.LedgerDimensionRecId
+                                          -- LEFT: a missing DAVC row maps to -1 and shows in the
+                                          -- trial-balance reconciliation instead of vanishing
 LEFT JOIN gold.DimEntity     e  ON e.EntityCode = s.CompanyId
 LEFT JOIN gold.DimAccount    a  ON a.ChartOfAccounts = e.ChartOfAccounts AND a.AccountNo = ld.MainAccountId
 LEFT JOIN gold.DimCostCenter cc ON cc.Company = s.CompanyId AND cc.CostCenterCode = ld.CostCenter
                                AND s.PostingDate BETWEEN cc.ValidFrom AND cc.ValidTo
-WHERE   s.PostingLayer = 'Current';
+WHERE   s.PostingLayerValue = @CurrentLayer;          -- the integer enum value, not the label
+```
+
+Run this before the gold SELECT: resolve the integer once and assert it, so a label or casing mismatch in the option-set lookup
+fails the load instead of filtering every row out (keep `postinglayer` as `PostingLayerValue`
+in silver next to the decoded label):
+
+```sql
+DECLARE @CurrentLayer int = (SELECT [Option] FROM globaloptionsetmetadata
+                             WHERE EntityName = 'generaljournalentry' AND OptionSetName = 'postinglayer'
+                               AND LocalizedLabelLanguageCode = 1033 AND LocalizedLabel = 'Current');  -- (verify names)
+IF @CurrentLayer IS NULL THROW 50001, 'Posting layer "Current" not found in globaloptionsetmetadata', 1;
+-- load check: no GL line without a decoded layer
+-- SELECT COUNT(*) FROM silver.fno_gl_line WHERE PostingLayer IS NULL;   -- must be 0
 ```
 
 Then the monthly fact with FX conversion:

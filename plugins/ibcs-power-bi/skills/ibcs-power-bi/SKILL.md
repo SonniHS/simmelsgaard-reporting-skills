@@ -25,9 +25,9 @@ opened in Desktop. Spec → PBIR is a procedure (§6), not one script.
 The notation itself (scenarios, variances, colours, scales, titles) is defined by the
 `ibcs-notation` skill (plugin `ibcs`); page and storyline logic by `ibcs-composition`; review by
 `ibcs-review` / the `ibcs-reviewer` agent. This skill only says how to reach that notation in
-Power BI. File mechanics (visual.json, page.json, report.json, theme serialisation, Deneb
-escaping, SVG measures) come from Microsoft's own Power BI agent skills where installed (PBIR
-format, PBIP, theme JSON, Deneb and SVG visuals); do not duplicate them here.
+Power BI. PBIR/PBIP file mechanics (visual.json, page.json, report.json, theme serialisation) come
+from Microsoft's `powerbi-authoring` plugin where installed (`/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install powerbi-authoring@fabric-collection`; skills `powerbi-report-authoring` and `powerbi-report-management`, preview; [Learn](https://learn.microsoft.com/power-bi/developer/agentic/power-bi-planner-fabric-skill-overview)); do not duplicate them here. It does not cover Deneb or SVG
+measures: those come from `ibcs-deneb` and `ibcs-svg-dax` in this plugin.
 
 References:
 - [references/card-routes.md](references/card-routes.md) — route per chart/table type, native
@@ -48,7 +48,7 @@ References:
 python3 -I "${CLAUDE_SKILL_DIR}/scripts/build_pbi_theme.py" --out-dir ./theme                  # ibcs-pbi-theme.json (+ -cvd)
 python3 -I "${CLAUDE_SKILL_DIR}/scripts/build_pbi_theme.py" --out-dir ./theme --overrides ibcs-tokens.overrides.json
 python3 -I "${CLAUDE_SKILL_DIR}/scripts/build_pbi_theme.py" --out-dir ./theme --check          # CI: stale?
-python3 "${CLAUDE_SKILL_DIR}/scripts/build_pbi_theme.py" --validate --schema reportThemeSchema-2.157.json   # needs jsonschema
+uv run --with jsonschema python3 "${CLAUDE_SKILL_DIR}/scripts/build_pbi_theme.py" --validate --schema reportThemeSchema-2.157.json   # or pip install jsonschema
 ```
 
 Run them from the project root; `${CLAUDE_SKILL_DIR}` is this skill's directory. The script
@@ -123,7 +123,7 @@ footnote card sized to its text. Without the shell the page is white and the ban
   page with absolute charts: write the scale group (`group.json`, each member with its `visual`
   name, its ranges and `longestValueLabel`), run `scale_layout.py group.json --json > layout.json`,
   set every member's `pxPerUnit` and size from it, and lint with
-  `ibcs_lint.py pbir <name>.Report --layout layout.json` (ibcs-review): a visual whose size or
+  `python3 -I <ibcs-review skill dir>/scripts/ibcs_lint.py pbir <name>.Report --layout layout.json` (load the `ibcs-review` skill of plugin `ibcs` with the Skill tool; it prints its base directory): a visual whose size or
   px per unit differs from layout.json, or a shared domain on visuals of different size, fails.
   Give each member its own `maxPx` (the space it may take, e.g. 330 px of height for the months,
   640 px of width for the bars): the tightest member sets the px per unit. Do not use a single
@@ -221,18 +221,24 @@ Input: a visual spec file per page in your project (for example
    **signed** reference and returns N/A when it cannot be interpreted (reference ≤ 0); geometry
    follows the arithmetic sign, polarity only selects the colour (good / bad / neutral blue).
 3. New report: `python3 -I "${CLAUDE_SKILL_DIR}/scripts/new_pbip.py" --out <dir> --name <report>
-   --semantic-model-id <id> --canvas <WxH> [--theme <generated theme>]` (live connection, theme
-   registered, one page). Then the header and footer texts, then each visual at its grid position.
+   --workspace "<workspace>" --model "<semantic model>" [--semantic-model-id <id>] --canvas <WxH>
+   [--theme <generated theme>]` (live connection, theme registered, one page). The workspace +
+   model form is the Desktop connection-string form (pbir-skeleton.md §3; compare it with a file your
+   Desktop saved), so use it when the project is opened in Desktop (step 6); the id-only form (`--semantic-model-id` alone) is documented on Learn for
+   Fabric REST deployment and `fab import` only (pbir-skeleton.md §3). Opening the scaffold in
+   Desktop has not been verified by this plugin yet (status above). Then the header and footer
+   texts, then each visual at its grid position.
 4. Native: apply the properties from [references/card-routes.md](references/card-routes.md).
    Deneb: `${CLAUDE_SKILL_DIR}/../ibcs-deneb/scripts/to_pbir.py` with `--field` mappings, the
-   spec's knobs, `--sort` (period order), `--filter` (static visual filters) and `--title`;
+   spec's knobs, `--sort` (period order), `--filter` (static visual filters) and `--title`; it
+   registers Deneb in `definition/report.json` (`publicCustomVisuals`) by itself, or warns when it
+   cannot find the file (then pass `--report <name>.Report/definition/report.json`);
    scale-group members get `--param pxPerUnit=…` and `--pos` with the size from
    `scripts/scale_layout.py --json` (§3; mandatory for absolute charts) plus their padding, and
    any `setParams` it prints (label room) as `--param`.
 5. Record every compromise in the page footnote and in the spec's `deviations`.
 6. Validate (`jq empty` on changed JSON, or `python3 -m json.tool <file> > /dev/null` if jq is not
-   installed; `scripts/report_measures.py <name>.Report --check`; `ibcs_lint.py pbir <name>.Report
-   --layout layout.json` without failed rules; a PBIP validator where available), preview each Deneb visual with live data (`render-previews.mjs --visual`), open in
+   installed; `scripts/report_measures.py <name>.Report --check`; `python3 -I <ibcs-review skill dir>/scripts/ibcs_lint.py pbir <name>.Report --layout layout.json` (load the `ibcs-review` skill of plugin `ibcs` with the Skill tool; it prints its base directory) without failed rules; a PBIP validator where available), preview each Deneb visual with live data (`render-previews.mjs --visual`), open in
    Desktop, compare with the spec, then run the `ibcs-review` skill.
 7. After publishing (only when the user asks), look at the rendered page: in a browser (*See
    details* on an error names the fields), or without one through *Export To File* as PDF with a

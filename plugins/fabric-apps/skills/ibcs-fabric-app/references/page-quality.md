@@ -29,8 +29,8 @@ at phone and desktop width.
 - The plot area dominates its card: titles, legends and notes take at most about a third.
 - Bars, columns and rows keep the token weights; same unit, same scale across the page; scale
   bands where scales must differ.
-- Text sizes from the type scale only; tabular numbers; labels never overlap or get cut (shorten in
-  the middle), tab and title rows never wrap at 1280–1600 px.
+- Text sizes from the type scale only; tabular numbers; labels never overlap or get cut (shorten from
+  the end with an ellipsis, or wrap to two lines), tab and title rows never wrap at 1280–1600 px.
 - Footnote markers match both ways: every ¹ in a title, chip or label has the same number in the
   footnote list, and every numbered footnote is referenced. An unnumbered footnote list next to
   numbered chips is a defect.
@@ -72,8 +72,9 @@ The frame of [report-shell.md](report-shell.md), at 390, ≈ 1050 and 1280 px:
 - [ ] End legends at their marks' y with ≥ font + 2 px between names; a zero Δ printed unsigned.
 - [ ] In the portal (not only the harness): footnote numbers are visible as text; a tab change
       opens the new page at the top; every chart fills its card's content width.
-- [ ] Theme, card style and density survive a reload (viewer preference); a copied link
-      reproduces page, entity, period and comparison.
+- [ ] Theme, card style and density survive a reload (viewer preference); a reload and Back
+      inside the portal keep page, entity, period and comparison (shareable deep links from the
+      portal were not available as of 2026-10: [app-patterns.md](app-patterns.md) §6).
 - [ ] Phone: header in two rows, filters behind one toggle with a summary, KPI cards two per
       row, no horizontal page scroll.
 

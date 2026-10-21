@@ -50,7 +50,7 @@ To see what the service renders without opening a browser, export the page to PD
 ## Fabric Apps: failures only in the portal
 
 The portal runs the app in nested cross-origin frames and hands it query results in a different
-shape than the terminal does. A page that works in `npm run dev` or with the CLI can still fail
+shape than the terminal does. A page that works on the local dev server or with the CLI can still fail
 there. Debug it through the dev-URI embed below.
 
 | Symptom | Cause and fix |
@@ -66,14 +66,15 @@ there. Debug it through the dev-URI embed below.
 |---|---|
 | The portal does not load your local build with `&devUri=http://localhost:<port>` | Chrome's Local Network Access check blocks a public site from framing localhost. Allow local-network access when the browser asks; an automated browser needs the flag from Microsoft's `app-validation` skill (`queries-and-data.md`). |
 | Sign-in fails with a redirect error | The port is not the same in all three places. Pin it in `vite.config.ts` (`strictPort: true`), under `services.auth.allowedRedirectUris` in `rayfin/rayfin.yml`, and in the `&devUri=` value; the redirect list reaches the tenant on the next `rayfin up`. |
-| `npx rayfin dev` asked for tenant changes | It provisions a backend in the tenant. Use `npm run dev` plus the dev-URI embed instead, and deploy only with approval (`deploy-and-operate.md`). |
+| `npx rayfin dev` or `npm run dev` asked for tenant changes | In the dataapp template `npm run dev` is `rayfin dev`, which provisions a backend in the tenant. Run the Vite-only server (`npm run dev:frontend`, or `npx vite --port <port> --strictPort`) plus the dev-URI embed instead, and deploy only with approval (`deploy-and-operate.md`). |
+| CI login fails on a Linux runner (no OS keychain) | The Rayfin CLI refuses to cache tokens without a keychain. On ephemeral hosted runners only, set `RAYFIN_ENCRYPTION_FALLBACK_ENABLED=true` and log out at the end (`deploy-and-operate.md` §2); never on shared or self-hosted runners. |
 | There is no app item yet, but you need to test queries | Run them from the terminal: `npx fabric-app-data query <alias> --file src/queries/<page>/<viz>.dax`. |
 
 ## Org apps and access
 
 | Symptom | Cause and fix |
 |---|---|
-| Users open the org app, but every query in the Fabric App fails with 401/403 | The audience has no access to the semantic model (Read, or Build + Read, depending on how the app queries; `ibcs-fabric-app` §1), or to the app's SQL database if it writes commentary. Grant it to the same Entra groups as the app audience (`fabric-org-apps` skill). |
+| Users open the org app, but every query in the Fabric App fails with 401/403 | The audience has no access to the semantic model (consumers need Read since the August 2026 release; authors Build + Read; `ibcs-fabric-app` §1), or to the app's SQL database if it writes commentary. Grant it to the same Entra groups as the app audience (`fabric-org-apps` skill). |
 | Service principals cannot query the model | Not supported against models with RLS or SSO; Fabric Apps query as the signed-in user (`queries-and-data.md`). |
 
 ## Web charts

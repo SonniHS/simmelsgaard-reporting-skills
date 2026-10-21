@@ -131,7 +131,7 @@ Never build two independent definitions; the explicit measures must call the cal
 
 | Consumer | What it needs from the model |
 |---|---|
-| Power BI report / org app | Calc groups on matrix columns, `fx Variance Colour` for conditional formatting, field parameters, Scale slicer, descriptions |
+| Power BI report / org app | Calc groups on matrix columns, `fx Variance Colour` (fills) and `fx Variance Text Colour` (font) for conditional formatting, field parameters, Scale slicer, descriptions |
 | Fabric App | Stable names (the contract), `///` descriptions (readable via `INFO.VIEW.MEASURES()`), raw values; the app formats by value kind ([visual-data-contract.md](visual-data-contract.md) §0.4). The tenant setting for the semantic-model Execute Queries REST API must be on |
 | Excel | Explicit measures for key variances; consider a perspective |
 | Copilot / data agents | Descriptions on every visible object, synonyms in the culture's linguistic metadata |

@@ -23,6 +23,7 @@
 IF SCHEMA_ID('gold') IS NULL
     EXEC ('CREATE SCHEMA gold');   -- dynamic SQL so the batch compiles when the schema exists
 
+DROP TABLE IF EXISTS gold.FactGlDetail;
 DROP TABLE IF EXISTS gold.FactFinance;
 DROP TABLE IF EXISTS gold.BridgeReportLineAccount;
 DROP TABLE IF EXISTS gold.SecUserEntity;
@@ -32,6 +33,7 @@ DROP TABLE IF EXISTS gold.DimScenario;
 DROP TABLE IF EXISTS gold.DimAccount;
 DROP TABLE IF EXISTS gold.DimReportLine;
 DROP TABLE IF EXISTS gold.DimEntity;
+DROP TABLE IF EXISTS gold.DimCostCenter;
 
 -- Day grain, contiguous, covering every AC, PY, BU, FC and PL year.
 CREATE TABLE gold.DimDate (
@@ -131,6 +133,37 @@ CREATE TABLE gold.FactFinance (
     CurrencyCode       varchar(3)   NOT NULL,   -- local currency of the entity
     AmountLC           decimal(19,4) NOT NULL,  -- local currency, P&L sign
     AmountGC           decimal(19,4) NOT NULL   -- group currency, P&L sign
+);
+
+-- SCD type 2 organisation dimension (references/tsql-scripts.md section 4). -1 Unknown, -2 Not applicable.
+CREATE TABLE gold.DimCostCenter (
+    CostCenterKey         int          NOT NULL,
+    Company               varchar(10)  NOT NULL,
+    CostCenterCode        varchar(20)  NOT NULL,
+    CostCenterName        varchar(60)  NOT NULL,
+    DepartmentCode        varchar(20)  NULL,       -- "as-was" attributes of this version
+    SegmentCode           varchar(20)  NULL,
+    CurrentDepartmentCode varchar(20)  NULL,       -- "as-is": attributes of the current version
+    CurrentSegmentCode    varchar(20)  NULL,
+    ValidFrom             date         NOT NULL,
+    ValidTo               date         NOT NULL,   -- 9999-12-31 for the current version
+    IsCurrent             bit          NOT NULL,
+    IsInferred            bit          NOT NULL,   -- created by a fact load before the master data arrived
+    RowHash               varchar(64)  NULL        -- SHA2_256 hex of the tracked attributes
+);
+
+-- GL line grain, AC only (management view; drill-through and reconciliation). Natural GL
+-- sign: the monthly FactFinance applies DimAccount.PLSign (references/tsql-scripts.md section 8).
+CREATE TABLE gold.FactGlDetail (
+    GlLineId           varchar(40)  NOT NULL,   -- ERP line id (RecId, Entry No.), unique per entity
+    PostingDate        date         NOT NULL,
+    Voucher            varchar(40)  NULL,
+    EntityKey          int          NOT NULL,
+    AccountKey         int          NOT NULL,
+    CostCenterKey      int          NOT NULL,
+    CurrencyCode       varchar(3)   NOT NULL,   -- local currency of the entity
+    AmountLC           decimal(19,4) NOT NULL,  -- natural GL sign
+    IsClosingEntry     bit          NOT NULL    -- year-end closing / opening entries (excluded from monthly P&L)
 );
 
 -- Dynamic RLS mapping (UPN -> entity). Authoritative source in production: ERP/Entra extract.

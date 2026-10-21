@@ -6,7 +6,10 @@
         --visual "MyReport.Report/definition/pages/<page>/visuals/<name>/visual.json" --new \
         --field "Period=col:Date[Month Short]" --field "AC=m:Measures[AC]" \
         --field "FC=m:Measures[FC]" --field "PY=m:Measures[PY]" \
-        --param refScenario=PY --pos 16,96,620,300 [--report MyReport.Report/definition/report.json]
+        --param refScenario=PY --pos 16,96,620,300
+
+    Deneb is registered in the report's publicCustomVisuals: report.json is found next to the
+    visual's pages folder (or pass --report PATH); without it the report never declares Deneb.
 
     # update the spec/config of an existing Deneb visual (field bindings untouched)
     python3 -I to_pbir.py assets/templates/pin-relative-variance.vl.json --visual .../visual.json
@@ -64,6 +67,9 @@ DENEB = "deneb7E15AEF80B9E4D4F8E12924291ECE89A"
 CONTAINER_SCHEMA = ("https://developer.microsoft.com/json-schemas/fabric/item/report/definition/"
                     "visualContainer/2.4.0/schema.json")
 FIELD = re.compile(r"^(?P<name>[^=]+)=(?P<kind>col|m):(?P<table>[^\[]+)\[(?P<prop>[^\]]+)\]$")
+# The Vega / Vega-Lite versions Deneb 2.0 bundles (SKILL.md, preview renderer); written as the
+# visual's provider version so Desktop opens the spec without Deneb's "create" dialog.
+PROVIDER_VERSION = {"vegaLite": "6.4.3", "vega": "6.4.0"}
 FILTER = re.compile(r"^col:(?P<table>[^\[]+)\[(?P<prop>[^\]]+)\]=(?P<values>.*)$")
 
 
@@ -90,12 +96,29 @@ def report_measures(path: Path | None) -> set[tuple[str, str]]:
     return {(e["name"], m["name"]) for e in ext.get("entities", []) for m in e.get("measures", [])}
 
 
-def find_extensions(visual: Path) -> Path | None:
-    """definition/reportExtensions.json for definition/pages/<page>/visuals/<v>/visual.json."""
+def find_definition(visual: Path) -> Path | None:
+    """The report's definition/ folder for definition/pages/<page>/visuals/<v>/visual.json."""
     for parent in visual.resolve().parents:
         if parent.name == "definition" and (parent / "pages").is_dir():
-            return parent / "reportExtensions.json"
+            return parent
     return None
+
+
+def find_extensions(visual: Path) -> Path | None:
+    """definition/reportExtensions.json for definition/pages/<page>/visuals/<v>/visual.json."""
+    d = find_definition(visual)
+    return d / "reportExtensions.json" if d else None
+
+
+def register_deneb(rpath: Path) -> bool:
+    """Add Deneb to report.json publicCustomVisuals; True when the file changed."""
+    report = json.loads(rpath.read_text(encoding="utf-8"))
+    pcv = report.setdefault("publicCustomVisuals", [])
+    if DENEB in pcv:
+        return False
+    pcv.append(DENEB)
+    rpath.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    return True
 
 
 def projection(spec_field: str, kind: str, table: str, prop: str, extension: bool = False) -> dict:
@@ -166,6 +189,8 @@ def build_objects(spec: dict, config: dict, provider: str, tooltips: bool, selec
                 "jsonSpec": literal(json.dumps(spec, ensure_ascii=False, separators=(",", ":"))),
                 "jsonConfig": literal(json.dumps(config, ensure_ascii=False, separators=(",", ":"))),
                 "provider": literal(provider),
+                "version": literal(PROVIDER_VERSION[provider]),
+                "isNewDialogOpen": lit_bool(False),
                 "renderMode": literal("svg"),  # pattern fills (FC hatch) need the SVG renderer
                 "enableTooltips": lit_bool(tooltips),
                 "enableContextMenu": lit_bool(True),
@@ -206,7 +231,7 @@ def main() -> int:
     ap.add_argument("--name", help="visual name (new visuals; default random 20-hex)")
     ap.add_argument("--selection", action="store_true", help="enable Deneb cross-filtering (__selected__)")
     ap.add_argument("--no-tooltips", action="store_true")
-    ap.add_argument("--report", help="report.json: register Deneb in publicCustomVisuals")
+    ap.add_argument("--report", help="report.json to register Deneb in (default: found from --visual)")
     ap.add_argument("--sort", help="<template field>[:asc|desc]: sort the visual's query by a bound field")
     ap.add_argument("--filter", action="append", default=[],
                     help="col:Table[Column]=v1,v2: static basic filter on the visual (repeatable)")
@@ -303,14 +328,15 @@ def main() -> int:
     vpath.write_text(json.dumps(visual, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     print(f"wrote {vpath}")
 
-    if a.report:
-        rpath = Path(a.report)
-        report = json.loads(rpath.read_text(encoding="utf-8"))
-        pcv = report.setdefault("publicCustomVisuals", [])
-        if DENEB not in pcv:
-            pcv.append(DENEB)
-            rpath.write_text(json.dumps(report, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+    definition = find_definition(vpath)
+    rpath = Path(a.report) if a.report else (definition / "report.json" if definition else None)
+    if rpath and rpath.exists():
+        if register_deneb(rpath):
             print(f"registered Deneb in {rpath}")
+    else:
+        print(f"warning: no report.json found ({rpath or 'visual is not inside a <name>.Report/definition'}); "
+              "Deneb is not registered in publicCustomVisuals. Pass --report <name>.Report/definition/report.json.",
+              file=sys.stderr)
     return 0
 
 

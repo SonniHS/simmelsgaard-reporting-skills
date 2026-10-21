@@ -1,7 +1,7 @@
 // One test per contract rule (references/testing.md). DOM-free on the layouts; the renderer and
 // the KPI card are server-rendered to strings.
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, readFileSync } from "node:fs";
+import { existsSync, mkdtempSync, readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -256,11 +256,21 @@ describe("KPI card", () => {
 });
 
 describe("tokens", () => {
-  it("tokens.generated.ts matches the ibcs-notation token file", () => {
-    const here = fileURLToPath(new URL(".", import.meta.url));
+  // Where the generator and the token file live: inside the skill (this reference package), or in
+  // an app laid out as the ibcs-fabric-app chart layer says (scripts/ and design/ at the app root).
+  const here = fileURLToPath(new URL(".", import.meta.url));
+  const skills = join(here, "../../../../..");
+  const app = join(here, "../..");
+  const source = [
+    { script: join(skills, "ibcs-notation/scripts/gen_tokens.mjs"), tokens: join(skills, "ibcs-notation/assets/ibcs-tokens.json"), overrides: null },
+    { script: join(app, "scripts/gen_tokens.mjs"), tokens: join(app, "design/ibcs-tokens.json"), overrides: join(app, "ibcs-tokens.overrides.json") },
+  ].find((c) => existsSync(c.script) && existsSync(c.tokens));
+
+  it.skipIf(!source)("tokens.generated.ts matches the token file (and overrides)", () => {
     const out = join(mkdtempSync(join(tmpdir(), "ibcs-")), "t.ts");
-    const skills = join(here, "../../../../..");
-    execFileSync("node", [join(skills, "ibcs-notation/scripts/gen_tokens.mjs"), "--tokens", join(skills, "ibcs-notation/assets/ibcs-tokens.json"), "--out", out]);
+    const args = [source!.script, "--tokens", source!.tokens, "--out", out];
+    if (source!.overrides && existsSync(source!.overrides)) args.push("--overrides", source!.overrides);
+    execFileSync("node", args);
     expect(readFileSync(join(here, "tokens.generated.ts"), "utf8")).toBe(readFileSync(out, "utf8"));
   });
 });

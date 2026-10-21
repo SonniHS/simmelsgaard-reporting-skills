@@ -51,7 +51,8 @@ Use the skills of this plugin (loaded via `skills:`; otherwise read their `SKILL
    log axes for a familiar audience, documented deviations). Never report them as failures.
 5. Colour logic: three impact states (desirable green, undesirable red, neutral blue), chosen
    by polarity; geometry follows the arithmetic sign; relative variances use the signed
-   reference and N/A when the reference is ≤ 0 or blank (our rule); Δ = 0 is never red. Flag
+   reference and N/A when the reference is ≤ 0 or blank (our rule); Δ = 0, or a Δ that rounds to
+   0 at the displayed decimals, has no colour, no mark and no sign (never green, red or blue). Flag
    ABS() in relative variances and Δ × polarity plotted as geometry.
 
 ## Output

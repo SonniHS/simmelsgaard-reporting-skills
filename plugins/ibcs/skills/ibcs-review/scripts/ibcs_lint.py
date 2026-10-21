@@ -379,12 +379,19 @@ def lint_theme(theme: dict, loc, tokens=None):
     if tokens:
         for k in ("good", "bad", "neutral"):
             if k in theme:
-                want = token_value(tokens, f"color.variance.{k}")
-                if str(theme[k]).upper() != str(want).upper():
-                    add("E6", "UN 4.1", "I", "check", f"{loc}:{k}", f"theme {theme[k]} ≠ token {want}",
+                # the theme's good/bad/neutral colour text (Power BI uses them for font colours), so the
+                # contrast-safe *Text tokens are the right ones; the graphic colours are accepted too
+                wants = []
+                for path in (f"color.variance.{v}{k}{t}" for v in ("", "cvd.", "bw.") for t in ("Text", "")):
+                    try:
+                        wants.append(str(token_value(tokens, path)).upper())
+                    except (KeyError, TypeError):
+                        pass  # the bw set has no *Text tokens
+                if str(theme[k]).upper() not in wants:
+                    add("E6", "UN 4.1", "I", "check", f"{loc}:{k}", f"theme {theme[k]} ≠ token {wants[0]}",
                         "Generate the theme from the effective tokens (or record an ORG override).")
             else:
-                add("E6", "UN 4.1", "I", "check", f"{loc}:{k}", "not set", "Set good/bad/neutral from color.variance.*.")
+                add("E6", "UN 4.1", "I", "check", f"{loc}:{k}", "not set", "Set good/bad/neutral from color.variance.*Text.")
     for cls, spec in (theme.get("textClasses") or {}).items():
         face = (spec or {}).get("fontFace", "")
         if face and DECORATIVE_FONT.search(face):
@@ -721,6 +728,10 @@ HEX_IN_TEXT = re.compile(r"#(?:[0-9A-Fa-f]{6}|[0-9A-Fa-f]{3})(?![0-9A-Za-z])")
 ABS_CALL = re.compile(r"\bABS\s*\(", re.I)
 VARIANCE_ARG = re.compile(r"Δ|delta|variance|\bvar\b|\bdiff|\bd(?:py|pl|bu|fc)\b|impact", re.I)
 ABS_DENOMINATOR = re.compile(r"(?:/\s*|\bDIVIDE\s*\((?:[^(),]|\([^()]*\))*,\s*)ABS\s*\(", re.I)
+# DIVIDE ( <minuend> - REF, REF ): a relative variance; it needs a "REF > 0" guard (or Ibcs.DeltaPct)
+# a printed zero variance: 0, +0.0, -0,00 %, −0.0pp (signed ones fail B5, coloured ones E6)
+ZERO_LABEL = re.compile(r"[+\-\u2212]?0(?:[.,]0+)?\s*(?:%|pp)?")
+REL_DIVIDE = re.compile(r"\bDIVIDE\s*\(\s*[^,]+?-\s*(\[[^\]]+\]|'[^']+'\[[^\]]+\]|[\w.]+)\s*,\s*\1\s*[,)]", re.I)
 
 
 def call_argument(text: str, open_paren: int) -> str:
@@ -796,6 +807,11 @@ def lint_report_extensions(d: Path, palette, tokens=None) -> dict:
                 if VARIANCE_ARG.search(arg):
                     add("E14", "UN 4.1", "S", "check", mloc, f"ABS({' '.join(arg.split())[:50]})",
                         "ABS of a variance is fine for a bar or pin length only; sign, impact colour and labels use the signed variance.")
+            for mm in REL_DIVIDE.finditer(expr):
+                ref = re.escape(mm.group(1))
+                if not re.search(ref + r"\s*>\s*0|0\s*<\s*" + ref, expr) and "Ibcs.DeltaPct" not in expr:
+                    add("E14", "UN 4.1", "M", "check", mloc, f"unguarded {' '.join(mm.group(0).split())[:60]}",
+                        "Relative variance: divide by the signed reference only when it is > 0, e.g. IF ( NOT ISBLANK ( AC ) && REF > 0, DIVIDE ( AC - REF, REF ) ); BLANK shows as N/A.")
             if ABS_DENOMINATOR.search(expr):
                 add("E14", "UN 4.1", "M", "check", mloc, "division by ABS(...)",
                     "Relative variances divide by the signed reference; reference <= 0 or blank -> N/A (never ABS).")
@@ -1536,6 +1552,7 @@ class _MarkCollector(HTMLParser):
     def __init__(self):
         super().__init__(convert_charrefs=True)
         self.stack, self.marks, self.patterns = [], [], set()
+        self.open_text = []   # (stack depth, mark index) of text marks still open, for their content
 
     def _paint(self, attrs):
         d = dict(attrs)
@@ -1560,17 +1577,24 @@ class _MarkCollector(HTMLParser):
                                "fill": (eff.get("color") or eff.get("fill")) if text and tag not in ("text", "tspan")
                                else eff.get("fill"),
                                "stroke": eff.get("stroke"),
-                               "transform": d.get("transform") or "", "id": d.get("id")})
+                               "transform": d.get("transform") or "", "id": d.get("id"), "content": ""})
+            if text and not closed and tag not in self.VOID:
+                self.open_text.append((len(self.stack), len(self.marks) - 1))
         if not closed and tag not in self.VOID:
             self.stack.append((tag, paint))
 
     def handle_startendtag(self, tag, attrs):
         self.handle_starttag(tag, attrs, closed=True)
 
+    def handle_data(self, data):
+        if self.open_text:
+            self.marks[self.open_text[-1][1]]["content"] += data
+
     def handle_endtag(self, tag):
         for i in range(len(self.stack) - 1, -1, -1):
             if self.stack[i][0] == tag:
                 del self.stack[i:]
+                self.open_text = [(d, k) for d, k in self.open_text if d < i]
                 break
 
 
@@ -1670,6 +1694,15 @@ def lint_dom(text: str, loc, tokens):
                 once((role, fill), "D9", "UN 3.2", "M", "fail", where, f"segment filled {fill}",
                      "Only the lowest segment carries the scenario notation; the segments above are greys.")
         kind = m["impact"]
+        if m["text"] and role in ("variance-label", "label") and ZERO_LABEL.fullmatch(m["content"].strip()):
+            num = m["content"].strip()
+            if num[0] in "+-\u2212":
+                once((role, "signed-zero", num), "B5", "UN 1.2, 4.1", "M", "fail", where, f"signed zero {num!r}",
+                     "A variance that rounds to zero at the displayed decimals is printed unsigned (0.0), never +0.0 / -0.0.")
+            if kind in ("good", "bad", "neutral"):
+                once((role, "zero-impact", num), "E6", "UN 4.1", "M", "fail", where, f"zero {num!r} with data-impact={kind}",
+                     "A variance that is 0 or rounds to 0 has no colour: data-impact none and the default text colour.")
+            continue
         if kind in impact:
             if m["text"]:
                 if fill in impact[kind] and fill not in text_ok[kind] and contrast(fill, bg) < 4.5:

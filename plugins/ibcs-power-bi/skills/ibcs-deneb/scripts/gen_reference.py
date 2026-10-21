@@ -1,8 +1,9 @@
 #!/usr/bin/env python3
 """Regenerate references/templates.md from each template's usermeta.ibcs (fields, knobs, notes).
 
-    python3 -I scripts/gen_reference.py [--check]      (path relative to this skill)
+    python3 -I scripts/gen_reference.py [--check] [--out PATH]      (path relative to this skill)
 """
+import argparse
 import json
 import sys
 from pathlib import Path
@@ -62,9 +63,13 @@ def build() -> str:
 
 
 if __name__ == "__main__":
-    target = ROOT / "references" / "templates.md"
+    ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
+    ap.add_argument("--check", action="store_true", help="exit 1 when the file is out of date; write nothing")
+    ap.add_argument("--out", default=str(ROOT / "references" / "templates.md"), help="file to write or check")
+    a = ap.parse_args()
+    target = Path(a.out)
     body = build()
-    if "--check" in sys.argv:
+    if a.check:
         sys.exit(0 if target.exists() and target.read_text(encoding="utf-8") == body else 1)
     target.write_text(body, encoding="utf-8")
     print(f"wrote {target}")

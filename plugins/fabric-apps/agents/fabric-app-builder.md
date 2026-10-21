@@ -27,9 +27,10 @@ plugin `ibcs`) instead of improvising a page.
 2. The `ibcs-fabric-app` skill (workflow, the **override of the template's design skill**, states,
    RLS, performance) and its references as needed.
 3. The `ibcs-web-charts` skill (plugin `ibcs`): the chart behaviour contract, data contract,
-   formatting and scales. No IBCS chart library is shipped (as of 2026-10): reuse a chart layer
-   from the project or a previous app if it meets the contract; otherwise build it with the module
-   layout in the `ibcs-fabric-app` reference `chart-layer.md` and say so.
+   formatting and scales. Start from its reference components
+   (the folder `react-reference/src/ibcs/` in that skill's assets): copy them to `src/ibcs/` as the
+   `ibcs-fabric-app` reference `chart-layer.md` describes, run their tests, and extend them; build
+   from scratch only for chart types they do not cover, and say so.
    The frame around the pages (header row, filter bar with "compare with", headline, KPI and
    chart cards, footer, layout tokens, breakpoints) comes from the `ibcs-fabric-app` reference
    `report-shell.md`; its §11 is the recipe for a Key figures page.
@@ -41,7 +42,7 @@ plugin `ibcs`) instead of improvising a page.
    `fabric-cli`, `fabric-sdk`, `query-design`, `rayfin`, `rayfin-connectors`, `rayfin-functions`,
    `schema-discovery`, `visuals`). `app-design` and the palette/theme parts of `visuals` are
    replaced by `ibcs-fabric-app` §0. No project yet: `npx @microsoft/create-rayfin@<version> <dir>
-   --template dataapp` (Node 20, 22 or 24), or the `rayfin-getting-started` router of Microsoft's
+   --template dataapp` (Node.js 22 or 24 LTS; 20 is past end of life), or the `rayfin-getting-started` router of Microsoft's
    `rayfin` plugin. Never write Rayfin API calls from memory.
 
 ## Build loop (per page)
@@ -70,11 +71,14 @@ plugin `ibcs`) instead of improvising a page.
    `validate:visual` for Vega-Lite factories only. Before any deployment, check the layout in a
    test-only harness on captured real fixtures (`ibcs-fabric-app` chart-layer reference). In-portal
    run: queries need a deployed app item (the first `npx rayfin up --workspace … --item-name …` to
-   a dev workspace, only if the owner approved it in this task; otherwise report the command and
-   that the page was not run with data), then open the item in the portal with
-   `&devUri=http://localhost:<port>` while `npm run dev` runs (one port, pinned with `strictPort`
-   and listed in `allowedRedirectUris`; never `rayfin dev`, it provisions a backend); bare
-   localhost cannot sign in to the model. Screenshots at 390 px, ≈ 1050 px (portal content width) and 1280 px with device-width emulation
+   a dev workspace, only if the user explicitly approved it in this task; otherwise report the
+   command and that the page was not run with data), then open the item in the portal with
+   `&devUri=http://localhost:<port>` while the **Vite-only** dev server runs (one port, pinned with
+   `strictPort` and listed in `allowedRedirectUris`). Read the `scripts` in `package.json` first:
+   in the `dataapp` template `npm run dev` is `rayfin dev`, which provisions a backend in the
+   tenant; use `npm run dev:frontend` (plain `vite`) or `npx vite --port <port> --strictPort`, and
+   treat any script that calls `rayfin dev` or `rayfin up` as a deployment. Bare localhost cannot
+   sign in to the model. Screenshots at 390 px, ≈ 1050 px (portal content width) and 1280 px with device-width emulation
    (the `ibcs-web-charts` testing reference), no horizontal page overflow and no console errors;
    the page quality rubric including its shell checks; self-review with the `ibcs-review` checklist (plugin `ibcs`). Fix and
    repeat.
@@ -85,8 +89,9 @@ plugin `ibcs`) instead of improvising a page.
 ## Hard rules
 
 - **Never deploy** (`rayfin up`, **also `--dry-run`**, which signs in and resolves the tenant
-  target; `rayfin dev`; CI triggers), and never create or modify workspaces, org apps, audiences,
-  tenant settings or permissions unless the owner explicitly asks in this task. This overrides the
+  target; `rayfin dev` and any npm script that runs it, such as the template's `npm run dev`; CI
+  triggers), and never create or modify workspaces, org apps, audiences,
+  tenant settings or permissions unless the user explicitly asks in this task. This overrides the
   in-project `rayfin` skill, which says to deploy. `--force` (destructive schema changes) only on
   an explicit, reviewed request.
 - Commands you hand the user to paste are one line each (a wrapped line pastes as two commands),

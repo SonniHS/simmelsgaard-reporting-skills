@@ -51,7 +51,7 @@ index or benchmark).
 | Scale | **identical** to the base chart (same value per px) | own % scale (the same-scale rule is for absolute variances), shared across the page's Δ% visuals |
 | Fill | minuend notation in impact colour: AC solid, FC hatched (+ colour outline), PL outlined | body in impact colour; head = minuend (AC dark solid, FC hatched) |
 | Axis | subtrahend notation: PY → solid light thick (`stroke.varianceAxis.pyWidthPx`); PL/BU → two thin parallel lines (`plLinePx`, `plGapPx`) | same |
-| Colour | three states: `good` if Δ × polarity > 0, `bad` if < 0, `neutral` (blue) if polarity is 0; colour only — direction follows the sign of Δ | same |
+| Colour | Δ = 0 (also rounded) → no colour; otherwise three states: `good` if Δ × polarity > 0, `bad` if < 0, `neutral` (blue) if polarity is 0; colour only — direction follows the sign of Δ | same |
 | Label | outside, in the direction of change, signed ("+34", "-18") | outside, signed ("+12%"); outliers: no head, triangle |
 | Zero | Δ = 0, or Δ that rounds to 0 at the displayed decimals: no mark, unsigned label ("0.0"), default text colour | same |
 | Variance of a % measure | pp ("+2.1pp") | ordinary % |

@@ -27,9 +27,10 @@ skill covers *what* gold must contain and the T-SQL to build it. For operating t
 | ERP extraction and decoding (F&O, BC, Dataverse) | [dynamics-erp-reporting](../dynamics-erp-reporting/SKILL.md) |
 
 Working example in [assets/sql/](assets/sql/01_schema.sql): portable DDL for the core star
-(`01_schema.sql`), a set-based date dimension (`02_dim_date.sql`), platform-specific key and
-index scripts (`04_optional_*.sql`) and load checks (`05_checks.sql`). Seed data is yours to
-add (step 03).
+(`01_schema.sql`, including the SCD2 `DimCostCenter` and the line-grain `FactGlDetail`), a
+set-based date dimension (`02_dim_date.sql`), a minimal seed with unknown members, scenarios, a
+P&L layout and known test numbers (`03_seed.sql`; replace it with your loads),
+platform-specific key and index scripts (`04_optional_*.sql`) and load checks (`05_checks.sql`).
 
 ## Settings to agree first
 

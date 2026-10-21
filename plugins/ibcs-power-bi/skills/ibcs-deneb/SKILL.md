@@ -20,8 +20,8 @@ Status (as of 2026-10): **10 templates done and render-checked** against the IBC
 templates in a live-connected report in the Power BI service; not opened in Desktop by this
 plugin; see "Not verified".
 
-Deneb mechanics (escaping, interactivity, PBIR files) come from Microsoft's Power BI agent skills
-where installed (Deneb visuals, PBIR format). The notation rules come from the `ibcs-notation`
+PBIR file mechanics come from Microsoft's `powerbi-authoring` plugin where installed (`/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install powerbi-authoring@fabric-collection`; skills `powerbi-report-authoring` and `powerbi-report-management`, preview; [Learn](https://learn.microsoft.com/power-bi/developer/agentic/power-bi-planner-fabric-skill-overview)); it has no Deneb skill, so Deneb
+escaping and properties are written by `to_pbir.py` here. The notation rules come from the `ibcs-notation`
 skill (plugin `ibcs`). The templates apply them as follows: relative variance divides by the
 **signed** reference and shows `N/A` when it cannot be interpreted; geometry follows the
 arithmetic sign, polarity only selects the colour (good / bad / **neutral blue**); FC is hatched
@@ -238,8 +238,9 @@ Run the commands from your project root; `${CLAUDE_SKILL_DIR}` is this skill's d
    names via `--field` (they become `displayName`s, so the template stays unchanged).
 3. `python3 -I "${CLAUDE_SKILL_DIR}/scripts/to_pbir.py" <template> --visual <…/visual.json> --new
    --field "Period=col:Date[Month Short]" --field "AC=m:Measures[AC]" … --param refScenario=PL
-   --sort Period --filter "col:Date[Year]=2026" --title "" --report <…/report.json>
-   [--config ./deneb-ibcs/config/deneb-config.json]` (registers Deneb in `publicCustomVisuals`).
+   --sort Period --filter "col:Date[Year]=2026" --title ""
+   [--config ./deneb-ibcs/config/deneb-config.json]` (registers Deneb in `publicCustomVisuals` of
+   the report's `definition/report.json`, found from `--visual`; `--report PATH` if it warns).
    Without `--new` it replaces only the spec/config of an existing Deneb visual (and applies
    `--sort`, `--filter`, `--title` if given).
 4. Sort order: Deneb keeps the query order, so `--sort` the period / report-line field (a month
@@ -253,7 +254,7 @@ Run the commands from your project root; `${CLAUDE_SKILL_DIR}` is this skill's d
 ### Previews (after changing a template)
 
 ```sh
-VEGA_HOME="$TMPDIR/vega"   # a scratch dir, never a global install
+VEGA_HOME="$(mktemp -d)/vega"   # a scratch dir, never a global install ($TMPDIR is unset on many Linux hosts)
 VG=6.4.0; VL=6.4.3          # the Vega / Vega-Lite versions Deneb 2.0 bundles
 npm install --prefix "$VEGA_HOME" --no-audit --no-fund --ignore-scripts "vega@$VG" "vega-lite@$VL"
 VEGA_HOME="$VEGA_HOME" node "${CLAUDE_SKILL_DIR}/scripts/render-previews.mjs" --png [--out DIR] [template …]

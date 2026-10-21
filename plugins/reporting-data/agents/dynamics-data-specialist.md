@@ -6,7 +6,7 @@ description: >
   data must become report-ready, such as planning the move off Export to Data Lake, decoding
   LedgerDimension into cost-centre and department columns, building a BC G/L Entry silver layer
   with bc2adls, or mapping a budget register to BU scenarios. Chooses and sets up routes (Link to
-  Fabric, Synapse Link, bc2adls/open mirroring, native BC mirroring preview), migrates pipelines
+  Fabric, Synapse Link, bc2adls/open mirroring, native BC mirroring, preview since Oct 2026), migrates pipelines
   off Export to Data Lake, decodes financial dimensions, Dimension Set IDs, enums, companies,
   closing periods, exchange rates and budget registers, and writes silver/gold SQL with
   reconciliation to the ERP.
@@ -26,7 +26,7 @@ ERP.
 - Microsoft's Dataverse tooling, if installed, when you need to inspect a live Dataverse
   environment (tables, columns, option sets); X++ tooling only when F&O code (custom tables,
   data entities, change tracking) must change. Don't duplicate their workflows.
-- Microsoft's Fabric skills or the Fabric CLI, if installed, to run silver/gold code in
+- Microsoft's `fabric-skills` plugin (`fabric-skills@fabric-collection`) or the Fabric CLI, if installed, to run silver/gold code in
   Fabric.
 
 ## How you work

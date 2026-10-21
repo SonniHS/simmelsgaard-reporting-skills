@@ -43,8 +43,10 @@ export function pickScale(values: (number | null)[], maxDigits = 3) {
   return { factor, prefix, decimals: scaled < 100 && intDigits < maxDigits ? 1 : 0 };
 }
 
+// null and non-finite print nothing (a table may show its dash token); N/A is only for a relative
+// variance that cannot be interpreted (formatRelative)
 export function formatValue(x: number | null, o: Fmt = {}, signed = false): string {
-  if (x == null || !Number.isFinite(x)) return "N/A";
+  if (x == null || !Number.isFinite(x)) return "";
   const s = new Intl.NumberFormat(o.locale ?? "en-US", {
     minimumFractionDigits: o.decimals ?? 0, maximumFractionDigits: o.decimals ?? 0,
   }).formatToParts(Math.abs(x / (o.factor ?? 1)))
@@ -56,7 +58,8 @@ export function formatValue(x: number | null, o: Fmt = {}, signed = false): stri
 
 export const formatRelative = (f: number | null, decimals = 0) =>
   f == null ? "N/A" : formatValue(f * 100, { decimals }, true) + "%";
-export const formatPp = (points: number) => formatValue(points, { decimals: 1 }, true) + "pp";
+export const formatPp = (points: number | null) =>
+  points == null ? "N/A" : formatValue(points, { decimals: 1 }, true) + "pp";
 
 // Precedence: an explicit display setting from the visual spec wins; the automatic rule only
 // fills what the spec leaves open. Call once per scale group with all its values.

@@ -43,8 +43,9 @@ Clamp after the ratio, the same way in every renderer:
 `size = Math.min(max, Math.max(min, ratio * B))`, e.g. head = clamp(0.85 × 60 px) = 10 px on a
 wide month column instead of 51 px.
 
-Impact colour = `good` if Δ × polarity > 0, `bad` if < 0, `neutral` if polarity is 0 — or the
-model's Impact. Δ = 0 (or rounding to 0 at the displayed decimals) → no mark. Geometry always
+Impact colour, in this order: Δ = 0 (or rounding to 0 at the displayed decimals) → no colour and no
+mark; else the model's Impact; else `neutral` if polarity is 0; else `good` if Δ × polarity > 0,
+`bad` if < 0. Geometry always
 uses the signed Δ. Tinted variance numbers use `color.variance.*Text`, not the graphic colours.
 
 ## Shared scale

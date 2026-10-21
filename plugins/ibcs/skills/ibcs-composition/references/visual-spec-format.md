@@ -675,7 +675,7 @@ visuals:
       PY bar light solid behind AC, shifted up; tiers left→right AC|ΔPY|ΔPY% with tier titles
       above; ΔPY axes solid light; "Rest of Europe" after a wider gap and excluded from the sort;
       bold Europe total row is NOT drawn (total is in the message) — add as extended category if
-      the owner wants it.
+      the report owner wants it.
 
   - id: v2
     type: small-multiples

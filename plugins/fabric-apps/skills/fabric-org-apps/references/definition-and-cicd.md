@@ -91,8 +91,8 @@ Microsoft Learn *(verify before scripting it)*.
 | Option | Identity | Works for org apps (as of 2026-10) | Notes |
 |---|---|---|---|
 | Deployment pipeline (dev → test → prod) | **user** | yes, with deployment rules | not with a service principal; Direct Lake models need a data-source rule to rebind |
-| Git integration per stage (branch per workspace) | user or service principal for Git operations | yes (preview) | update from Git per workspace; ids differ per workspace unless logical ids are used |
-| fabric-cicd / `fab deploy` | service principal or user | **verify**: OrgApp was not in fabric-cicd's published item-type list | `parameter.yml` for ids and URLs |
+| Git integration per stage (branch per workspace) | user or service principal for Git operations | yes | update from Git per workspace; ids differ per workspace unless logical ids are used |
+| fabric-cicd / `fab deploy` | service principal or user | `OrgApp` / `OrgAppAudience` support merged into fabric-cicd `main` on 2026-10-19 (PR #1155); use the first release after v1.4.0 | `parameter.yml` for ids and URLs; deployment pipelines still can't promote org apps with a service principal |
 | REST (create/update org app, audiences CRUD, `updateDefinition`) | service principal or user | yes for the definition; check principal support per endpoint | base64 `definition.json` + `.platform` parts |
 
 REST sketch with the Fabric CLI (`fab`):

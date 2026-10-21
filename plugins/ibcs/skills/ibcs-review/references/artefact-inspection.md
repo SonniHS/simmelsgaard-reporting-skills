@@ -80,9 +80,13 @@ In `visual.json` → `visual`:
 
 Shared scales: compare `valueAxis.start/end` across visuals of one unit; fx-bound min/max
 measures (`expr.Measure`) are good — open the measure to confirm it is shared. Display units
-fixed per scale group. In the model (`*.SemanticModel/definition/*.tmdl`) check variance format
-strings (`+#,0;-#,0;0`), ΔPY% using `DIVIDE(AC - PY, PY)` (signed, no ABS), polarity attribute,
-colour measure returning three states.
+fixed per scale group. In the model (`*.SemanticModel/definition/*.tmdl`) check: variance format
+strings are signed (`+#,0;-#,0;0`) but must not sign a value that rounds to zero at the displayed
+decimals (a plain signed format prints `+0` for +0.4, so the rounded-zero case needs its own
+unsigned format); ΔPY% uses the signed reference **with a guard**, e.g.
+`IF ( NOT ISBLANK ( AC ) && PY > 0, DIVIDE ( AC - PY, PY ) )`, BLANK shown as N/A (never a bare
+`DIVIDE ( AC - PY, PY )`, which returns a number for a negative reference, and no ABS); a
+polarity attribute; a colour measure returning three states plus none for Δ = 0.
 
 ## 3. Power BI theme JSON
 

@@ -43,6 +43,16 @@
      "name": "Sales Total",
      "dataType": "Double",
      "expression": "ABS ( [Sales] )"
+    },
+    {
+     "name": "Sales ΔPY% Unguarded",
+     "dataType": "Double",
+     "expression": "DIVIDE ( [Sales] - [Sales PY], [Sales PY] )"
+    },
+    {
+     "name": "Sales ΔPY% Guarded",
+     "dataType": "Double",
+     "expression": "IF ( NOT ISBLANK ( [Sales] ) && [Sales PY] > 0, DIVIDE ( [Sales] - [Sales PY], [Sales PY] ) )"
     }
    ]
   }

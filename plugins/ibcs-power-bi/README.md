@@ -3,9 +3,10 @@
 Build Power BI reports that follow the IBCS® Standards. The plugin decides, per chart or table,
 the cheapest route that reaches the IBCS notation — a native visual with exact `visual.json`
 properties, a Deneb (Vega-Lite) template, an SVG-in-DAX measure, or a certified visual — and ships
-the pieces: a report theme generated from the IBCS design tokens, seven token-driven Deneb
+the pieces: a report theme generated from the IBCS design tokens, ten token-driven Deneb
 templates with previews (two-tier variance columns, pins, structure bars with triangles,
-calculation and variance waterfalls, small multiples, scenario lines), scripts to sync your
+calculation and variance waterfalls, small multiples, scenario lines, stacked columns, a relative
+scatter, columns by forecast version), scripts to sync your
 organisation's token overrides and inject templates into PBIR, a scaffold for a live-connected
 PBIP report, report-level measure rules for shared models that must not change, SVG measure
 skeletons (KPI cards, bars with triangles, variance bars) with a preview harness, page layout
@@ -48,8 +49,8 @@ Scripts need Python 3 (stdlib only); preview rendering needs Node.js and, for PN
   groups and polarity in the model.
 - `fabric-apps` — the `fabric-org-apps` skill for distributing reports as org apps (audiences,
   dev/test/prod).
-- Upstream tools: Microsoft's Power BI agent skills (PBIR/PBIP file format, theme JSON, Deneb and
-  SVG visuals) for file mechanics; [Deneb](https://deneb.guide/) (custom visual); the community
+- Upstream tools: Microsoft's `powerbi-authoring` plugin where installed (`/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install powerbi-authoring@fabric-collection`; skills `powerbi-report-authoring` and `powerbi-report-management`, preview; [Learn](https://learn.microsoft.com/power-bi/developer/agentic/power-bi-planner-fabric-skill-overview)) for PBIR/PBIP file mechanics (it does not cover Deneb or SVG
+  measures); [Deneb](https://deneb.guide/) (custom visual); the community
   PowerofBI.IBCS DAX library ([daxlib.org](https://daxlib.org/) registry, source at
   [github.com/avatorl/dax-udf-svg-ibcs](https://github.com/avatorl/dax-udf-svg-ibcs); check its
   licence before use).
@@ -61,4 +62,5 @@ templates, token files, sample data, generated theme) under the MIT License. See
 plugin.
 
 Follows the IBCS® Standards; IBCS® is a registered trademark of IBCS Institute. Not affiliated
-with or certified by IBCS Institute.
+with or certified by IBCS Institute. Microsoft, Microsoft Fabric and Power BI are trademarks of the
+Microsoft group of companies; this project is not affiliated with or endorsed by Microsoft.

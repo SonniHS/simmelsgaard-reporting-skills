@@ -190,7 +190,7 @@ be one white strip, and with column width < `imageWidth` + 20 it draws a stray "
 
 ## 7. Checks
 
-`ibcs_lint.py pbir <name>.Report --layout layout.json` (ibcs-review) checks the shell mechanics:
+`python3 -I <ibcs-review skill dir>/scripts/ibcs_lint.py pbir <name>.Report --layout layout.json` (load the `ibcs-review` skill of plugin `ibcs` with the Skill tool; it prints its base directory) checks the shell mechanics:
 neutral canvas, content on a white card shape or with a white background (A2), no border or
 shadow on content visuals while card shapes may have them (A4), slicer labels at least 12 px below
 the title text box above them, card backgrounds that end more than 24 px below their last visual,

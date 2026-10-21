@@ -9,3 +9,5 @@ node_modules/
 tests/private-denylist.txt
 # Local-only agent instructions (session routing etc.)
 CLAUDE.local.md
+.remember/
+.pytest_cache/

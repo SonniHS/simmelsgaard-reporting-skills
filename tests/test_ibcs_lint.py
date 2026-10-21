@@ -276,6 +276,11 @@ class ReportMeasures(unittest.TestCase):
         (rel,) = self.of("Sales ΔPY% Wrong")
         self.assertEqual((rel["rule"], rel["sev"], rel["status"]), ("E14", "M", "check"))
 
+    def test_unguarded_relative_divide_is_must_check(self):
+        (rel,) = self.of("Sales ΔPY% Unguarded")
+        self.assertEqual((rel["rule"], rel["sev"], rel["status"]), ("E14", "M", "check"))
+        self.assertEqual(self.of("Sales ΔPY% Guarded"), [])
+
     def test_abs_of_plain_value_is_not_flagged(self):
         self.assertEqual(self.of("Sales Total"), [])
 
@@ -691,6 +696,14 @@ class RoundThreeRegressions(unittest.TestCase):
             page = Path(tmp) / "p.html"
             page.write_text(html, encoding="utf-8")
             return run("dom", page, "--no-overrides")[1]
+
+    def test_zero_variance_label_is_unsigned_and_uncoloured(self):
+        bad = self.dom("<svg><text data-role='variance-label' data-impact='good' fill='#5A7A00'>+0.0</text>"
+                       "<text data-role='variance-label' data-impact='bad' fill='#D00000'>\u22120.0</text></svg>")
+        self.assertEqual(sorted({(x["rule"], x["status"]) for x in bad}), [("B5", "fail"), ("E6", "fail")])
+        ok = self.dom("<svg><text data-role='variance-label' data-impact='none' fill='#000000'>0.0</text>"
+                      "<text data-role='variance-label' data-impact='good' fill='#5A7A00'>+0.1</text></svg>")
+        self.assertFalse([x for x in ok if x["rule"] in ("B5", "E6")])
 
     def test_html_variance_numbers_use_css_color(self):
         good = self.dom("<div><span data-role='variance-label' data-impact='good' style='color: rgb(90, 122, 0)'>"

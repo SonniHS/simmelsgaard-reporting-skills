@@ -131,7 +131,7 @@ drop the canvas tint (white page, cards as plain blocks).
   never the graphic green), the measure value in ink. A 1.5 px rule in ink under it.
 - **Materiality**: a comparison below the page's threshold reads "in line with BU (+0.5 mEUR,
   +0.3%)" instead of "+0.5 mEUR vs BU". The threshold comes from the visual spec (e.g. |Δ%| <
-  0.5 %); until the owner confirms it, the footer says it is proposed.
+  0.5 %); until the report owner confirms it, the footer says it is proposed.
 - At most two findings: the headline measure and the single largest material mover ("E2 has the
   largest gap to BU (−3.4 mEUR)"). The mover is ringed where it appears (§6, §7).
 - Title lines: line 1 muted (who, with every active filter), line 2 measure bold and unit, line 3

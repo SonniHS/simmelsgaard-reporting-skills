@@ -31,19 +31,22 @@ Useful Learn pages:
 
 | Route | Status (Oct 2026) | Use when | Notes |
 |---|---|---|---|
-| **Native BC → Fabric mirroring** | Announced at the end of Sept 2026; a public preview with a BC 29.x update is expected per community reports. **Not documented on Learn at the time of writing (unverified)** | New builds once a preview is available and accepted | Per community reports: built on open mirroring; a BC setup page pushes selected **companies and tables** (incl. extension fields) into an open-mirroring database; deletes replicate; latency minutes; Fabric storage/query costs apply. *(unverified until Microsoft docs exist)* |
+| **Native BC → Fabric mirroring** | Documented on Learn; planned as a production-ready **preview** from Oct 2026 (Learn, checked 2026-10-21) | New builds that accept a preview | The **Connect to Microsoft Fabric** assisted setup pushes selected **companies and tables** (standard and extension; all fields, no field selection) into an **open mirrored database** you create first in Fabric; up to 1,000 tables; default namespaces `BusinessCentral` (data) and `BusinessCentral_log`. Prerequisites: BC online 2026 release wave 2 **v29.0+**, the **Microsoft Fabric Mirroring** extension, data encryption on, permission set *MS Fabric Mirroring - Admin*, a dedicated Entra app registration (client ID, secret, service-principal object ID), a Fabric capacity (F SKU, F2+, or P), workspace **Member/Admin**, same Entra tenant. No BC charge; Fabric capacity costs apply. Learn: [overview](https://learn.microsoft.com/dynamics365/business-central/admin-fabric), [set up](https://learn.microsoft.com/dynamics365/business-central/admin-set-up-fabric-mirroring), [manage](https://learn.microsoft.com/dynamics365/business-central/admin-manage-fabric-export), [FAQ](https://learn.microsoft.com/dynamics365/business-central/fabric-faq) |
 | **bc2adls** (community fork) → Lakehouse or **open mirroring** | Widely used today; Microsoft's original repo is archived; fork maturity varies — record fork + version | Today, any size | AL extension; incremental exports with deletions; per table/company; select fields in setup; check the fork's maintainer and support model |
 | Partner open-mirroring connectors | Available | Managed alternative | Commercial |
 | BC API v2.0 / custom API pages → pipelines / Dataflow Gen2 / notebooks | GA | Small/medium volume, few tables | Incremental on `lastModifiedDateTime`/`systemModifiedAt`; subject to operational limits; deletes need extra logic |
 | Power BI BC connector (Import) | GA | One small company, no platform | Not a gold layer |
 
-Decision now: build silver against **bc2adls/open mirroring** with a mapping view per table,
-so switching to native mirroring later only changes the views.
+Decision now: for a new build, use **native mirroring** if a preview is acceptable, with
+**bc2adls** as the fallback; either way build silver as a mapping view per table, so switching
+routes (or a naming change at GA) only changes the views.
 
 ## 2. Silver naming
 
 bc2adls exports columns as `<FieldName>-<FieldNo>` and adds `$Company` and system columns
-*(verify against your fork's version)*; native mirroring will use its own naming. Normalise:
+*(verify against your fork's version)*; native mirroring writes into the `BusinessCentral`
+namespace with its own column naming *(check one mirrored table before writing the views)*.
+Normalise:
 
 ```sql
 -- silver.bc_gl_entry  (example for bc2adls naming; adjust to your export)

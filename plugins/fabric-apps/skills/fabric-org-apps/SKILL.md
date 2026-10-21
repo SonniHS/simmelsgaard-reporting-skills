@@ -15,8 +15,8 @@ description: >
 
 # Fabric org apps: packaging and distribution
 
-Facts as of 2026-10: org apps are GA, audiences GA since July 2026; several adjacent pieces (Git
-integration of org apps, Fabric Apps) are preview. Re-check Microsoft Learn before promising
+Facts as of 2026-10: org apps are GA, audiences GA since July 2026, and Git integration lists org
+apps without a preview tag; adjacent pieces such as Fabric Apps are preview. Re-check Microsoft Learn before promising
 behaviour. Companion: [ibcs-fabric-app](../ibcs-fabric-app/SKILL.md) (building the Fabric App).
 For Fabric CLI mechanics (`fab`, Git integration, deployment pipelines) use Microsoft's Fabric skills
 (`fabric-skills@fabric-collection` from <https://github.com/microsoft/skills-for-fabric>).
@@ -80,9 +80,9 @@ role" on the model). Direct Lake or DirectQuery chains need access along the cha
 
 | Mechanism | Org apps (as of 2026-10) | Notes |
 |---|---|---|
-| Git integration | supported (preview): `<name>.OrgApp/` with `.platform`, `definition.json` (schema v2.0.0), `.children/<audience>.OrgAppAudience/` | items referenced by `itemLogicalId`; audience `parentAppId` = the org app's `logicalId`; audience element references are flat |
+| Git integration | supported (no preview tag in Learn's supported-items list, 2026-10): `<name>.OrgApp/` with `.platform`, `definition.json` (schema v2.0.0), `.children/<audience>.OrgAppAudience/` | items referenced by `itemLogicalId`; audience `parentAppId` = the org app's `logicalId`; audience element references are flat |
 | Deployment pipelines | supported with deployment rules | **not with a service principal**: promote with a user identity (or REST) |
-| fabric-cicd | named by Learn as able to consume org-app definitions, but `OrgApp` was not in its published item-type list | verify the changelog before relying on it |
+| fabric-cicd | `OrgApp` / `OrgAppAudience` item types merged into fabric-cicd `main` on 2026-10-19 (PR #1155); not in a release yet (latest v1.4.0, 2026-10-07) | use the first release after v1.4.0; deployment pipelines still can't promote org apps with a service principal |
 | REST | CRUD for org apps and audiences, plus `getDefinition` / `updateDefinition` (base64 parts) | fallback for automation; `fab import` / `fab api` wrap it |
 | Fabric Apps | **not** in Git integration or pipelines | deploy with `rayfin up` per stage first, then reference the app from the org app |
 

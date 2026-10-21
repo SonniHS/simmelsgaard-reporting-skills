@@ -192,12 +192,13 @@ function 'Ibcs.DeltaPct' =
 ```
 
 Functions in the model: `Ibcs.Delta`, `Ibcs.DeltaMember`, `Ibcs.DeltaPct`, `Ibcs.Impact`, `Ibcs.ImpactColour`,
-`Ibcs.IsHelper`, `Ibcs.IsRatioFormat`, `Ibcs.PointsIfRatio`, `Ibcs.ScaleFormat`,
-`Ibcs.ValueFormat`, `Ibcs.DeltaFormat`, `Ibcs.DeltaPctFormat`, `Ibcs.Minuend`. Calls inside DAX
+`Ibcs.ImpactTextColour`, `Ibcs.IsHelper`, `Ibcs.IsRatioFormat`, `Ibcs.PointsIfRatio`,
+`Ibcs.ScaleDivisor`, `Ibcs.ScaleDecimals`, `Ibcs.ScaleFormat`, `Ibcs.ValueFormat`,
+`Ibcs.DeltaFormat`, `Ibcs.DeltaPctFormat`. Calls inside DAX
 are unquoted (`Ibcs.Delta ( a, b )`). Parameters that may be BLANK are left **untyped**
 (`AnyVal val`) so no implicit cast can turn BLANK into 0; `STRING`/`BOOLEAN` hints are used
 for format helpers. Use `EXPR`/`MEASUREREF`/`COLUMNREF` only when the function must evaluate
-the argument in its own context. The bodies of all twelve functions are in
+the argument in its own context. The bodies of all these functions are in
 [dax-patterns.md](dax-patterns.md) §1 (in TMDL: `function 'Ibcs.Name' =` with the same parameter
 list and body).
 
@@ -210,22 +211,20 @@ table 'Scenario Analysis'
 		precedence: 20
 
 		calculationItem 'ΔPY' =
-				VAR minuend = Ibcs.Minuend ( SELECTEDVALUE ( 'Time Calc'[Period] ) )   -- AC, or AC+FC under FY/YTG
-				RETURN
 				IF (
-				    Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
-				    SELECTEDMEASURE (),
-				    Ibcs.PointsIfRatio (
-				        Ibcs.Delta (
-				            CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = minuend ),
-				            CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "PY" )
-				        ),
-				        SELECTEDMEASUREFORMATSTRING ()
-				    )
+					Ibcs.IsHelper ( SELECTEDMEASURENAME () ),
+					SELECTEDMEASURE (),
+					Ibcs.PointsIfRatio (
+						Ibcs.Delta (
+							CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC+FC" ),
+							CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "PY" )
+						),
+						SELECTEDMEASUREFORMATSTRING ()
+					)
 				)
 			ordinal: 6
 
-			formatStringDefinition = Ibcs.DeltaFormat ( SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING (), SELECTEDVALUE ( Scale[Scale], "k" ) )
+			formatStringDefinition = Ibcs.DeltaFormat ( SELECTEDMEASURE (), SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING (), SELECTEDVALUE ( Scale[Scale], "k" ) )
 
 	column Scenario
 		dataType: string
@@ -242,9 +241,13 @@ table 'Scenario Analysis'
 ```
 
 The group also sets `multipleOrEmptySelectionExpression = BLANK ()` (several items selected
-without an axis → BLANK instead of a silent AC), and the Δ/Δ% items take their minuend from
-`Ibcs.Minuend ( SELECTEDVALUE ( 'Time Calc'[Period] ) )` (AC+FC under FY/YTG): ΔPY, ΔPL, ΔBU and
-their % items as above; ΔFC and ΔFC% keep `"AC"` (AC+FC − FC would be 0 under YTG).
+without an axis → BLANK instead of a silent AC), and the Δ/Δ% items take the constant minuend
+`"AC+FC"`: AC for every closed month, FC after it, so AC for closed periods and the year-end view
+under FY/YTG. ΔPY, ΔPL, ΔBU and their % items as above; ΔFC and ΔFC% keep `"AC"` (AC+FC − FC
+would be 0 under YTG). Do not read `'Time Calc'[Period]` inside these items to switch the
+minuend: in a tested model that read exhausted query memory in the Fabric engine (2026-10). The
+Δ items pass `SELECTEDMEASURE ()` to the format helpers so a variance that rounds to zero prints
+unsigned ([dax-patterns.md](dax-patterns.md) §6).
 
 Depths: `calculationGroup` 1, `calculationItem` 2, item properties (`ordinal`,
 `formatStringDefinition`) 3, DAX bodies 4. The two columns are mandatory: `Name` → the item
@@ -255,8 +258,9 @@ Items and ordinals (IBCS order: PY first, then PL, BU, FC, AC; variances after):
 | Ordinal | Item | Format expression |
 |---|---|---|
 | 0–5 | PY, PL, BU, FC, AC, AC+FC | `Ibcs.ValueFormat` (scaled, unsigned; ratios keep `0.0%`) |
-| 6, 8, 10, 12, 14 | ΔPY, ΔPL, ΔBU, ΔFC, (AC+FC)-BU | `Ibcs.DeltaFormat` (scaled, signed; ratios `+0.0" pp";-0.0" pp";0.0" pp"`, value ×100 by `Ibcs.PointsIfRatio`) |
-| 7, 9, 11, 13 | ΔPY%, ΔPL%, ΔBU%, ΔFC% | `Ibcs.DeltaPctFormat` (`+0.0%;-0.0%;0.0%`) |
+| 6, 8, 10, 12, 14 | ΔPY, ΔPL, ΔBU, ΔFC, (AC+FC)-BU | `Ibcs.DeltaFormat` (scaled, signed; ratios `+0.0" pp";-0.0" pp";0.0" pp"`, value ×100 by `Ibcs.PointsIfRatio`; unsigned `0.0` when the value rounds to zero at the scale) |
+| 7, 9, 11, 13 | ΔPY%, ΔPL%, ΔBU%, ΔFC% | `Ibcs.DeltaPctFormat` (`+0.0%;-0.0%;0.0%`; unsigned `0.0%` when it rounds to zero) |
+| 15–18 | ΔPY member, ΔPY% member, ΔBU member, ΔBU% member | as ΔPY / ΔPY%; `Ibcs.DeltaMember` for rows that add up to a total (structure bars, bridge steps; [dax-patterns.md](dax-patterns.md) §10) |
 
 `Time Calc` (precedence 10): Period, YTD, QTD, R12, FY, YTG, no format strings, column
 `Period`. See [dax-patterns.md](dax-patterns.md) §5 for the bodies and why the precedence

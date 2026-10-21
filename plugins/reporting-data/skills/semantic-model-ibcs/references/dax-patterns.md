@@ -54,11 +54,20 @@ DEFINE
     FUNCTION Ibcs.Impact = ( delta, direction ) =>
         IF ( NOT ISBLANK ( delta ) && delta <> 0, SIGN ( delta * direction ) )
 
-    /// Colour of an impact: +1 good, −1 bad, 0 neutral; BLANK (no or zero variance) stays BLANK =
-    /// default text colour. Hex values: the default ibcs-notation tokens (color.variance.*); use your overrides.
+    /// GRAPHIC colour of an impact, for bars, pins and markers only: +1 good, −1 bad, 0 neutral;
+    /// BLANK (no or zero variance) stays BLANK. Hex values: the default ibcs-notation tokens
+    /// color.variance.{good,bad,neutral}; use your overrides. Never as a font colour: the graphic
+    /// green is about 2.4:1 on white.
     FUNCTION Ibcs.ImpactColour = ( impact ) =>
         IF ( NOT ISBLANK ( impact ),                 -- guard first: in DAX BLANK = 0 would match "neutral"
             SWITCH ( impact, 1, "#8CB400", -1, "#FF0000", 0, "#0064FF" ) )
+
+    /// TEXT colour of an impact, for tinted variance NUMBERS (matrix and table font colour, labels):
+    /// the contrast-safe tokens color.variance.{goodText,badText,neutralText} (≥ 4.5:1 on white).
+    /// BLANK stays BLANK = default (black) text.
+    FUNCTION Ibcs.ImpactTextColour = ( impact ) =>
+        IF ( NOT ISBLANK ( impact ),
+            SWITCH ( impact, 1, "#5A7A00", -1, "#D00000", 0, "#0064FF" ) )
 
     /// Helper measures (named "fx …") pass through every calc item unchanged
     FUNCTION Ibcs.IsHelper = ( measureName : STRING ) =>
@@ -73,6 +82,12 @@ DEFINE
     FUNCTION Ibcs.PointsIfRatio = ( delta, formatString : STRING ) =>
         IF ( Ibcs.IsRatioFormat ( formatString ), delta * 100, delta )
 
+    /// Divisor and fixed decimals of a scale "1" | "k" | "m" | "bn" (as printed by Ibcs.ScaleFormat)
+    FUNCTION Ibcs.ScaleDivisor = ( scale : STRING ) =>
+        SWITCH ( scale, "bn", 1e9, "m", 1e6, "k", 1e3, 1 )
+    FUNCTION Ibcs.ScaleDecimals = ( scale : STRING ) =>
+        IF ( scale IN { "bn", "m", "k" }, 1, 0 )
+
     /// Scaled number format for "1" | "k" | "m" | "bn" (each "," = ÷1 000 in en-US format
     /// strings); signed = TRUE gives the variance form +x;−x;0
     FUNCTION Ibcs.ScaleFormat = ( scale : STRING, signed : BOOLEAN ) =>
@@ -86,21 +101,27 @@ DEFINE
         IF ( Ibcs.IsHelper ( measureName ) || Ibcs.IsRatioFormat ( formatString ),
             formatString, Ibcs.ScaleFormat ( scale, FALSE ) )
 
-    /// Format of the absolute variance items: scaled and signed; ratios in signed percentage points
-    FUNCTION Ibcs.DeltaFormat = ( measureName : STRING, formatString : STRING, scale : STRING ) =>
+    /// Format of the absolute variance items: scaled and signed; ratios in signed percentage points.
+    /// value = the item's result (pass SELECTEDMEASURE ()). A variance that ROUNDS to zero at the
+    /// printed scale and decimals gets the unsigned zero section: "0.0", never "+0.0" or "-0.0"
+    /// (a format string picks its section by the unrounded sign).
+    FUNCTION Ibcs.DeltaFormat = ( value, measureName : STRING, formatString : STRING, scale : STRING ) =>
+        VAR isRatio = Ibcs.IsRatioFormat ( formatString )
+        VAR shown = IF ( isRatio, ROUND ( value, 1 ), ROUND ( value / Ibcs.ScaleDivisor ( scale ), Ibcs.ScaleDecimals ( scale ) ) )
+        RETURN
+            SWITCH ( TRUE (),
+                Ibcs.IsHelper ( measureName ), formatString,
+                isRatio && shown = 0, "0.0"" pp""",
+                isRatio, "+0.0"" pp"";-0.0"" pp"";0.0"" pp""",
+                shown = 0, IF ( scale IN { "bn", "m", "k" }, "0.0", "0" ),
+                Ibcs.ScaleFormat ( scale, TRUE ) )
+
+    /// Format of the relative variance items (Δ%); a Δ% that rounds to 0.0 % is unsigned
+    FUNCTION Ibcs.DeltaPctFormat = ( value, measureName : STRING, formatString : STRING ) =>
         SWITCH ( TRUE (),
             Ibcs.IsHelper ( measureName ), formatString,
-            Ibcs.IsRatioFormat ( formatString ), "+0.0"" pp"";-0.0"" pp"";0.0"" pp""",
-            Ibcs.ScaleFormat ( scale, TRUE ) )
-
-    /// Format of the relative variance items (Δ%)
-    FUNCTION Ibcs.DeltaPctFormat = ( measureName : STRING, formatString : STRING ) =>
-        IF ( Ibcs.IsHelper ( measureName ), formatString, "+0.0%;-0.0%;0.0%" )
-
-    /// Name of the minuend item for ΔPY, ΔPL and ΔBU: AC+FC under the whole-year periods FY and
-    /// YTG (IBCS year-end view, §5), else AC. ΔFC keeps AC (AC+FC − FC would be 0 under YTG).
-    FUNCTION Ibcs.Minuend = ( period ) =>
-        IF ( period IN { "FY", "YTG" }, "AC+FC", "AC" )
+            ROUND ( value, 3 ) = 0, "0.0%",
+            "+0.0%;-0.0%;0.0%" )
 ```
 
 Signatures follow the Learn general form
@@ -261,10 +282,17 @@ calendar row (end of the date table) and YTD comes back BLANK. Fall back to the 
 period: `IF ( ISFILTERED ( 'Date' ), MAX ( … ), CALCULATE ( MAX ( … ), REMOVEFILTERS ( 'Date' ), 'Date'[IsClosedPeriod] = TRUE () ) )`.
 
 **Whole-year views.** Under FY and YTG the AC side covers only closed months while BU/PY/FC
-cover the full year. The variance items therefore use **AC+FC as minuend** under FY and YTG
-(`Ibcs.Minuend ( SELECTEDVALUE ( 'Time Calc'[Period] ) )`, §1 and §6), the IBCS year-end view.
-ΔFC keeps AC as minuend (under YTG, AC+FC minus FC is 0). R12 vs FC
-stays partial when FC versions only cover the current year: show ΔFC on YTD views.
+cover the full year. The variance items therefore use **AC+FC as their minuend, always** (§6):
+AC for every closed month and FC after it. For Period, YTD, QTD and R12 views that end in a
+closed month this is exactly AC; under FY and YTG it is the IBCS year-end view. ΔFC keeps AC as
+minuend (under YTG, AC+FC minus FC is 0). R12 vs FC stays partial when FC versions only cover
+the current year: show ΔFC on YTD views.
+
+Do **not** pick the minuend from the Time Calc selection inside the Scenario Analysis items
+(`IF ( SELECTEDVALUE ( 'Time Calc'[Period] ) IN { "FY", "YTG" }, "AC+FC", "AC" )`): in a tested
+model in the Fabric engine (2026-10) reading the lower-precedence group inside the items
+exhausted query memory. The constant AC+FC minuend gives the same numbers for closed periods
+and needs no such read.
 
 **Reporting-month rule.** Users pick one month (slicer on `Date[MonthLabel]`, default
 `[fx Last Closed Month]`). If a whole year is in context, "YTD" means the full year for AC but
@@ -274,24 +302,24 @@ cap YTD with a dynamic "comparable periods" flag.
 ## 6. Variance items
 
 ```dax
--- ΔPY (absolute), percentage points for ratio measures; minuend AC, or AC+FC under FY/YTG
+-- ΔPY (absolute), percentage points for ratio measures; minuend AC+FC (= AC for closed periods)
 -- (wrap in the §3 helper bypass, as in reference-model-tmdl.md §5)
-VAR minuend = Ibcs.Minuend ( SELECTEDVALUE ( 'Time Calc'[Period] ) )
-RETURN
-    Ibcs.PointsIfRatio (
-        Ibcs.Delta (
-            CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = minuend ),
-            CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "PY" ) ),
-        SELECTEDMEASUREFORMATSTRING () )
+Ibcs.PointsIfRatio (
+    Ibcs.Delta (
+        CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC+FC" ),
+        CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "PY" ) ),
+    SELECTEDMEASUREFORMATSTRING () )
+-- formatStringDefinition = Ibcs.DeltaFormat ( SELECTEDMEASURE (), SELECTEDMEASURENAME (),
+--                              SELECTEDMEASUREFORMATSTRING (), SELECTEDVALUE ( Scale[Scale], "k" ) )
 
 -- ΔPY% (relative): same minuend
-VAR minuend = Ibcs.Minuend ( SELECTEDVALUE ( 'Time Calc'[Period] ) )
-RETURN
-    Ibcs.DeltaPct (
-        CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = minuend ),
-        CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "PY" ) )
+Ibcs.DeltaPct (
+    CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC+FC" ),
+    CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "PY" ) )
+-- formatStringDefinition = Ibcs.DeltaPctFormat ( SELECTEDMEASURE (), SELECTEDMEASURENAME (), SELECTEDMEASUREFORMATSTRING () )
+
 -- ΔPL / ΔBU (and their %): same, with "PL" / "BU" as subtrahend.
--- ΔFC / ΔFC%: minuend stays "AC" (no Ibcs.Minuend).
+-- ΔFC / ΔFC%: minuend "AC" (AC+FC − FC would be 0 under YTG).
 ```
 
 - An item may apply **another item of the same group** by filtering the group column; direct
@@ -302,6 +330,13 @@ RETURN
   signed `+#,0.0,,;-#,0.0,,;0.0` (m); ratios `+0.0" pp";-0.0" pp";0.0" pp"` (the value is already ×100, see
   `Ibcs.PointsIfRatio`); Δ% `+0.0%;-0.0%;0.0%`. The `,`
   scaling and `.`/`,` separators follow the model culture.
+- **Rounded zero is unsigned.** A format string chooses its `+`/`-` section by the *unrounded*
+  sign, so a ΔPY of 20 000 at scale m would print `+0.0`. `Ibcs.DeltaFormat` and
+  `Ibcs.DeltaPctFormat` therefore take the item's value (`SELECTEDMEASURE ()`, which Learn
+  documents for "expressions for calculation items or dynamic format strings":
+  https://learn.microsoft.com/dax/selectedmeasure-function-dax) and return the unsigned zero
+  format when the value rounds to zero at the printed scale and decimals (ibcs-notation, the
+  zero-variance rule). Keep `Ibcs.ScaleDecimals` and `Ibcs.ScaleFormat` in step.
 - Ratio detection by format string (`CONTAINSSTRING ( SELECTEDMEASUREFORMATSTRING (), "%" )`)
   keeps the calc group generic. Verify it in your build for measures with a *dynamic* format
   string (`Report Value`); if it misfires, test `SELECTEDVALUE ( 'Report Line'[LineType] ) = "Ratio"`
@@ -313,7 +348,10 @@ RETURN
 - Attribute `VarianceDirection` (+1 / −1 / 0) lives on the report line (or KPI table), set in
   SQL, and refers to the **displayed** value: revenue and profit lines +1, cost lines (shown
   positive) −1, statistical or balance-sheet movements 0 (neutral, blue).
-- A Δ of exactly 0 gets no colour (`Ibcs.Impact` returns BLANK), never "bad".
+- A Δ of exactly 0 gets no colour (`Ibcs.Impact` returns BLANK), never "bad". A Δ that
+  **rounds** to zero at the displayed scale and decimals gets no colour either: `Ibcs.Impact`
+  only sees the raw value, so the measure that knows the scale (below) blanks it, and an app or
+  visual that knows its own decimals does the same (the `ibcs-web-charts` reference `impact.ts`).
 - Polarity decides **colour only**. The plotted value and its direction stay arithmetic.
 - Subtotal lines use their own direction; never aggregate directions of children.
 
@@ -324,12 +362,24 @@ VAR absItem = SWITCH ( TRUE (),
     scenarioItem IN { "ΔPY", "ΔPY%" }, "ΔPY",  scenarioItem IN { "ΔPL", "ΔPL%" }, "ΔPL",
     scenarioItem IN { "ΔBU", "ΔBU%" }, "ΔBU",  scenarioItem IN { "ΔFC", "ΔFC%" }, "ΔFC",
     scenarioItem IN { "(AC+FC)-BU", "(AC+FC)-BU%" }, "(AC+FC)-BU",
-    scenarioItem IN { "FC-PL", "(FC-PL)%" }, "FC-PL" )
+    scenarioItem IN { "FC-PL", "(FC-PL)%" }, "FC-PL",
+    scenarioItem IN { "ΔPY member", "ΔPY% member" }, "ΔPY member",
+    scenarioItem IN { "ΔBU member", "ΔBU% member" }, "ΔBU member" )
 VAR delta = IF ( NOT ISBLANK ( absItem ), CALCULATE ( [Report Value], 'Scenario Analysis'[Scenario] = absItem ) )
-RETURN Ibcs.Impact ( delta, SELECTEDVALUE ( 'Report Line'[VarianceDirection], 1 ) )
+VAR scale = SELECTEDVALUE ( Scale[Scale], "k" )
+VAR shown =                                    -- the Δ as printed: ratio lines in pp (×100 by PointsIfRatio)
+    IF ( SELECTEDVALUE ( 'Report Line'[LineType] ) = "Ratio",
+        ROUND ( delta, 1 ),
+        ROUND ( delta / Ibcs.ScaleDivisor ( scale ), Ibcs.ScaleDecimals ( scale ) ) )
+RETURN IF ( shown <> 0, Ibcs.Impact ( delta, SELECTEDVALUE ( 'Report Line'[VarianceDirection], 1 ) ) )
 
-fx Variance Colour = Ibcs.ImpactColour ( [fx Variance Impact] )   -- good green, bad red, neutral blue, Δ = 0 BLANK
+fx Variance Colour      = Ibcs.ImpactColour ( [fx Variance Impact] )       -- bars, pins, markers only
+fx Variance Text Colour = Ibcs.ImpactTextColour ( [fx Variance Impact] )   -- font colour of variance numbers
 ```
+
+Bind `fx Variance Text Colour` to font colour (matrix and table cells, data labels) and
+`fx Variance Colour` to bar and marker fills only: the graphic green is about 2.4:1 on white,
+the text tokens are at least 4.5:1 (ibcs-notation, tinted numbers).
 
 Hex values come from the organisation's notation tokens (the `ibcs-notation` skill in plugin
 `ibcs` ships a default token file and an overrides mechanism); the green/red/blue roles are
@@ -407,6 +457,33 @@ the visual/app from ordered rows, or with `WINDOW`/visual calculations
   actual) keeps 0 − reference and a new member actual − 0. With `Ibcs.Delta` those rows are BLANK
   and the rows no longer add up to the total Δ. The remainder ("Others") row is the total minus the shown members, never a sum
   of blanks.
+  In the calc group these are their own items, so the plain ΔPY/ΔBU items keep the
+  "no variance against nothing" rule for KPIs and time series:
+
+```dax
+-- 'ΔBU member' (ordinal after ΔBU%): rows that must add up to the total ΔBU
+IF ( Ibcs.IsHelper ( SELECTEDMEASURENAME () ), SELECTEDMEASURE (),
+    VAR ac  = CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC+FC" )
+    VAR ref = CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "BU" )
+    -- the reference has data for this period at all: remove the STRUCTURE dimensions only
+    -- (list yours; never 'Date' or the measure's own filters such as 'Report Line')
+    VAR refExists = NOT ISBLANK ( CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "BU",
+                                              REMOVEFILTERS ( Entity ), REMOVEFILTERS ( Account ) ) )
+    RETURN Ibcs.PointsIfRatio ( Ibcs.DeltaMember ( ac, ref, refExists ), SELECTEDMEASUREFORMATSTRING () ) )
+-- formatStringDefinition: as ΔBU
+
+-- 'ΔBU% member': a discontinued member is −100 %, a new member N/A (reference blank)
+IF ( Ibcs.IsHelper ( SELECTEDMEASURENAME () ), SELECTEDMEASURE (),
+    VAR ac  = CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "AC+FC" )
+    VAR ref = CALCULATE ( SELECTEDMEASURE (), 'Scenario Analysis'[Scenario] = "BU" )
+    RETURN IF ( NOT ( ISBLANK ( ac ) && ISBLANK ( ref ) ), Ibcs.DeltaPct ( COALESCE ( ac, 0 ), ref ) ) )
+-- formatStringDefinition: as ΔBU%
+-- 'ΔPY member' / 'ΔPY% member': the same with "PY".
+```
+
+  Use the member items in structure bars, bridge steps and stacked segments (the queries in
+  [visual-data-contract.md](visual-data-contract.md) §2); keep ΔBU/ΔPY for KPI cards, tables and
+  time series. `fx Variance Impact` maps `ΔBU member` and `ΔBU% member` to `ΔBU member` (§7).
 - **Field parameter** `Structure` over `Entity[EntityName]`, `Entity[Region]`,
   `Account[AccountName]`, `'Report Line'[LineName]`: one slicer, one bar chart. Field
   parameters are report-level objects: Fabric Apps can't use them (send the column instead).

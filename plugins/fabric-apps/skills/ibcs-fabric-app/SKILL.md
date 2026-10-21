@@ -32,9 +32,10 @@ the operational decisions. Companion skills:
 
 - the `ibcs-web-charts` skill (plugin `ibcs`): the chart behaviour contract (scenario columns,
   variance tiers, structure bars, waterfalls, small multiples, tables), formatting, one scale per
-  unit, phone and print. Implement or choose a chart library that meets that contract; this skill
-  does not ship one; there is no shipped IBCS chart library yet, see
-  [references/chart-layer.md](references/chart-layer.md) for the module layout that worked.
+  unit, phone and print. Its tested React + SVG reference components
+  (the folder `react-reference/src/ibcs/` in that skill's assets) are the starting point: copy them to
+  `src/ibcs/` as [references/chart-layer.md](references/chart-layer.md) describes and extend them;
+  build from scratch only for chart types they do not cover.
 - the `ibcs-composition` skill (plugin `ibcs`): the visual spec per page.
 - the `ibcs-notation` and `ibcs-review` skills (plugin `ibcs`): notation and the review checklist.
 - the `semantic-model-ibcs` skill (plugin `reporting-data`): the IBCS-ready model and per-card DAX.
@@ -73,11 +74,11 @@ flow, spacing tokens for non-data UI.
 | Item | Requirement | If missing |
 |---|---|---|
 | Visual spec | One spec per page (`ibcs-composition` format): message, title lines, visuals, data shape, scale groups, interactions | Ask for it or hand the brief to the `ibcs-visual-designer` agent (plugin `ibcs`); don't invent the page |
-| Capacity | As of 2026-10: workspace on **Fabric capacity (F2+, Trial OK)** in a region where Fabric Apps are available. Some regions are Power BI-only (e.g. Denmark East); put the app workspace on a capacity elsewhere, the semantic model may stay | Stop and tell the user |
+| Capacity | As of 2026-10: workspace on **Fabric capacity (F2+, Trial OK)** in a region where Fabric Apps (preview) are available. They are missing from every Power BI-only region (e.g. Denmark East) and from several full-Fabric regions (e.g. UK South/West, Canada Central/East, Brazil South, Australia Southeast): check the capacity region against the "Unavailable Fabric features" column of [Fabric region availability](https://learn.microsoft.com/fabric/admin/region-availability). Put the app workspace on a capacity elsewhere; the semantic model may stay | Stop and tell the user |
 | Tenant settings | As of 2026-10: **Fabric Apps (preview)**; **Semantic Model Execute Queries REST API**; for CI, service principals may use Fabric APIs | Fabric admin |
-| Permissions | Author: Edit on the workspace, **Build + Read** on the model. Consumers: Run/interact on the app + model access. Microsoft sources disagreed in 2026-09/10 on whether Read alone is enough; grant **Build + Read** until a tenant test shows Read works. Not granted by the org app (§7) | Grant via Entra groups |
+| Permissions | Author: Edit on the workspace, **Build + Read** on the model. Consumers: access to the app + **Read** on the model: since the end of August 2026 Fabric App consumers need only Read, not Build ([What's new in Power BI, August 2026](https://learn.microsoft.com/power-bi/fundamentals/whats-new)). Check with one test account that has only Read; add Build for consumers only if that test fails, and record it as a deviation (Build also lets them query the whole model, e.g. from Excel). Not granted by the org app (§7) | Grant via Entra groups |
 | Model | IBCS-ready: scenario/variance calculation group or explicit measures, impact (polarity), report lines, closed-period flag (`semantic-model-ibcs`) | Fix the model first; if it must not change, use query-scoped `DEFINE MEASURE` on the model's own measures and functions, flagged in the footnote ([queries-and-data.md](references/queries-and-data.md) §3a). The app never computes variances in TypeScript |
-| Tooling | Node.js 20, 22 or 24 (the `create-rayfin` 1.36.2 engines range, 2026-10); Learn says "Node.js 20 or later" | Install a supported Node version |
+| Tooling | Node.js **22 or 24 LTS**. The `create-rayfin` 1.36.2 engines range (2026-10) still includes 20, and Learn says "Node.js 20 or later", but Node.js 20 reached end of life on 2026-04-30 | Install Node.js 22 or 24 |
 
 ## 2. Workflow
 
@@ -89,8 +90,9 @@ flow, spacing tokens for non-data UI.
    (`rayfin.yml`); both run as the signed-in user, so RLS/OLS apply
    ([queries-and-data.md](references/queries-and-data.md) §0). Never use a stored identity to read
    data on a user's behalf, and never add mock data (the template forbids it).
-2. **Install the IBCS layer**: a chart layer that meets the `ibcs-web-charts` contract (module
-   layout: [references/chart-layer.md](references/chart-layer.md)), the token module and CSS
+2. **Install the IBCS layer**: copy the `ibcs-web-charts` reference components
+   (the folder `react-reference/src/ibcs/` in that skill's assets) to `src/ibcs/` and run their tests (module
+   layout and rules: [references/chart-layer.md](references/chart-layer.md)), the token module and CSS
    generated from the IBCS token file, and the report shell (header row, filter bar, page frame,
    cards, footer: [references/report-shell.md](references/report-shell.md)). Remove the template's
    font links and dark-mode toggle (§0). Give each page one scale registry.
@@ -107,14 +109,18 @@ flow, spacing tokens for non-data UI.
 5. **States**: loading, empty, error, partial and N/A per §5.
 6. **Verify**: typecheck + unit tests (query factories, adapters, formatters, chart layout
    functions); `validate:visual` for Vega-Lite factories only. In-portal run: the queries need a
-   deployed app item (`npx rayfin up` once to a dev workspace, only with the owner's approval),
-   then open the item in the portal with `&devUri=http://localhost:<port>` while `npm run dev` runs
-   (one pinned port, also in `allowedRedirectUris`; never `rayfin dev`); bare localhost cannot
-   authenticate. Before any deployment, check layout with a test-only harness on captured fixtures
+   deployed app item (`npx rayfin up --workspace … --item-name …` once to a dev workspace, only
+   with the user's explicit approval), then open the item in the portal with
+   `&devUri=http://localhost:<port>` while the **Vite-only** dev server runs (one pinned port, also
+   in `allowedRedirectUris`). Read the `scripts` in `package.json` first: in the `dataapp` template
+   (`create-rayfin` 1.36.2) `npm run dev` **is** `rayfin dev`, which provisions a backend in the
+   tenant; run `npm run dev:frontend` (plain `vite`) or `npx vite --port <port> --strictPort`
+   instead, and treat any script that calls `rayfin dev` or `rayfin up` as a deployment. Bare
+   localhost cannot authenticate. Before any deployment, check layout with a test-only harness on captured fixtures
    ([references/chart-layer.md](references/chart-layer.md)). Screenshots at 390 px, ≈ 1050 px (portal content width) and 1280 px with device-width emulation (recipe in
    the `ibcs-web-charts` testing reference); `ibcs-review` on each page; the page quality rubric
    in [references/page-quality.md](references/page-quality.md); RLS test matrix (§4).
-7. **Deploy only when the owner approves it in this task**
+7. **Deploy only when the user explicitly approves it in this task**
    ([references/deploy-and-operate.md](references/deploy-and-operate.md)); `--dry-run` counts too,
    it signs in and resolves the tenant target. Always `--workspace` + `--item-name`; production
    through CI. Users open the app item in the **portal**, not the static-hosting URL.
@@ -128,8 +134,11 @@ flow, spacing tokens for non-data UI.
   entity, variance waterfall); detail = variance table or lookup grid.
 - **Selectors** are IBCS concepts: reporting period (last closed month by default), period view,
   comparison (PL | PY | FC), entity filters. Every active selection appears in the title (filters
-  → line 1; period and scenarios → line 3). Keep them in the URL so deep links, back button and
-  bookmarks work. Hide controls in print.
+  → line 1; period and scenarios → line 3). Keep them in the URL (hash) so Back, Forward and a
+  reload inside the portal frame keep the view. Shareable deep links from the portal were not
+  available as of 2026-10: the portal owns the address bar
+  ([references/app-patterns.md](references/app-patterns.md) §6 has the direct-URL alternative).
+  Hide controls in print.
 - **Message text**: dynamic messages may only *detect* (template filled from measures);
   explanations come from governed commentary, otherwise mark the page `analysis`.
 - Details, wireframe, period grammar and the URL contract: [references/app-patterns.md](references/app-patterns.md).

@@ -30,7 +30,7 @@ rows in the TMDL (`DATATABLE`), so the model needs no connection or gateway.
 | `Date` | Calendar 2025–2026 (`CALENDAR`), marked as date table; `MonthLabel` (`2026-09`), `MonthShort`, `IsClosedPeriod` (up to 2026-09) |
 | `Region`, `Scenario`, `Sales` | Dimensions and the month-grain fact; keys and fact columns hidden |
 | `_Measures` | Revenue, Cost of Sales, Gross Profit, Gross Margin %, Operating Costs (polarity −1), Operating Result, Orders, `fx Last Closed Month` |
-| `Scenario Analysis` (precedence 20) | PY, BU, FC, AC, AC+FC, ΔPY, ΔPY%, ΔBU, ΔBU%, ΔFC, ΔFC%; signed, scaled format strings; pp for ratios; Δ% N/A when the reference ≤ 0 |
+| `Scenario Analysis` (precedence 20) | PY, BU, FC, AC, AC+FC, ΔPY, ΔPY%, ΔBU, ΔBU%, ΔFC, ΔFC%, and ΔBU member / ΔBU% member for rows that explain a total (regions); signed, scaled format strings that print a rounded zero unsigned; pp for ratios; Δ% N/A when the reference ≤ 0 |
 | `Time Calc` (precedence 10) | Period, YTD, QTD, R12, FY, YTG, relative to the reporting month in context |
 | `Scale`, `FC Version` | Unit picker for the format strings (default k; builders scale charts themselves), forecast-version picker |
 | `functions.tmdl` | `Ibcs.Delta`, `Ibcs.DeltaMember`, `Ibcs.DeltaPct`, `Ibcs.Impact`, colour and format helpers |

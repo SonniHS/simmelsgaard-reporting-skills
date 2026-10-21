@@ -169,10 +169,15 @@ The FX table needs a row `FromCurrency = ToCurrency = @GroupCurrency, Rate = 1` 
 the group currency are not dropped by the inner join.
 
 "n+m" forecast: copy closed AC months into the FC version when the version is created
-[portable]:
+[portable]. Order: load the FC version's plan rows first (the plan load above reloads the whole
+version), then this copy, which replaces months 1..n:
 
 ```sql
 DECLARE @Fc varchar(12) = 'FC2026-09', @N int = 9, @Fy int = 2026;
+DELETE f FROM gold.FactFinance f
+JOIN gold.DimDate d     ON d.[Date] = f.PeriodDate
+JOIN gold.DimScenario s ON s.ScenarioKey = f.ScenarioKey
+WHERE s.VersionCode = @Fc AND d.FiscalYearNo = @Fy AND d.FiscalPeriod <= @N;   -- no double grain
 INSERT INTO gold.FactFinance (ScenarioKey, PeriodDate, DateKey, AccountKey, EntityKey, CurrencyCode, AmountLC, AmountGC)
 SELECT  fc.ScenarioKey, f.PeriodDate, f.DateKey, f.AccountKey, f.EntityKey, f.CurrencyCode, f.AmountLC, f.AmountGC
 FROM    gold.FactFinance f
@@ -397,6 +402,8 @@ SELECT CAST(f.ScenarioKey AS int)        AS ScenarioKey,
        CAST(f.PeriodDate  AS date)       AS PeriodDate,
        CAST(f.AccountKey  AS int)        AS AccountKey,
        CAST(f.EntityKey   AS int)        AS EntityKey,
+       CAST(f.CurrencyCode AS varchar(3)) AS CurrencyCode,
+       CAST(f.AmountLC    AS decimal(19,4)) AS AmountLC,   -- the model's hidden `Amount LC` and its OLS
        CAST(f.AmountGC    AS decimal(19,4)) AS AmountGC
 FROM   gold.FactFinance f;
 ```
@@ -408,7 +415,7 @@ views [Spark]:
 ```sql
 DROP TABLE IF EXISTS gold.FactFinanceDL;
 CREATE TABLE gold.FactFinanceDL AS
-SELECT ScenarioKey, PeriodDate, AccountKey, EntityKey, AmountGC FROM gold.FactFinance;
+SELECT ScenarioKey, PeriodDate, AccountKey, EntityKey, CurrencyCode, AmountLC, AmountGC FROM gold.FactFinance;
 ```
 
 ## 11. Reconciliation and load checks [portable]
@@ -431,6 +438,22 @@ WHERE ABS(COALESCE(m.AmountLC, 0) - COALESCE(g.AmountLC, 0)) > 0.01;
 
 -- Phasing profiles sum to 1
 SELECT ProfileCode, SUM(Weight) FROM plan.Phasing GROUP BY ProfileCode HAVING ABS(SUM(Weight) - 1) > 0.000001;
+
+-- Annual plan rows without a known phasing profile (the §3 load would drop them silently)
+SELECT p.* FROM plan.PlanEntry p
+WHERE p.Status = 'Approved' AND p.FiscalPeriod IS NULL
+  AND NOT EXISTS (SELECT 1 FROM plan.Phasing ph WHERE ph.ProfileCode = p.PhasingProfile);
+
+-- Approved plan = loaded plan, per version (local currency, P&L sign as the §3 load stores it)
+SELECT COALESCE(p.VersionCode, f.VersionCode) AS VersionCode, p.PlanLC, f.LoadedLC
+FROM  (SELECT p.VersionCode, SUM(p.AmountLC * COALESCE(a.PLSign, -1)) AS PlanLC
+       FROM plan.PlanEntry p LEFT JOIN gold.DimAccount a ON a.AccountNo = p.AccountNo
+       WHERE p.Status = 'Approved' GROUP BY p.VersionCode) p
+FULL JOIN (SELECT s.VersionCode, SUM(f.AmountLC) AS LoadedLC
+           FROM gold.FactFinance f JOIN gold.DimScenario s ON s.ScenarioKey = f.ScenarioKey
+           WHERE s.ScenarioType IN ('BU', 'PL') GROUP BY s.VersionCode) f
+  ON  f.VersionCode = p.VersionCode
+WHERE ABS(COALESCE(p.PlanLC, 0) - COALESCE(f.LoadedLC, 0)) > 0.01;
 
 -- Every rate needed by the load exists (missing rates silently drop rows in an INNER JOIN).
 -- Same predicate as the §8 load: group currency, version 'AC', AVERAGE for P&L, CLOSING for BS.

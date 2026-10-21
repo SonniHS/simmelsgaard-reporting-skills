@@ -25,6 +25,23 @@ All notable changes to this marketplace and its plugins. The format follows
   and `claude plugin validate --strict` for the marketplace and every plugin.
 - `CONTRIBUTING.md`, `SECURITY.md`, issue and pull request templates, and `docs/prerequisites.md`.
 
+### Fixed
+- Rounded-zero rule applied everywhere: a variance that rounds to zero at the displayed decimals prints
+  unsigned and uncoloured and draws no mark (checklist B5/E6, linter, token descriptions, calc-group
+  format strings via `Ibcs.DeltaFormat ( value, … )`, Power BI card routes, SVG key message, apps).
+  Colour logic checks zero first, then the model's impact, then polarity.
+- `semantic-model-ibcs`: the ΔPY/ΔBU minuend is the constant item AC+FC; reading 'Time Calc' inside the
+  items exhausted query memory in Fabric. New member items use `Ibcs.DeltaMember` so structure rows
+  reconcile; text colours use the contrast-safe text tokens.
+- `fabric-apps`: the dev loop never provisions tenant resources (`npm run dev` is `rayfin dev` in the
+  dataapp template), every deploy names `--workspace` and `--item-name`, CI login works on Linux
+  runners, Node 22/24 LTS, consumers need Read only.
+- `ibcs-power-bi`: `to_pbir.py` registers Deneb in the report, `new_pbip.py --force` keeps report
+  measures, `gen_reference.py --help` writes nothing, the theme's impact colours use the text tokens,
+  Microsoft's `powerbi-authoring` skills are named.
+- Stale product facts refreshed against Microsoft Learn (PBIR default, Business Central mirroring,
+  org app Git support, fabric-cicd OrgApp support). The leak scan reads every UTF-8 file.
+
 ## [0.1.0] - 2026-10-20
 
 ### Added

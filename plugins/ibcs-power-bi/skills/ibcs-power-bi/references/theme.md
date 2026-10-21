@@ -20,7 +20,7 @@ values by hand: regenerate after any token change, and run `--check` in CI.
 | Theme key | Value / source token | Why |
 |---|---|---|
 | `dataColors[0..2]` | AC, PY, PL fill; then the remaining stack greys | default series order = scenario order |
-| `good` / `bad` / `neutral` | `color.variance.*` (CVD build: blue-green for good) | used by conditional formatting and the new card's reference labels |
+| `good` / `bad` / `neutral` | `color.variance.*Text` (CVD build: `cvd.*Text`, blue-green for good; bw build: the grey `bw.*`) | Power BI uses them for **text**: the new card's reference labels, KPI status and font-colour rules, so they take the contrast-safe text tokens (≥ 4.5:1). Marks keep the graphic colours: waterfall fills here, colour measures elsewhere (card-routes.md) |
 | `maximum` / `center` / `minimum` | greys | gradients stay grey: colour is reserved for impact |
 | `textClasses` | one family from `typography.family.powerbi`, token sizes | key message, title, labels, footnotes |
 | `visualStyles."*"."*"` | background/border/shadow off, legend off, value axis off, no gridlines, labels on with display units "None" | IBCS defaults for every visual |

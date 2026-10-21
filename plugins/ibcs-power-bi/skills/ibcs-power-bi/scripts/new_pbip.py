@@ -12,7 +12,12 @@
         --page-display "Key figures" --page-name keyFigures --canvas 1280x1120 --display-option FitToWidth
         --theme ./theme/ibcs-pbi-theme.json     (default: the bundled IBCS theme of this skill)
         --logical-id <guid>                     (default: a new random one; keep it stable afterwards)
-        --force                                 (overwrite generated files of an existing project)
+        --force                                 (refresh an existing project: see below)
+
+--force on an existing project refreshes only the scaffold's own parts: the .pbip, definition.pbir
+(the connection), version.json, the theme file and the theme registration in report.json (merged:
+publicCustomVisuals, settings and everything else stay). It never touches reportExtensions.json
+(report measures), pages.json, existing pages or visuals, and keeps the .platform logicalId.
 
 Writes (nothing else, never publishes):
     <out>/<name>.pbip
@@ -105,7 +110,7 @@ def main() -> int:
     ap.add_argument("--display-option", default="FitToPage", choices=["FitToPage", "FitToWidth", "ActualSize"],
                     help="page view; FitToWidth for tall (scrolling) pages")
     ap.add_argument("--logical-id", help="the .platform logicalId (default: new uuid4)")
-    ap.add_argument("--force", action="store_true")
+    ap.add_argument("--force", action="store_true", help="refresh an existing project (keeps measures, pages, logicalId)")
     a = ap.parse_args()
 
     m = re.fullmatch(r"(\d+)x(\d+)", a.canvas)
@@ -128,32 +133,57 @@ def main() -> int:
         "$schema": PBIP_SCHEMA, "version": "1.0",
         "artifacts": [{"report": {"path": f"{a.name}.Report"}}],
         "settings": {"enableAutoRecovery": True}}, a.force)
-    write(rep / ".platform", {
+    platform = rep / ".platform"
+    logical_id = a.logical_id
+    if not logical_id and platform.exists():  # keep the item's identity on --force
+        logical_id = json.loads(platform.read_text(encoding="utf-8")).get("config", {}).get("logicalId")
+    write(platform, {
         "$schema": PLATFORM_SCHEMA,
         "metadata": {"type": "Report", "displayName": a.name},
-        "config": {"version": "2.0", "logicalId": a.logical_id or str(uuid.uuid4())}}, a.force)
+        "config": {"version": "2.0", "logicalId": logical_id or str(uuid.uuid4())}}, a.force)
     write(rep / "definition.pbir", {"$schema": PBIR_SCHEMA, "version": "4.0",
                                     "datasetReference": dataset_reference(a)}, a.force)
     write(d / "version.json", {"$schema": f"{SCHEMA}/versionMetadata/1.0.0/schema.json", "version": "2.0.0"},
           a.force)
-    write(d / "report.json", {
-        "$schema": f"{SCHEMA}/report/3.0.0/schema.json",
-        "themeCollection": {"customTheme": {
-            "name": theme_file,
-            "reportVersionAtImport": {"visual": "2.4.0", "report": "3.0.0", "page": "2.0.0"},
-            "type": "RegisteredResources"}},
-        "resourcePackages": [{"name": "RegisteredResources", "type": "RegisteredResources",
-                              "items": [{"name": theme_file, "path": theme_file, "type": "CustomTheme"}]}],
-        "settings": {"useStylableVisualContainerHeader": True, "exportDataMode": "AllowSummarized",
-                     "defaultDrillFilterOtherVisuals": True, "allowChangeFilterTypes": True,
-                     "useEnhancedTooltips": True}}, a.force)
-    write(d / "reportExtensions.json", {"$schema": EXT_SCHEMA, "name": "extension", "entities": []}, a.force)
-    write(d / "pages" / "pages.json", {"$schema": f"{SCHEMA}/pagesMetadata/1.0.0/schema.json",
-                                       "pageOrder": [page], "activePageName": page}, a.force)
-    write(d / "pages" / page / "page.json", {
-        "$schema": f"{SCHEMA}/page/2.0.0/schema.json",
-        "name": page, "displayName": a.page_display, "displayOption": a.display_option,
-        "height": height, "width": width, "objects": page_objects(theme_src)}, a.force)
+    theme_collection = {"customTheme": {
+        "name": theme_file,
+        "reportVersionAtImport": {"visual": "2.4.0", "report": "3.0.0", "page": "2.0.0"},
+        "type": "RegisteredResources"}}
+    theme_item = {"name": theme_file, "path": theme_file, "type": "CustomTheme"}
+    report_path = d / "report.json"
+    if report_path.exists() and a.force:  # merge: keep publicCustomVisuals, settings, other resources
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+        report["themeCollection"] = {**report.get("themeCollection", {}), **theme_collection}
+        pkgs = report.setdefault("resourcePackages", [])
+        reg = next((p for p in pkgs if p.get("name") == "RegisteredResources"), None)
+        if reg is None:
+            pkgs.append({"name": "RegisteredResources", "type": "RegisteredResources", "items": [theme_item]})
+        else:
+            reg["items"] = [i for i in reg.get("items", []) if i.get("type") != "CustomTheme"] + [theme_item]
+        write(report_path, report, True)
+    else:
+        write(report_path, {
+            "$schema": f"{SCHEMA}/report/3.0.0/schema.json",
+            "themeCollection": theme_collection,
+            "resourcePackages": [{"name": "RegisteredResources", "type": "RegisteredResources",
+                                  "items": [theme_item]}],
+            "settings": {"useStylableVisualContainerHeader": True, "exportDataMode": "AllowSummarized",
+                         "defaultDrillFilterOtherVisuals": True, "allowChangeFilterTypes": True,
+                         "useEnhancedTooltips": True}}, a.force)
+    # report measures, pages and visuals are the user's work: created once, never overwritten
+    ext_path = d / "reportExtensions.json"
+    if not ext_path.exists():
+        write(ext_path, {"$schema": EXT_SCHEMA, "name": "extension", "entities": []}, False)
+    pages_path = d / "pages" / "pages.json"
+    if pages_path.exists():
+        page = None
+    else:
+        write(pages_path, {"$schema": f"{SCHEMA}/pagesMetadata/1.0.0/schema.json",
+                           "pageOrder": [page], "activePageName": page}, False)
+        write(d / "pages" / page / "page.json", {
+            "$schema": f"{SCHEMA}/page/2.0.0/schema.json",
+            "name": page, "displayName": a.page_display, "displayOption": a.display_option,
+            "height": height, "width": width, "objects": page_objects(theme_src)}, False)
     target = rep / "StaticResources" / "RegisteredResources" / theme_file
     if target.exists() and not a.force:
         raise SystemExit(f"{target} exists; use --force")
@@ -172,7 +202,10 @@ def main() -> int:
     if not gi.exists():
         gi.write_text("**/.pbi/localSettings.json\n**/.pbi/cache.abf\n", encoding="utf-8", newline="\n")
         print(f"wrote {gi}")
-    print(f"page folder: {d / 'pages' / page} (add visuals under visuals/<name>/visual.json)")
+    if page:
+        print(f"page folder: {d / 'pages' / page} (add visuals under visuals/<name>/visual.json)")
+    else:
+        print("kept report measures, pages and visuals (refreshed connection and theme only)")
     return 0
 
 

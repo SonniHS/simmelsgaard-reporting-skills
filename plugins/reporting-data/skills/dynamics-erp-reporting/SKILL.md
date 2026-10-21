@@ -7,7 +7,7 @@ description: >
   Dynamics must reach a lakehouse, warehouse or semantic model, or whenever someone mentions
   GeneralJournalAccountEntry, G/L Entry, DAVC, Dimension Set ID, Link to Fabric, bc2adls or Export
   to Data Lake. Covers the routes (Link to Fabric, Azure Synapse Link, BC bc2adls/open mirroring
-  and the announced native BC mirroring), the end of service of Export to Data Lake and how to
+  and native BC mirroring (preview)), the end of service of Export to Data Lake and how to
   migrate off it, key tables, financial dimension and Dimension Set decoding, enum labels,
   DataAreaId/company resolution, closing periods, exchange rates, budget register, source-to-gold
   mapping and reconciliation.
@@ -43,7 +43,7 @@ Status as of 2026-10.
 | Source | Recommended | Alternatives | Ending / legacy |
 |---|---|---|---|
 | **F&O** | **Link to Fabric**, F&O **tables** selected explicitly, low-latency sync | Azure Synapse Link to own ADLS Gen2 (Delta/CSV) | **Export to Data Lake: end of service on 30 Nov 2026; move off it.** BYOD legacy for analytics; virtual entities not for bulk |
-| **Business Central** | **bc2adls** (community fork) → Lakehouse or **open mirroring**; partner open-mirroring tools | API v2.0 / custom API pages → pipelines; Power BI BC connector for one small company | Microsoft's original bc2adls repo archived. **Native BC mirroring was announced in late Sept 2026; not yet documented on Learn at the time of writing: treat as unverified preview** |
+| **Business Central** | **Native BC → Fabric mirroring** (documented on Learn; production-ready **preview** from Oct 2026, BC 29.0+) into an open mirrored database; **bc2adls** (community fork) where a preview is not acceptable | Partner open-mirroring tools; API v2.0 / custom API pages → pipelines; Power BI BC connector for one small company | Microsoft's original bc2adls repo archived |
 | **Dataverse / CE** | **Link to Fabric** (all *Track changes* tables, no copy) | Synapse Link; TDS endpoint/connector for small Import models | Data Export Service retired |
 
 Link to Fabric prerequisites that bite: Fabric capacity in the **same region** as the
@@ -96,8 +96,9 @@ https://learn.microsoft.com/power-apps/maker/data-platform/fabric-link-to-data-p
 
 ## Unverified items (check before relying on them)
 
-- Native BC → Fabric mirroring: scope, setup page, column naming and GA timing (community
-  sources only, Sept/Oct 2026).
+- Native BC → Fabric mirroring: GA timing, schema-change behaviour (not documented yet) and
+  the exact column naming in the `BusinessCentral` namespace; prerequisites and limits are on
+  Learn (references/business-central.md §1).
 - bc2adls column naming `<Field>-<No>` and `$Company`: depends on the fork/version.
 - F&O enum label strings (`Current`, `Operating`, `Completed`) and `GlobalOptionsetMetadata`
   `EntityName`/`OptionSetName` casing; F&O exchange-rate storage factor; whether DAVC carries

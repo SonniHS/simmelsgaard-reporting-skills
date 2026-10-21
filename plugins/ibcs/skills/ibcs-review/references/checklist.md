@@ -49,7 +49,7 @@
 | B2 | abbreviations defined; short in column headers, long in row headers | UN 1.1 | S | text |
 | B3 | one number format (thousands separator, decimal sign) | UN 1.2 | M | text |
 | B4 | one negative style | UN 1.2 | M | text |
-| B5 | "+" on all positive variances, nowhere else | UN 1.2, 4.1 | M | text, model (format strings) |
+| B5 | "+" on every positive variance except one that rounds to 0 at the displayed decimals (printed unsigned, e.g. `0.0`); no "+" anywhere else; never `+0.0` / `-0.0` | UN 1.2, 4.1 | M | text, model (format strings) |
 | B6 | ISO 4217 codes; no symbols when currencies mix | UN 1.2 | S | text |
 | B7 | prefixes kEUR/mEUR/bEUR; SI units k/M/G | UN 1.2 | S | text |
 | B8 | ISO dates and periods (2026-Q2, 2026-06) or documented short forms | UN 1.2, 3.3 | S | text |
@@ -102,7 +102,7 @@
 | E3 | comparisons by overlap (AC/FC in front) or scenario triangles | UN 4.1 | S | img | — |
 | E4 | absolute variances named ΔPY/ΔPL (or AC-PL …) | UN 4.1 | S | text | — |
 | E5 | **absolute** variance bars same width and same scale as base | UN 4.1 | M | meta, img | relative variances use their own % scale |
-| E6 | three impact colours by polarity: desirable green, undesirable red, neutral/ambiguous blue; geometry follows the sign; Δ = 0 never red | UN 4.1 | M | model, img | exact codes are an org choice; hue families are not |
+| E6 | three impact colours by polarity: desirable green, undesirable red, neutral/ambiguous blue; geometry follows the sign; Δ = 0, or a Δ that rounds to 0 at the displayed decimals, has no colour and no mark (never green, red or blue) | UN 4.1 | M | model, img | exact codes are an org choice; hue families are not |
 | E7 | where colour is unavailable, grays are used (red → dark, green → light, blue → medium gray); for colour-deficient readers green → blue-green where helpful (p. 52) | UN 4.1 | S | lint(tokens), meta | separate CVD/B&W report variants are organisational policy, not IBCS — never fail a page for lacking them |
 | E8 | variance fill shows minuend (AC solid, FC hatched, PL outlined) | UN 4.1 | M | img | — |
 | E9 | variance axis shows subtrahend (PY solid light, PL/BU double line) | UN 4.1 | M | img | — |

@@ -55,5 +55,8 @@ OTHER THIRD-PARTY MATERIAL
 
   No other third-party material is bundled. Tools referred to by name (Microsoft Power BI, Microsoft
   Fabric, Deneb, Vega-Lite, Microsoft Dynamics 365) are trademarks of their
-  owners and are only described, not redistributed. For the Microsoft Fabric
-  CLI, use Microsoft's own skills from https://github.com/microsoft/fabric-cli.
+  owners and are only described, not redistributed. For Microsoft Fabric,
+  use Microsoft's Fabric skills (fabric-skills@fabric-collection from
+  https://github.com/microsoft/skills-for-fabric). The npm packages the
+  reference components in plugins/ibcs use (React, TypeScript, Vitest) are
+  dependencies installed from npm, not bundled.

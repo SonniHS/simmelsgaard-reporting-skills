@@ -93,10 +93,10 @@ locale:
 | Item / column | Kind | Display rule |
 |---|---|---|
 | AC, PY, PL, BU, FC, AC+FC | value | scale once per object (k/m/bn, ≤ 3 digits in charts, ≤ 4 in tables), unit in the title (`mEUR`) |
-| ΔPY, ΔPL, ΔBU, ΔFC, (AC+FC)-BU | absolute variance (minuend AC; **AC+FC** under the FY and YTG period views) | same scale as the values, **always signed** (`+1.2`, `−0.4`); structure and bridge rows use `Ibcs.DeltaMember` so a discontinued member shows 0 − REF ([dax-patterns.md](dax-patterns.md) §10) |
+| ΔPY, ΔPL, ΔBU, ΔFC, (AC+FC)-BU | absolute variance (minuend **AC+FC**: AC for every closed period, FC after it; ΔFC: AC) | same scale as the values, **signed** (`+1.2`, `−0.4`) unless it rounds to zero at the displayed decimals (`0.0`, no sign, no colour); structure and bridge rows use the items `ΔPY member` / `ΔBU member` (`Ibcs.DeltaMember`), so a discontinued member shows 0 − REF ([dax-patterns.md](dax-patterns.md) §10) |
 | Δ… of a ratio measure (`EBIT Margin %`, ratio report lines) | percentage points | the model already returns **pp** (×100): `+2.1 pp` |
 | ΔPY%, ΔPL%, ΔBU%, ΔFC% | relative variance | signed percent (`+3.2%`); **BLANK next to a present AC means "N/A"** (reference blank, 0 or negative): print `N/A`, never 0 or empty; BLANK with AC blank too = no row. Same table as ibcs-web-charts `behaviour-contract.md` §1 |
-| `Impact` | −1 / 0 / +1 / BLANK | colour only: +1 good (green), −1 bad (red), 0 neutral (blue), BLANK = Δ blank or exactly 0 → no colour |
+| `Impact` | −1 / 0 / +1 / BLANK | colour only: +1 good (green), −1 bad (red), 0 neutral (blue), BLANK = Δ blank or rounding to 0 at the Scale selection → no colour. An app that prints other decimals than the model's Scale must also drop the colour of a Δ that rounds to 0 at **its** decimals (as the `ibcs-web-charts` reference `impact.ts` does) |
 | `IbcsNotation` (from `Scenario`) | text | solid / outlined / hatched fill of the scenario |
 
 Plot variances with their **arithmetic sign** (a positive Δ goes up/right). Polarity changes
@@ -106,10 +106,12 @@ the colour, never the geometry, never the value.
 
 Ask the model, not the app: `"Impact", CALCULATE ( [fx Variance Impact], 'Scenario Analysis'[Scenario] = "ΔPY" )`.
 It maps ΔPY and ΔPY% to the absolute ΔPY and multiplies its sign by
-`'Report Line'[VarianceDirection]` (+1 / −1 / 0); a Δ of exactly 0 returns BLANK (no colour).
-It evaluates `[Report Value]` only, so select KPIs by `'Report Line'[LineCode]`. Power BI:
-bind `[fx Variance Colour]` as *field value* conditional formatting on the bars/cells (it is
-evaluated per cell under the Δ item in context).
+`'Report Line'[VarianceDirection]` (+1 / −1 / 0); a Δ that is 0 or rounds to 0 at the Scale
+selection returns BLANK (no colour). It evaluates `[Report Value]` only, so select KPIs by
+`'Report Line'[LineCode]`. Power BI: bind `[fx Variance Colour]` as *field value* conditional
+formatting on bar and marker fills, and `[fx Variance Text Colour]` (the contrast-safe text
+tokens) on font colours of variance numbers; both are evaluated per cell under the Δ item in
+context.
 
 Deneb templates (the `ibcs-deneb` skill, plugin `ibcs-power-bi`) take a `Polarity` field
 (1 / −1 / 0) and multiply the Δ by it themselves. Bind `Polarity` to
@@ -412,12 +414,16 @@ SUMMARIZECOLUMNS (
     TREATAS ( { "2026-09" }, 'Date'[MonthLabel] ),
     TREATAS ( { "YTD" }, 'Time Calc'[Period] ),
     TREATAS ( { "REV" }, 'Report Line'[LineCode] ),
-    "ΔBU",    CALCULATE ( [Report Value], 'Scenario Analysis'[Scenario] = "ΔBU" ),
-    "Impact", CALCULATE ( [fx Variance Impact], 'Scenario Analysis'[Scenario] = "ΔBU" )
+    "ΔBU",    CALCULATE ( [Report Value], 'Scenario Analysis'[Scenario] = "ΔBU member" ),
+    "ΔBU%",   CALCULATE ( [Report Value], 'Scenario Analysis'[Scenario] = "ΔBU% member" ),
+    "Impact", CALCULATE ( [fx Variance Impact], 'Scenario Analysis'[Scenario] = "ΔBU member" )
 )
 ```
 
 Align rows with the base bar chart (same categories, same order, same height); same scale.
+The **member** items (`Ibcs.DeltaMember`, [dax-patterns.md](dax-patterns.md) §10) keep a
+discontinued entity at 0 − BU (Δ% −100 %) and a new one at AC − 0 (Δ% N/A), so the rows add up to
+the total ΔBU; the plain `ΔBU` item would return BLANK for both.
 
 **Member-level variances without `Ibcs.DeltaMember`.** Many models have explicit Δ measures (or
 only `Ibcs.Delta` / `Ibcs.DeltaPct`) whose Δ is BLANK for a member without AC or without
@@ -466,7 +472,8 @@ The previous query with `"ΔBU%"`. BLANK → `N/A`.
 
 ### Vertical variance waterfall (PY → entities → AC)
 
-Totals query (horizontal waterfall a) + contribution query (variance bars with ΔPY). Running
+Totals query (horizontal waterfall a) + contribution query (variance bars with the `ΔPY member`
+item, so discontinued and new members count and `PY + Σ Δ = AC` holds). Running
 sums, the remainder row and the total-variance arrow are app logic. Sort contributions by the
 structure's standard order or by |Δ| descending, remainder last.
 
@@ -624,7 +631,7 @@ ORDER BY 'Report Line'[SortOrder], 'Scenario Analysis'[Ordinal]
   `VarianceDirection = −1`; a loss subtotal (negative) has Δ% BLANK = N/A.
 - Power BI matrix: rows `Report Line[LineName]`, columns `Scenario Analysis[Scenario]`
   (filtered to the 7 items), values `Report Value`; font colour = field value
-  `fx Variance Colour`; column subtotals off; scenario notation in headers is not native (see
+  `fx Variance Text Colour` (text tokens; `fx Variance Colour` is for bars and markers only); column subtotals off; scenario notation in headers is not native (see
   the `ibcs-notation` skill, plugin `ibcs`).
 - By entity instead of by line: replace the `Report Line` group-by columns with
   `Entity[EntityName]` and add `TREATAS ( { "EBIT" }, 'Report Line'[LineCode] )`.

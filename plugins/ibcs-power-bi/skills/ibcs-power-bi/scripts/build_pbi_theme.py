@@ -219,9 +219,12 @@ def build_theme(t: dict, variant: str = "standard", file_name: str | None = None
         "$schema": SCHEMA_URL,
         "name": file_name or ("ibcs-pbi-theme" + {"standard": "", "cvd": "-cvd", "bw": "-bw"}[variant] + ".json"),
         "dataColors": data_colors,
-        "good": impact["good"],
-        "bad": impact["bad"],
-        "neutral": impact["neutral"],
+        # good/bad/neutral colour TEXT in Power BI (new card reference labels, KPI status, font-colour
+        # rules), so they take the contrast-safe *Text tokens (>= 4.5:1); marks keep the graphic
+        # colours (waterfall fills above, colour measures). The bw build has no text variants.
+        "good": impact.get("goodText", impact["good"]),
+        "bad": impact.get("badText", impact["bad"]),
+        "neutral": impact.get("neutralText", impact["neutral"]),
         # Gradient defaults stay grey: colour is reserved for impact (SI 2.2, UN 4.1)
         "maximum": sc["ac"],
         "center": sc["py"],
@@ -341,10 +344,7 @@ def key_check(theme: dict, shell: bool | str = False) -> list[str]:
 
 
 def schema_validate(theme: dict, schema_src: str) -> list[str]:
-    try:
-        import jsonschema  # type: ignore
-    except ImportError:
-        return ["--validate needs `pip install jsonschema` (skipped)"]
+    import jsonschema  # type: ignore  # presence checked in main() before anything is generated
     if re.match(r"^https?://", schema_src):
         import urllib.request
         with urllib.request.urlopen(schema_src, timeout=30) as r:  # noqa: S310 (fixed MS URL)
@@ -421,6 +421,13 @@ def main() -> int:
     ap.add_argument("--validate", action="store_true", help="validate against the theme JSON schema")
     ap.add_argument("--schema", default=SCHEMA_URL, help="schema path or URL for --validate")
     a = ap.parse_args()
+    if a.validate:
+        try:
+            import jsonschema  # type: ignore  # noqa: F401
+        except ImportError:
+            print("--validate needs the jsonschema package: run with `uv run --with jsonschema python3 "
+                  "build_pbi_theme.py --validate …` or `pip install jsonschema`; nothing was written.", file=sys.stderr)
+            return 2
 
     srcs = [str(p) for p in ibcs_tokens.source_paths(a.tokens, a.overrides)]
     tok = ibcs_tokens.load(a.tokens, a.overrides)

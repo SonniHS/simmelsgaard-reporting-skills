@@ -18,6 +18,8 @@ What the service needs (found in an end-to-end test, as of 2026-10):
      removes the flag.
   4. No "active": true on a projection except in a slicer (on a tableEx column it collapsed every
      measure column to 1 px and added a blank row). --fix removes it.
+  5. Every custom visual used on a page (Deneb) is registered in report.json "publicCustomVisuals";
+     otherwise the report never declares it. --fix adds it.
 Nothing is published; only files under the given Report folder change.
 """
 
@@ -31,6 +33,7 @@ from pathlib import Path
 
 sys.dont_write_bytecode = True
 ACTIVE_OK = {"slicer", "advancedSlicerVisual"}  # Desktop writes "active" on slicer fields
+CUSTOM_VISUALS = {"deneb7E15AEF80B9E4D4F8E12924291ECE89A"}  # AppSource visuals the skills place
 
 
 def model_measures(tables: Path | None) -> dict[str, str]:
@@ -118,6 +121,7 @@ def run(report: Path, model: dict[str, str], fix: bool) -> list[str]:
     if fix and changed_ext:
         ext_path.write_text(json.dumps(ext, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
 
+    used: set[str] = set()
     for f in sorted(definition.glob("pages/**/*.json")):
         doc = json.loads(f.read_text(encoding="utf-8"))
         where = str(f.relative_to(definition))
@@ -133,6 +137,18 @@ def run(report: Path, model: dict[str, str], fix: bool) -> list[str]:
                             del p["active"]
         if fix and len(problems) > before:
             f.write_text(json.dumps(doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
+        if vis.get("visualType") in CUSTOM_VISUALS:
+            used.add(vis["visualType"])
+
+    report_path = definition / "report.json"
+    if used and report_path.exists():
+        report_doc = json.loads(report_path.read_text(encoding="utf-8"))
+        missing = sorted(used - set(report_doc.get("publicCustomVisuals", [])))
+        for v in missing:
+            problems.append(f"report.json: custom visual {v} is used but not in publicCustomVisuals")
+        if fix and missing:
+            report_doc.setdefault("publicCustomVisuals", []).extend(missing)
+            report_path.write_text(json.dumps(report_doc, indent=2, ensure_ascii=False) + "\n", encoding="utf-8")
     return problems
 
 

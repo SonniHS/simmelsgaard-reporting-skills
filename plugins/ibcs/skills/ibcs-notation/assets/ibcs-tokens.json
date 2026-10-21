@@ -1380,7 +1380,7 @@
     },
     "format": {
       "$type": "string",
-      "$description": "Format patterns per value kind. d3 = d3-format/Vega-Lite (replace ',' group separator with number.separator.thousands after formatting); excel = Power BI/DAX/Excel format string (thousands separator comes from the culture).",
+      "$description": "Format patterns per value kind. d3 = d3-format/Vega-Lite (replace ',' group separator with number.separator.thousands after formatting); excel = Power BI/DAX/Excel format string (thousands separator comes from the culture). Signed variance patterns (variance, relativeVariance, relativeVariance1, percentagePoints) apply only after the rounded-zero check: a value that rounds to 0 at the displayed decimals is unsigned, uncoloured and draws no mark. Code that signs values itself formats with the unsigned pattern (absolute, absoluteInteger, ratio) and adds '+' only when the rounded value is > 0.",
       "absolute": {
         "d3": {
           "$value": ",.1f"
@@ -1410,6 +1410,7 @@
         }
       },
       "variance": {
+        "$description": "Signed pattern: apply it only after the zero check. Round at the displayed factor and decimals first; a value that rounds to 0 uses the unsigned pattern (d3 ',.1f', excel '0.0'), never +0 or -0. d3's default minus is U+2212: set a locale minus '-' (number.sign.negative). Excel and Power BI pick the section from the unrounded value, so a plain signed format string prints +0.0 for 0.04; in Power BI use a dynamic format string that rounds first, e.g. IF ( ROUND ( [Δ] / factor, d ) = 0, \"0.0\", \"+#,0.0;-#,0.0\" ), where dynamic format strings are allowed.",
         "d3": {
           "$value": "+,.1f"
         },
@@ -1438,6 +1439,7 @@
         }
       },
       "relativeVariance": {
+        "$description": "Signed pattern: apply it only after the zero check. Round at the displayed factor and decimals first; a value that rounds to 0 uses the unsigned pattern (d3 '.0%', excel '0%'), never +0 or -0. d3's default minus is U+2212: set a locale minus '-' (number.sign.negative). Excel and Power BI pick the section from the unrounded value, so a plain signed format string prints +0.0 for 0.04; in Power BI use a dynamic format string that rounds first, e.g. IF ( ROUND ( [Δ] / factor, d ) = 0, \"0%\", \"+0%;-0%\" ), where dynamic format strings are allowed.",
         "d3": {
           "$value": "+.0%"
         },
@@ -1458,7 +1460,7 @@
         "excel": {
           "$value": "+0.0%;-0.0%;0.0%"
         },
-        "$description": "Relative variance with one decimal (+5.8%), for specs whose display setting asks for it (decimals fixed per scale group). Default stays relativeVariance (whole percent).",
+        "$description": "Relative variance with one decimal (+5.8%), for specs whose display setting asks for it (decimals fixed per scale group). Default stays relativeVariance (whole percent). Signed pattern: apply it only after the zero check. Round at the displayed factor and decimals first; a value that rounds to 0 uses the unsigned pattern (d3 '.1%', excel '0.0%'), never +0 or -0. d3's default minus is U+2212: set a locale minus '-' (number.sign.negative). Excel and Power BI pick the section from the unrounded value, so a plain signed format string prints +0.0 for 0.04; in Power BI use a dynamic format string that rounds first, e.g. IF ( ROUND ( [Δ] / factor, d ) = 0, \"0.0%\", \"+0.0%;-0.0%\" ), where dynamic format strings are allowed.",
         "$extensions": {
           "ibcs": {
             "src": "OURS",
@@ -1473,7 +1475,7 @@
         "excel": {
           "$value": "+0.0\"pp\";-0.0\"pp\";0.0\"pp\""
         },
-        "$description": "d3: append 'pp' after formatting.",
+        "$description": "d3: append 'pp' after formatting. Signed pattern: apply it only after the zero check. Round at the displayed factor and decimals first; a value that rounds to 0 uses the unsigned pattern (d3 '.1f', excel '0.0\"pp\"'), never +0 or -0. d3's default minus is U+2212: set a locale minus '-' (number.sign.negative). Excel and Power BI pick the section from the unrounded value, so a plain signed format string prints +0.0 for 0.04; in Power BI use a dynamic format string that rounds first, e.g. IF ( ROUND ( [Δ] / factor, d ) = 0, \"0.0\"pp\"\", \"+0.0\"pp\";-0.0\"pp\"\" ), where dynamic format strings are allowed.",
         "$extensions": {
           "ibcs": {
             "src": "STD",
@@ -1977,7 +1979,7 @@
   },
   "polarity": {
     "$type": "number",
-    "$description": "Per-measure attribute that selects the impact COLOUR only (never the geometry; never plot Δ × polarity): polarity 0 → neutral (blue); otherwise Δ = 0 → no bar and default text colour (never bad), good if Δ × polarity > 0, bad if < 0.",
+    "$description": "Per-measure attribute that selects the impact COLOUR only (never the geometry; never plot Δ × polarity). Order: Δ = 0, or a Δ that rounds to 0 at the displayed decimals → no colour, no bar, unsigned label in the default text colour (never bad, never neutral); otherwise the model's impact if given; otherwise polarity 0 → neutral (blue); good if Δ × polarity > 0, bad if < 0.",
     "higherIsBetter": {
       "$value": 1,
       "$extensions": {

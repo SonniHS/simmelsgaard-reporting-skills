@@ -38,11 +38,14 @@ the model, so the page shows no data there.
 
 1. Create the app item once: `npx rayfin up --workspace "<dev workspace>" --item-name "<app>"`.
    It is a deployment:
-   only with the owner's approval in this task ([deploy-and-operate.md](deploy-and-operate.md) §1).
-2. `npm run dev` (Vite only), then open the app item in the Fabric portal and append
+   only with the user's explicit approval in this task ([deploy-and-operate.md](deploy-and-operate.md) §1).
+2. Start the **Vite-only** dev server, then open the app item in the Fabric portal and append
    `&devUri=http://localhost:<port>` to its URL. The portal hosts your local build and proxies the
-   queries as you. Never use `npx rayfin dev` for this loop: it provisions a backend in the
-   tenant, so it needs the same approval as a deploy.
+   queries as you. Read the `scripts` in `package.json` first: in the `dataapp` template
+   (`create-rayfin` 1.36.2, Microsoft's `samples/data-app/package.json`) `npm run dev` **is**
+   `rayfin dev` and `dev:frontend` is plain `vite`. Run `npm run dev:frontend` or
+   `npx vite --port <port> --strictPort`. `rayfin dev`, and any script that calls it or
+   `rayfin up`, provisions resources in the tenant and needs the same approval as a deploy.
 3. Without an app item (no tenant deployment yet), test queries only: `npx fabric-app-data query
    <alias> --file src/queries/<page>/<viz>.dax` (or `--query '<DAX>'`, `--limit 50`) runs the same
    SDK pipeline from the terminal as the developer.
@@ -58,7 +61,8 @@ exact item URL with `&devUri=…` to open.
 fail in the portal (see the factory-output test in §2). The deployed app runs in nested
 cross-origin frames, and its console was not readable from the portal tab with a browser tool, so:
 
-1. Run `npm run dev` on the pinned port and open the app item with
+1. Run the Vite-only dev server (`npm run dev:frontend`, never a script that runs `rayfin dev`)
+   on the pinned port and open the app item with
    `&devUri=http://localhost:<port>`: the portal now frames your local build.
 2. Chrome's Local Network Access check blocks a public site from framing `http://localhost`. A
    normal profile asks for local-network access: the user must allow it. An automated browser
@@ -155,7 +159,8 @@ from your implementation of the `ibcs-web-charts` contract.
 const scale = usePageScale("EUR");                                 // the page's scale registry: one unit key → scale factor + px per unit
 const result = useSemanticModelQuery({ connection, query });      // queries never throw
 const title = <TitleBlock what="Net sales" unit={scale.label} when={when} />;   // stays in every state (SKILL.md §5)
-if (result.loading) return <Panel title={title}><ChartSkeleton height={180} /></Panel>;
+if (result.isLoading) return <Panel title={title}><ChartSkeleton height={180} /></Panel>;
+if (result.error) return <Panel title={title}><ViewError error={result.error} /></Panel>;   // timeout or thrown error: SKILL.md §5 text
 if (result.data?.status !== "success") return <Panel title={title}><ViewError error={result.data?.error} /></Panel>;
 const records = toRecords(result.data.table);                     // bare column names, normalised values (§6)
 const rows = toPeriodRows(records, { period: "MonthShort", ac: "AC", fc: "FC", pl: "PL", py: "PY",
@@ -225,7 +230,11 @@ reference, N/A when not interpretable).
 Map the queried columns straight into chart rows, e.g.
 `{ category, AC, PL, variances: { "ΔPL": r["ΔPL"], "ΔPL%": r["ΔPL%"] }, impact: r.Impact }`. A
 present variance value wins over any computed fallback (BLANK → `null` → N/A); impact changes colour
-only and wins over a static polarity.
+only and wins over a static polarity. The model's impact is BLANK only for an exact zero; the app
+knows the displayed decimals, so it applies the **rounded-zero rule** itself: a Δ that rounds to
+zero at the visual's factor and decimals gets no mark, no colour and an unsigned label (`0.0`),
+whatever the impact column says. Check zero first, then impact, then polarity (the reference
+components' `impactKey ( Δ, { impact, polarity, isZero } )` does it in that order).
 
 ## 3a. When the model must not change: query-scoped measures
 

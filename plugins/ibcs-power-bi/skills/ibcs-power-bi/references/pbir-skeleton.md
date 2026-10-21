@@ -127,7 +127,11 @@ When the shared model must not change, the report carries its own measures:
   helpers in a `displayFolder` instead.
 - **No dynamic format strings**: Learn states that report measures in a live-connect report
   cannot have them. Use a static `formatString`; for a unit picker (thousands / millions), divide
-  in the measure and keep the format static, or fix the unit with a page filter.
+  in the measure and keep the format static, or fix the unit with a page filter. For the
+  zero-variance rule, round the variance to the displayed precision in the measure
+  (`ROUND ( [AC] - [PY], -5 )` for mEUR at one decimal) with a static three-section format
+  (`+#,0.0,,;-#,0.0,,;0.0`): a rounded 0 takes the unsigned third section (card-routes.md,
+  signed data labels).
 - SVG measures: `"dataType": "Text"`, `"dataCategory": "ImageUrl"`.
 - Mark each one as a report measure (description or a footnote on the page) and list it for the
   model owner: report measures are a bridge, model measures are the goal.

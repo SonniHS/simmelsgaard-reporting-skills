@@ -168,8 +168,8 @@ visuals:
         - {code: BU}
         - {code: AC, period: "YTD to the month slicer"}
       variances:
-        - {id: dbu, code: ΔBU, measure: rev, minuend: AC, subtrahend: BU, kind: absolute}
-        - {id: dbup, code: ΔBU%, measure: rev, minuend: AC, subtrahend: BU, kind: relative}
+        - {id: dbu, code: ΔBU, measure: rev, minuend: AC, subtrahend: BU, kind: absolute, field: "[Revenue] with 'Scenario Analysis' item ΔBU member"}
+        - {id: dbup, code: ΔBU%, measure: rev, minuend: AC, subtrahend: BU, kind: relative, field: "[Revenue] with 'Scenario Analysis' item ΔBU% member"}
       shape: [Region, SortOrder, IsRemainder, AC, BU, ΔBU, ΔBU%, ImpactΔBU]
     tiers:
       - {id: base, type: bar-triangles, values: [rev.AC, rev.BU], scaleGroup: meur-ytd, position: base,

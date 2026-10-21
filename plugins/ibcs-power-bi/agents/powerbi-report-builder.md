@@ -22,10 +22,11 @@ visual spec.
   `references/card-routes.md`.
 - The `ibcs-deneb` skill for any visual routed to Deneb; the `ibcs-svg-dax` skill (skeletons, or
   the community PowerofBI.IBCS library; check its licence before use) for chart components in tables.
-- The notation (`ibcs-notation`) and the visual-spec format (`ibcs-composition`), plugin `ibcs`
-  (a dependency of this plugin; load them with the Skill tool).
-- File mechanics from Microsoft's Power BI agent skills where installed (PBIR format, PBIP, theme
-  JSON, Deneb and SVG visuals; prefer a PBIR CLI when one is installed). Measures and calculation
+- The notation (`ibcs-notation`), the visual-spec format (`ibcs-composition`) and `ibcs-review`
+  (its `ibcs_lint.py` is the build gate in step 7), plugin `ibcs` (a dependency of this plugin;
+  load them with the Skill tool, which prints each skill's base directory).
+- PBIR/PBIP file mechanics from Microsoft's `powerbi-authoring` plugin where installed (`/plugin marketplace add microsoft/skills-for-fabric`, then `/plugin install powerbi-authoring@fabric-collection`; skills `powerbi-report-authoring` and `powerbi-report-management`, preview; [Learn](https://learn.microsoft.com/power-bi/developer/agentic/power-bi-planner-fabric-skill-overview)). It does not cover Deneb or SVG measures
+  (`ibcs-deneb`, `ibcs-svg-dax`). Measures and calculation
   groups belong in the semantic model (the `semantic-model-ibcs` skill, if the `reporting-data`
   plugin is installed), not as ad-hoc DAX in visuals. When the shared model must not change, the
   bridge is report-level measures (`ibcs-power-bi` §5).
@@ -68,7 +69,8 @@ visual spec.
    size from `ibcs-power-bi/scripts/scale_layout.py`, `unitDivisor` or scaled measures,
    `triangleScenario` for a `draw: triangle` tier, `fcLabel`, `categoryLabelPx` and the aligned tier ranges (`scale_layout.py` `alignTiers`) on a Total visual,
    `pinTier` for a Δ% pin tier above the columns in the same visual, `showBase: false` for a
-   second variance tier), `--sort`, `--filter`, `--title`. Slicers: `textSize`, a visual-level
+   second variance tier), `--sort`, `--filter`, `--title` (it registers Deneb in `report.json`
+   `publicCustomVisuals` itself; on a warning pass `--report <report>/definition/report.json`). Slicers: `textSize`, a visual-level
    filter without blank and unknown members, one `syncGroup` per field across pages; dynamic
    texts on `cardVisual` (`pbir-skeleton.md` §6, §9). KPI cards: one `tableEx` per card
    (page-shell.md §4). Structure tables with pins: SVG measures in one
@@ -82,8 +84,8 @@ visual spec.
    shared `deviations`: give each entry `medium: powerbi`, or keep them in a sibling file
    `<spec name>.deviations.powerbi.yaml`, so one medium's compromise is not read as the other's.
 7. Validate: `jq empty` on every changed JSON (or `python3 -m json.tool <file> > /dev/null` if jq
-   is not installed); `report_measures.py <report> --check`; `ibcs_lint.py pbir <report>
-   --layout layout.json` (ibcs-review; no failed rule: sizes, px per unit, label room, cut
+   is not installed); `report_measures.py <report> --check`; `python3 -I <ibcs-review skill dir>/scripts/ibcs_lint.py
+   pbir <report> --layout layout.json` (no failed rule: sizes, px per unit, label room, cut
    headers, image column widths); a PBIP validator where available;
    `build_pbi_theme.py --check` and `sync_tokens.py --check`; a live-data preview of each Deneb
    visual (`render-previews.mjs --visual`); then the `ibcs-review` skill on the result if

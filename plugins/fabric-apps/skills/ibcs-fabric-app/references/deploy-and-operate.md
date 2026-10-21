@@ -16,13 +16,18 @@ project: the in-project Rayfin skills are authoritative.
 **Approval first.** Every `rayfin up` is a deployment, **including `--dry-run`**: the dry run signs
 in, checks the licence and resolves the workspace and target in the tenant (Rayfin CLI 1.36,
 2026-10). The in-project `rayfin` skill tells agents to run the full deploy; this skill overrides
-it: run neither without the owner's approval in the current task, and the same for `npx rayfin dev`
-(it provisions a backend). Without approval, hand the user the exact command.
+it: run neither without the user's explicit approval in the current task, and the same for
+`npx rayfin dev` (it provisions a backend) and for any npm script that calls `rayfin dev` or
+`rayfin up` (in the `dataapp` template `npm run dev` **is** `rayfin dev`; read the `scripts` in
+`package.json` first). Without approval, hand the user the exact command.
 
-**Name the target.** Without flags, `rayfin up` reuses a recorded target (a workspace id in the
-environment or in `rayfin/.env` from an earlier deployment, which may be production) and only
-otherwise falls back to **My Workspace**; the item is named after the project `id` in `rayfin.yml`.
-Always pass both:
+**Name the target.** Without flags, `rayfin up` picks its target in this order (Rayfin CLI 1.36,
+2026-10): `--workspace` / `--workspace-id`, then the `RAYFIN_WORKSPACE_ID` environment variable,
+then the recorded deployment in `rayfin/.deployments.json` (which may be production), then a
+prompt that offers a new workspace (a non-interactive run fails). The item is named after the
+project `id` in `rayfin.yml`. `rayfin/.deployments.json` and `rayfin/.env` are gitignored by the
+template; keep them that way, because a shared registry whose recorded target is prod turns every
+untargeted deploy into a prod deploy. Always pass both:
 
 ```bash
 npx rayfin up --workspace "<workspace name>" --item-name "<item name>"
@@ -50,15 +55,20 @@ the raw error shown in dev builds ([queries-and-data.md](queries-and-data.md) §
 
 | Env | Workspace | Who deploys | How |
 |---|---|---|---|
-| dev | `<app>-dev` (per developer or shared) | developer, with approval | `npx rayfin up --workspace <app>-dev --item-name "<app>"` |
-| test | `<app>-test` | CI on merge to `main`, or manually | `rayfin up --dry-run` on PRs, `rayfin up --yes` on merge |
-| prod | `<app>-prod` | CI with manual approval (GitHub environment protection) | `rayfin up --workspace <app>-prod --yes` |
+| dev | `<app>-dev` (per developer or shared) | developer, with approval | `npx rayfin up --workspace "<app>-dev" --item-name "<app>"` |
+| test | `<app>-test` | CI on merge to `main`, or manually | PRs: `npx rayfin up --workspace "<app>-test" --item-name "<app>" --dry-run`; merge: `npx rayfin up --workspace "<app>-test" --item-name "<app>" --yes` |
+| prod | `<app>-prod` | CI with manual approval (GitHub environment protection) | `npx rayfin up --workspace "<app>-prod" --item-name "<app>" --yes` |
+
+`--yes` skips the prompts: it approves an automatic capacity assignment **and** the reuse of an
+existing item with the same name in the target workspace (Rayfin deploy docs, 2026-10). Use it
+only in CI against a workspace created for that environment, never on a first deploy into a
+shared workspace.
 
 - No versioning in the service: the repo and its tags are the history; roll back by redeploying a tag.
 - Schema apply refuses destructive changes unless `--force`. Pass `--force` only from a manual,
   reviewed run with the planned operations pasted into the PR.
-- The CLI writes environment ids to files under `rayfin/` (`.env*`); keep them out of Git if you
-  don't want them shared. Secrets never go in the repo.
+- The CLI writes deployment ids to `rayfin/.deployments.json` and `rayfin/.env`; both are
+  gitignored by the template, keep them out of Git. Secrets never go in the repo.
 - Point dev/test apps at test copies of the semantic model and prod at the certified model; keep
   connection ids per environment in the CLI's environment files, not in source.
 
@@ -76,33 +86,63 @@ on:
   workflow_dispatch:
     inputs:
       force: { description: "Allow destructive schema changes (data loss)", type: boolean, default: false }
-concurrency: { group: "${{ github.workflow }}-${{ github.ref }}", cancel-in-progress: false }   # queue, never cancel a prod schema apply midway
+concurrency: { group: "${{ github.workflow }}-${{ github.ref }}", cancel-in-progress: false }   # queue, never cancel a schema apply midway
 permissions: { contents: read }
+env:
+  RAYFIN_ENCRYPTION_FALLBACK_ENABLED: "true"   # hosted Linux runners have no OS keychain; the runner is ephemeral
 jobs:
-  deploy:
+  deploy-test:
+    runs-on: ubuntu-latest
+    environment: test
+    env:
+      CLIENT_ID: ${{ secrets.CLIENT_ID }}
+      TENANT_ID: ${{ secrets.TENANT_ID }}
+      CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
+      FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME }}   # <app>-test in the test environment
+      FABRIC_APP_NAME: ${{ vars.FABRIC_APP_NAME }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: "22", cache: "npm" }
+      - run: npm ci
+      - run: npm run typecheck && npm test
+      - name: Login (service principal)
+        run: npx rayfin login --service-principal --tenant "$TENANT_ID" --client-id "$CLIENT_ID" --client-secret "$CLIENT_SECRET"
+      - name: Deploy to test
+        run: npx rayfin up --workspace "$FABRIC_WORKSPACE_NAME" --item-name "$FABRIC_APP_NAME" --yes
+      - if: always()
+        run: npx rayfin logout
+  deploy-prod:
+    needs: deploy-test
     runs-on: ubuntu-latest
     environment: prod                      # protection rule = manual approval
     env:
       CLIENT_ID: ${{ secrets.CLIENT_ID }}
       TENANT_ID: ${{ secrets.TENANT_ID }}
       CLIENT_SECRET: ${{ secrets.CLIENT_SECRET }}
-      FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME }}
+      FABRIC_WORKSPACE_NAME: ${{ vars.FABRIC_WORKSPACE_NAME }}   # <app>-prod in the prod environment
       FABRIC_APP_NAME: ${{ vars.FABRIC_APP_NAME }}
       FORCE: ${{ inputs.force }}           # via env, not interpolated into the script
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
-        with: { node-version: "20", cache: "npm" }
+        with: { node-version: "22", cache: "npm" }
       - run: npm ci
-      - run: npm run typecheck && npm test
       - name: Login (service principal)
-        run: npx rayfin login --service-principal -t "$TENANT_ID" -u "$CLIENT_ID" -p "$CLIENT_SECRET"
-      - name: Deploy
+        run: npx rayfin login --service-principal --tenant "$TENANT_ID" --client-id "$CLIENT_ID" --client-secret "$CLIENT_SECRET"
+      - name: Deploy to prod
         run: |
           EXTRA=""
           if [[ "$FORCE" == "true" ]]; then EXTRA="--force"; fi
           npx rayfin up --workspace "$FABRIC_WORKSPACE_NAME" --item-name "$FABRIC_APP_NAME" --yes $EXTRA
+      - if: always()
+        run: npx rayfin logout
 ```
+
+PR workflow (a separate file, `on: pull_request`): one job with `environment: test`, the same
+setup, login and logout steps, and
+`npx rayfin up --workspace "$FABRIC_WORKSPACE_NAME" --item-name "$FABRIC_APP_NAME" --dry-run`
+(no `--yes`).
 
 - `npm run typecheck` does not exist in the `dataapp` scaffold (`create-rayfin` 1.36.2): its
   `build` runs `tsc -b --noCheck`, so type errors never fail a build. Add
@@ -113,16 +153,30 @@ jobs:
 - Service-principal prerequisites: tenant setting allowing service principals to use Fabric APIs,
   the principal as **Contributor or higher** on the target workspace, workspaces created beforehand.
 - Prefer federated credentials (OIDC) over a client secret where the CLI supports it
-  (`rayfin login --help`).
-- PR workflow: the same job with `up --dry-run` against test, without `--yes`.
+  (`rayfin login --help`). `RAYFIN_TOKEN` (a pre-acquired bearer token) is the documented
+  alternative to `rayfin login` in a pipeline.
+- **Service-principal sign-in is not settled (2026-10).** The Learn CLI reference
+  (`fabric/apps/cli-reference`) lists `--service-principal` as "not currently supported", while the
+  Learn GitHub Actions article and the Rayfin docs (`app-backend/deploy.md`, CLI 1.36) document it
+  with `--client-id`, `--client-secret` and `--tenant`. Verify with a `--dry-run` into a test
+  workspace before relying on CI; the manual `rayfin up` by a person with deploy rights stays the
+  fallback.
+- `RAYFIN_ENCRYPTION_FALLBACK_ENABLED=true` lets the CLI keep its token cache in plain text on a
+  machine without OS credential storage (Rayfin docs: development only). Hosted Linux runners have
+  no keychain, so the login fails without it; the runner is discarded after the job and the final
+  `rayfin logout` clears the cache. Never set it on a shared or self-hosted runner.
 
 ## 3. Capacity, region, licensing (as of 2026-10)
 
 - An F SKU is required (F2+, Trial works), billed in capacity units from the workspace's capacity.
   Query load is billed to the **semantic model's** capacity.
-- Fabric Apps are not available in every region; some regions are Power BI-only (e.g. Denmark
-  East). Put the app workspace on a capacity in a supported region and check data-residency
-  requirements before moving anything.
+- Fabric Apps (preview) are not available in every region: not in the Power BI-only regions
+  (e.g. Denmark East) and, as of 2026-10, not in several full-Fabric regions either (e.g. UK South
+  and West, Canada Central and East, Brazil South, Australia Southeast). Check the capacity's
+  region against the "Unavailable Fabric features" column of
+  [Fabric region availability](https://learn.microsoft.com/fabric/admin/region-availability), put
+  the app workspace on a capacity in a supported region, and check data-residency requirements
+  before moving anything.
 - Viewer licensing below F64 was not documented for Fabric Apps (the F64 free-viewer rule is
   written for Power BI items). Microsoft announced Pro/PPU inclusion in 2026-09. Test in the
   tenant with a free-licence account before promising access.

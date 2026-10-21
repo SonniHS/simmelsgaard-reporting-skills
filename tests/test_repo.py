@@ -21,8 +21,6 @@ ROOT = Path(__file__).resolve().parent.parent
 PLUGINS = ROOT / "plugins"
 DENYLIST = ROOT / "tests" / "private-denylist.txt"
 
-TEXT_SUFFIXES = {".md", ".json", ".py", ".sh", ".mjs", ".js", ".ts", ".tsx", ".yaml", ".yml", ".txt", ".svg", ".dax",
-                 ".sql", ".tmdl", ""}
 SKIP_SCAN = {"LICENSE-CC-BY-SA-4.0", "LICENSE-MIT"}
 LICENCE_FILES = ["NOTICE", "LICENSE-MIT", "LICENSE-CC-BY-SA-4.0"]
 PRIVATE_DIRS = r"(?:vault|packages|apps|specs|erp-demo|design/tokens)/"
@@ -65,9 +63,15 @@ def md_files(base):
 
 
 def text_files():
+    """Every file that decodes as UTF-8 (any suffix: .html, .css, .csv, .pbir, .platform …), except the licence texts."""
     for path in repo_files():
-        if path.suffix.lower() in TEXT_SUFFIXES and path.name not in SKIP_SCAN:
-            yield path
+        if path.name in SKIP_SCAN:
+            continue
+        try:
+            path.read_bytes().decode("utf-8")
+        except UnicodeDecodeError:
+            continue  # binary (images)
+        yield path
 
 
 def frontmatter(path):

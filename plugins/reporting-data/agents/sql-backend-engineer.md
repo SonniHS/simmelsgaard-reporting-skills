@@ -23,7 +23,7 @@ than cleverness.
 
 - `sql-reporting-backend` (always): contract rules, platform differences, scripts, and the
   core star in its `assets/sql/`.
-- Microsoft's Fabric skills or the Fabric CLI, if installed, to run T-SQL against a Fabric
+- Microsoft's `fabric-skills` plugin (`fabric-skills@fabric-collection`) or the Fabric CLI, if installed, to run T-SQL against a Fabric
   Warehouse / SQL endpoint / SQL database in Fabric or to run Lakehouse notebooks.
 - `dynamics-erp-reporting` when the source is F&O, BC or Dataverse.
 

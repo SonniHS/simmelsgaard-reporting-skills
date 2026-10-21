@@ -478,7 +478,8 @@ VAR _PPY = IF ( [Revenue PY] > 0, ROUND ( DIVIDE ( _AC - [Revenue PY], [Revenue 
 -- impact text colour of a rounded variance (rounded zero: black)
 VAR _K1 = SWITCH ( TRUE (), _DPY = 0, _Text, _Pol = 0, _NeutralT, _DPY * _Pol > 0, _GoodT, _BadT )
 VAR _Num = IF ( _DPY = 0, "0.0", FORMAT ( _DPY, "+" & _Fmt & ";-" & _Fmt, "en-US" ) ) & " mEUR ("
-    & IF ( ISBLANK ( _PPY ), "N/A", FORMAT ( _PPY, "+0.0%;-0.0%", "en-US" ) ) & ")"
+    & IF ( ISBLANK ( _PPY ), "N/A", IF ( _PPY = 0, "0.0%", FORMAT ( _PPY, "+0.0%;-0.0%", "en-US" ) ) ) & ")"
+    -- a rounded 0 is unsigned (a two-section format string would print +0.0%)
 -- PARTS (text, colour); add or drop blocks of three VARs as the template needs
 VAR _T1 = "Revenue " & [Period Label] & " is " & FORMAT ( _AC / _Div, _Fmt, "en-US" ) & " mEUR, "
 VAR _T2 = _Num                                       VAR _C2 = _K1

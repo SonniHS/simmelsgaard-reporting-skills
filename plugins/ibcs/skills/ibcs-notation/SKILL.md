@@ -133,7 +133,8 @@ type × data shape → chart card A-n); tables: [references/table-catalogue.md](
   absurd sizes on very wide or narrow columns: clamp stem, head and scenario triangles in px
   (`geometry.pin.stemPx`, `.headPx`, `geometry.triangleSizePx`, OURS) in every renderer.
 - **Colour = business impact, three states:** desirable bright green, undesirable dark red,
-  neutral/ambiguous blue (polarity 0 → blue). IBCS fixes the hues and meanings; only the exact
+  neutral/ambiguous blue (polarity 0 → blue); a Δ that is 0 or rounds to 0 at the displayed
+  decimals gets no colour at all, checked first. IBCS fixes the hues and meanings; only the exact
   codes are an organisational choice. Polarity selects the **colour only** — geometry follows the
   arithmetic sign: a cost increase is drawn up/right *and* red. Never plot Δ × polarity. These are
   *not* traffic lights.

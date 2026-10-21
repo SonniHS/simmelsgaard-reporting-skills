@@ -66,15 +66,16 @@ Card numbers ("card 5") are the chart cards of the IBCS chart overview, EX 1.1.
 | Integrated variance | **no** | Deneb or a certified visual |
 | P&L vertical waterfall with subtotals | partly | native waterfall has breakdown and totals but no scenario notation or polarity |
 | Small multiples on an identical scale | yes | shared axis is the default; keep independent axes off |
-| Signed data labels (`+13`) | yes | format string `+#,0;-#,0;0` (dynamic format strings or calculation-group format expressions). A value that rounds to 0 (0.004 at 2 decimals) still takes the + or − section (`+0.00`): for the zero-variance rule use a dynamic format string `IF ( ROUND ( SELECTEDMEASURE (), 2 ) = 0, "0.00", "+#,0.00;-#,0.00;0.00" )` |
+| Signed data labels (`+13`) | yes | format string `+#,0;-#,0;0`. A value that rounds to 0 (0.004 at 2 decimals) still takes the + or − section (`+0.00`). For the zero-variance rule (a value that rounds to 0 prints unsigned `0.0`): **round the value itself to the displayed precision** and keep a static three-section format, so a rounded 0 takes the unsigned third section — `ROUND ( [AC] - [PY], -5 )` with `+#,0.0,,;-#,0.0,,;0.0` for mEUR at one decimal (the ROUND digits = the format's decimals minus its scaling: −5 for 0.1 m). This works in report-level measures of a live-connected report, where dynamic format strings are not allowed. In the semantic model a calculation-group format expression can do it instead (`semantic-model-ibcs`); a dynamic format string `IF ( ROUND ( SELECTEDMEASURE (), 2 ) = 0, "0.00", "+#,0.00;-#,0.00;0.00" )` works only on model measures. A native visual bound to an unrounded report measure cannot apply the rule; use the rounded measure, Deneb or SVG. |
 | Variance bars inside a matrix | simple only | conditional-formatting data bars: each column scales on its own, no reference axis notation; strict IBCS needs SVG |
 | Sparklines in a matrix | basic | no scenario coding; hatched FC needs SVG |
 | KPI card with ΔPY / ΔPY% (`kpi-cards`) | partly | the new card (`cardVisual`) shows reference labels coloured from theme `good`/`bad`, but not by polarity per measure, without the rounded-zero rule and with no fixed layout for several comparisons. **Route: SVG KPI cards** in one `tableEx` (ibcs-svg-dax skeleton 4); the new card only as a footnoted compromise |
 | Title who / what / when | yes | text box or dynamic title measure (UN 2.2) |
 
 **Visual calculations** (GA as of 2026-10) add per-visual variance logic without growing the
-model: `ΔPY = [AC] - [PY]`, `ΔPY% = DIVIDE([AC] - [PY], [PY])` (signed reference; show N/A when
-the reference is ≤ 0), `RUNNINGSUM([ΔPL])` for a bridge. Keep **reusable** variances in the model
+model: `ΔPY = [AC] - [PY]`, `ΔPY% = IF ( NOT ISBLANK ( [AC] ) && [PY] > 0, DIVIDE ( [AC] - [PY], [PY] ) )`
+(signed reference; BLANK, shown as N/A, when the reference is blank or ≤ 0), `RUNNINGSUM([ΔPL])` for
+a bridge. Keep **reusable** variances in the model
 (a calculation group): a visual calculation exists only in its visual.
 
 ## 3. Native recipes
@@ -123,12 +124,18 @@ A model measure with three states, colours from the tokens:
 VAR _ac = [AC]
 VAR _py = [PY]
 VAR _p = SELECTEDVALUE ( 'Account'[Polarity], 1 )      -- 1 = higher is better, -1 = lower is better, 0 = neutral
+VAR _d = ROUND ( ( _ac - _py ) / 1e6, 1 )               -- Δ at the label's precision: unit divisor and decimals of its format
 RETURN SWITCH ( TRUE (),
     ISBLANK ( _ac ) || ISBLANK ( _py ), BLANK (),       -- both operands needed: a BLANK AC is no variance
-    _ac = _py, BLANK (),                                -- Δ = 0: no impact colour
+    _d = 0, BLANK (),                                   -- Δ = 0 or rounds to 0: no impact colour (checked first)
     _p = 0, "{color.variance.neutral}",
-    ( _ac - _py ) * _p > 0, "{color.variance.good}", "{color.variance.bad}" )
+    _d * _p > 0, "{color.variance.good}", "{color.variance.bad}" )
 ```
+
+Order: zero first, then impact, then polarity. The divisor and decimals in `_d` must match the
+label's format (here mEUR with one decimal); otherwise a label reading `0.0` keeps a colour.
+The graphic colours are for **marks** (`dataPoint.fill`); a font-colour rule on numbers uses the
+text tokens `{color.variance.goodText}` / `badText` / `neutralText` (≥ 4.5:1, ibcs-notation).
 
 Bind it with a `Measure` expression and a wildcard selector:
 
@@ -141,8 +148,9 @@ Bind it with a `Measure` expression and a wildcard selector:
 ```
 
 Plot `[ΔPY]` itself (arithmetic sign), never `[ΔPY] * polarity`. Format string
-`+#,0.0;-#,0.0;0.0` (token `number.format.variance.excel`); for values that round to 0 the dynamic
-format string of the row above (zero-variance rule: unsigned `0.0`, ibcs-notation). The variance axis notation is not
+`+#,0.0;-#,0.0;0.0` (token `number.format.variance.excel`); for values that round to 0 the
+rounded-value route of the "Signed data labels" row above (zero-variance rule: unsigned `0.0`,
+ibcs-notation). The variance axis notation is not
 available natively: footnote it or use the Deneb tier.
 
 ### Same scale across visuals (UN 4.1, CH 4.1)
