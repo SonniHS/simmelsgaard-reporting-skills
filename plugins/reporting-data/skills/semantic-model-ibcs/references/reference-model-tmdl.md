@@ -424,6 +424,9 @@ metadata translations; data translations (account names) as columns per language
 ## 11. TMDL rules that bite in this model
 
 - Indent with tabs (many validators reject spaces in `.SemanticModel` folders).
+- Never name a UDF parameter like a DAX function (`value`, `sum`, `date`, …): the engine drops that
+  function **without an error**, and the first query that calls it fails with "Failed to resolve name
+  'Ibcs.…'" (seen 2026-10 with a parameter named `value`). Use `amount`, `actual`, `reference`.
 - `///` only directly above a declaration that has a Description (table, column, measure,
   expression, function, role); not above relationships.
 - Names with spaces, dots, `%`, `+`, `(` or Δ need single quotes: `'ΔPY%'`, `'AC+FC'`,

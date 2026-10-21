@@ -67,7 +67,8 @@ SUMMARIZECOLUMNS (
 )
 ```
 
-Expected: AC 30 763 348.68, PY 29 999 955.00, BU 31 607 352.00, ΔPY +763 393.68 (+2.5 %),
+Verified in Fabric (2026-10): a deploy of this folder reproduces all 155 values of
+`expected_results.csv`. Expected for the query above: AC 30 763 348.68, PY 29 999 955.00, BU 31 607 352.00, ΔPY +763 393.68 (+2.5 %),
 ΔBU −844 003.32 (−2.7 %).
 
 ## Regenerate

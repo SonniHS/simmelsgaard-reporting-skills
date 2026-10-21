@@ -73,9 +73,12 @@ DEFINE
     FUNCTION Ibcs.IsHelper = ( measureName : STRING ) =>
         LEFT ( measureName, 3 ) = "fx "
 
-    /// Ratio measures are detected by a "%" in their format string (see §6 for the caveat)
+    /// Ratio measures are detected by a "%" in their format string (see §6 for the caveat), or by
+    /// the pp format: inside a Δ item that has its own formatStringDefinition,
+    /// SELECTEDMEASUREFORMATSTRING () returns that item's format ("+0.0 pp" for a ratio), not the
+    /// measure's "0.0%" (verified in the Fabric engine, 2026-10)
     FUNCTION Ibcs.IsRatioFormat = ( formatString : STRING ) =>
-        CONTAINSSTRING ( formatString, "%" )
+        CONTAINSSTRING ( formatString, "%" ) || CONTAINSSTRING ( formatString, " pp" )
 
     /// Δ of a ratio in percentage points: 0.012 → 1.2, shown with the pp format below (that
     /// format does not scale, so the ×100 happens here). Other measures pass unchanged.
@@ -105,9 +108,9 @@ DEFINE
     /// value = the item's result (pass SELECTEDMEASURE ()). A variance that ROUNDS to zero at the
     /// printed scale and decimals gets the unsigned zero section: "0.0", never "+0.0" or "-0.0"
     /// (a format string picks its section by the unrounded sign).
-    FUNCTION Ibcs.DeltaFormat = ( value, measureName : STRING, formatString : STRING, scale : STRING ) =>
+    FUNCTION Ibcs.DeltaFormat = ( amount, measureName : STRING, formatString : STRING, scale : STRING ) =>
         VAR isRatio = Ibcs.IsRatioFormat ( formatString )
-        VAR shown = IF ( isRatio, ROUND ( value, 1 ), ROUND ( value / Ibcs.ScaleDivisor ( scale ), Ibcs.ScaleDecimals ( scale ) ) )
+        VAR shown = IF ( isRatio, ROUND ( amount, 1 ), ROUND ( amount / Ibcs.ScaleDivisor ( scale ), Ibcs.ScaleDecimals ( scale ) ) )
         RETURN
             SWITCH ( TRUE (),
                 Ibcs.IsHelper ( measureName ), formatString,
@@ -117,10 +120,10 @@ DEFINE
                 Ibcs.ScaleFormat ( scale, TRUE ) )
 
     /// Format of the relative variance items (Δ%); a Δ% that rounds to 0.0 % is unsigned
-    FUNCTION Ibcs.DeltaPctFormat = ( value, measureName : STRING, formatString : STRING ) =>
+    FUNCTION Ibcs.DeltaPctFormat = ( amount, measureName : STRING, formatString : STRING ) =>
         SWITCH ( TRUE (),
             Ibcs.IsHelper ( measureName ), formatString,
-            ROUND ( value, 3 ) = 0, "0.0%",
+            ROUND ( amount, 3 ) = 0, "0.0%",
             "+0.0%;-0.0%;0.0%" )
 ```
 
@@ -337,8 +340,11 @@ Ibcs.DeltaPct (
   https://learn.microsoft.com/dax/selectedmeasure-function-dax) and return the unsigned zero
   format when the value rounds to zero at the printed scale and decimals (ibcs-notation, the
   zero-variance rule). Keep `Ibcs.ScaleDecimals` and `Ibcs.ScaleFormat` in step.
-- Ratio detection by format string (`CONTAINSSTRING ( SELECTEDMEASUREFORMATSTRING (), "%" )`)
-  keeps the calc group generic. Verify it in your build for measures with a *dynamic* format
+- Ratio detection by format string (`Ibcs.IsRatioFormat`: `"%"` or `" pp"` in `SELECTEDMEASUREFORMATSTRING ()`)
+  keeps the calc group generic. Inside a Δ item that defines its own `formatStringDefinition`,
+  `SELECTEDMEASUREFORMATSTRING ()` returns the item's format (the pp format for a ratio), not the
+  measure's: testing only `"%"` silently skips the ×100 and returns pp as fractions (verified in
+  the Fabric engine, 2026-10). Verify it in your build for measures with a *dynamic* format
   string (`Report Value`); if it misfires, test `SELECTEDVALUE ( 'Report Line'[LineType] ) = "Ratio"`
   instead. A measure name can't tell them apart: `Report Value` is one measure for ratio and
   currency lines alike.

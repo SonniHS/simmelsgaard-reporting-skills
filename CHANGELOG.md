@@ -61,6 +61,13 @@ All notable changes to this marketplace and its plugins. The format follows
   when the largest step is under 5 % of the base (our default, knob `magnifyBelow`); base and total
   stay on the page scale.
 
+### Fixed (found by deploying the sample model)
+- `semantic-model-ibcs`: inside a Δ item with its own format string expression,
+  `SELECTEDMEASUREFORMATSTRING ()` returns the item's pp format, so `Ibcs.IsRatioFormat` now also
+  recognises `" pp"`; before, variances of ratios came back as fractions instead of percentage points.
+- `semantic-model-ibcs`: a UDF parameter named like a DAX function (`value`) makes the engine drop the
+  function silently; the format helpers use `amount`, and the TMDL rules warn about it.
+
 ## [0.1.0] - 2026-10-20
 
 ### Added
