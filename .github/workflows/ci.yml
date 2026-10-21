@@ -1,0 +1,88 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    name: Repository tests
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      # PyYAML lets the visual-spec worked-example test run instead of skipping.
+      - name: Install test dependencies
+        run: python3 -m pip install pytest pyyaml
+
+      # Manifests, frontmatter, links, plugin boundaries, script tests and the leak scan.
+      # The private denylist is local-only, so its check is skipped here; the pattern scan runs.
+      - name: Run unit tests
+        run: python3 -m pytest -q tests
+
+      # Generated files must match the token file.
+      - name: Check generated files are current
+        working-directory: plugins/ibcs-power-bi/skills
+        run: |
+          python3 -I ibcs-deneb/scripts/sync_tokens.py --check
+          python3 -I ibcs-deneb/scripts/gen_reference.py --check
+          python3 -I ibcs-power-bi/scripts/build_pbi_theme.py --check --out-dir ibcs-power-bi/assets
+
+  components:
+    name: Reference chart components
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: plugins/ibcs/skills/ibcs-web-charts/assets/react-reference
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: plugins/ibcs/skills/ibcs-web-charts/assets/react-reference/package-lock.json
+
+      - run: npm ci
+      - run: npm run typecheck
+      - run: npm test
+
+  validate:
+    name: Claude Code plugin validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      # `claude plugin validate` runs offline and needs no sign-in or API key.
+      - name: Install Claude Code CLI
+        run: npm install -g @anthropic-ai/claude-code
+
+      - name: Validate marketplace
+        run: claude plugin validate --strict .
+
+      - name: Validate each plugin
+        run: |
+          status=0
+          for plugin in plugins/*/; do
+            echo "::group::$plugin"
+            claude plugin validate --strict "$plugin" || status=1
+            echo "::endgroup::"
+          done
+          exit $status

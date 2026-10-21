@@ -54,3 +54,8 @@ affiliated with or certified by IBCS Institute.
 python3 -m unittest discover -s tests -v     # manifests, frontmatter, links, plugin boundaries, leak scan
 claude plugin validate --strict plugins/<plugin>
 ```
+
+## Documentation
+
+- [Prerequisites](docs/prerequisites.md): what each plugin needs, and which Microsoft Fabric skills to install alongside
+- [Contributing](CONTRIBUTING.md), [Security policy](SECURITY.md), [Changelog](CHANGELOG.md)

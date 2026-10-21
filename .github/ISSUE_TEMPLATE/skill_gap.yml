@@ -1,0 +1,58 @@
+name: Skill gap
+description: A skill or agent gave wrong or insufficient guidance.
+title: "[skill gap] "
+labels: [skill-gap]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Use this when Claude, using one of these skills, produced something wrong, non-IBCS, or got
+        stuck. The prompt and the result are the most useful parts. Do not paste secrets, ids, host
+        names or real business data; use placeholders.
+  - type: dropdown
+    id: plugin
+    attributes:
+      label: Plugin
+      options:
+        - ibcs
+        - ibcs-power-bi
+        - fabric-apps
+        - reporting-data
+        - not sure
+    validations:
+      required: true
+  - type: input
+    id: skill
+    attributes:
+      label: Skill or agent
+      description: e.g. `ibcs-notation`, `ibcs-fabric-app`, `powerbi-report-builder`. Leave empty if unsure.
+  - type: textarea
+    id: prompt
+    attributes:
+      label: Prompt used
+      description: What you asked, as close to verbatim as you can share.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: What Claude did or answered, and why it is wrong or not enough.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+      description: The right answer or output. Cite the IBCS rule or page, or the Microsoft Learn article, if you know it.
+    validations:
+      required: true
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots
+      description: Drag images here, e.g. the rendered chart or page. Blur real figures and names.
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version and Claude Code version

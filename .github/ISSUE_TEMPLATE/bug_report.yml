@@ -1,0 +1,62 @@
+name: Bug report
+description: A script, template, manifest or generated file does not work as documented.
+title: "[bug] "
+labels: [bug]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for the report. Do not paste secrets, tenant, workspace or item ids, host names or real
+        business data; use placeholders such as `<workspace-id>`. Security problems go through private
+        vulnerability reporting instead (see SECURITY.md).
+        If a skill gave wrong or insufficient guidance, use the "Skill gap" template.
+  - type: dropdown
+    id: plugin
+    attributes:
+      label: Plugin
+      options:
+        - ibcs
+        - ibcs-power-bi
+        - fabric-apps
+        - reporting-data
+        - marketplace / repository
+    validations:
+      required: true
+  - type: input
+    id: component
+    attributes:
+      label: Skill, script or file
+      description: e.g. `ibcs-deneb/scripts/to_pbir.py` or `column-two-tier-variance.vl.json`
+    validations:
+      required: true
+  - type: input
+    id: version
+    attributes:
+      label: Plugin version or commit
+      description: From `/plugin` in Claude Code, or the commit SHA if you use a clone.
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: Commands you ran, with arguments, and a minimal input if you can share one.
+      render: shell
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: What happened
+      description: Error output, wrong result, or a screenshot.
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected
+    validations:
+      required: true
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment
+      description: OS, Python / Node.js version, Claude Code version, Power BI Desktop or Deneb version where relevant.
