@@ -61,6 +61,26 @@ All notable changes to this marketplace and its plugins. The format follows
   when the largest step is under 5 % of the base (our default, knob `magnifyBelow`); base and total
   stay on the page scale.
 
+### Fixed (proof run 3)
+- Phone labels on the month chart (M1): the highlighted and selected categories and each variance
+  tier's largest |Δ| are never left out; a colliding label staggers to the other side of the axis,
+  then steps one px smaller (at least 10 px), and only then is left out; Δ% keeps one decimal at every
+  width; neighbouring labels keep 4 px apart. Regression pages `previews/phone-m1-390.html` and
+  `phone-m1-326.html`. Long structure names wrap to two lines instead of being cut.
+- Power BI period measures use `KEEPFILTERS ( __P )`: `REMOVEFILTERS ( 'Date' )` wiped the row's month
+  and showed the period total in every month (reproduced on a deployed model), with a check query.
+- Pin checks: a one-pin Total aligned with its months is judged with them, never alone (E12).
+- Public copy lint (C16) also catches TODO, FIXME and "change requested", and reads the string literals
+  of report-level text measures.
+- Title-line lint only in the header card; a chart card's text-box title over a card-visual subtitle is
+  the dynamic-subtitle recipe. `scale_layout.py` warns when a scale band exceeds a member's data.
+- End legend names keep one line box (1.2 em) + 2 px apart; the pin scale-band label sits on the free
+  side, 8 px clear of the tier name.
+- Docs: skeleton 7 punctuation parts, skeleton 8 header height (26 px SVG, full-width table) and sort
+  arrow, bold measure in line 2, card shape visual.json recipe, the visual-spec example's year tiers on
+  the year's own scale, deploy target confirmation, vitest scope, compare-with only where it applies,
+  `keep` only for cited values; the reference package names react-test-renderer and exports the KPI types.
+
 ### Fixed (proof run 2)
 - Pin outliers: a pin beyond 3 × the next-largest |Δ%| of its tier (or the ±100 % clip) is clipped with
   the outlier triangle and its full label, and the tier scales from the other pins (web `outlierRatio`,

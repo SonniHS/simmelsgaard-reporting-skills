@@ -103,7 +103,8 @@ Rules:
   outlined reference) at the upper part of its column (top + about a quarter of its height, clear
   of the primary's name), AC or FC at the middle of the bar; never left of the first month; "AC&FC" when the series runs from
   AC into FC, plain "AC" when the last column is AC. Spread them with a collision shift (minimum
-  gap font size + 2 px between centres, kept inside the base tier). The same rule as the Deneb
+  gap 1.2 em + 2 px between centres, one line box plus 2 px, so the label boxes never overlap;
+  kept inside the base tier). The same rule as the Deneb
   end legend (`column-two-tier-variance` legendSide "end") and `ibcs-web-charts` behaviour
   contract §2.
 - **Structure-chart legend header** (scenario names above the bars): at least 1 em between names
@@ -168,10 +169,15 @@ behaviour. Without `onSelect` the hit marks render nothing, so static charts sta
 
 ### Phone layouts (≤ 760 px)
 
-- **Month chart**: redraw for the card width, never scroll sideways. Order of reduction: Δ%
-  labels to 0 decimals; then absolute labels to the scale's decimals − 1 (never below 0); then
-  thin value labels by the collision rule below (keep the Total, the values the key message cites
-  — pass them as `keep` — then selected, first, last, extremes); the category step
+- **Month chart**: redraw for the card width, never scroll sideways. Δ% labels keep **one
+  decimal at every width** (a pin that rounds to zero shows an unsigned "0.0%"; whole % made
+  −3.4 % and −2.6 % both read −3 %, proof run 3). Order of reduction: absolute labels to the
+  scale's decimals − 1 (never below 0); then place labels by the collision rule below: a colliding
+  label staggers to the other side of the axis, then steps one px smaller (at least 10 px), and
+  only then is left out; the highlighted and selected categories and each variance tier's largest
+  |Δ| are never left out; then thin value labels by the collision rule below (keep the Total, the values the key message cites
+  — pass them as `keep` — then selected, first, last, extremes; `keep` overrides collision
+  avoidance, so pass only the values the key message cites, never as a way to show more labels); the category step
   never drops below ≈ 22 px (12 months in ≈ 300 px). One-decimal labels need a step of ≈ 40 px at
   11 px type.
 - **Total**: a Total-only chart under the months: one category, its own scale with the same

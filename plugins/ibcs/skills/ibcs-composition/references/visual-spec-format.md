@@ -779,7 +779,7 @@ page:
 scaleGroups:
   - {id: meur, unit: mEUR, kind: absolute, members: [v2.base, v2.dbu], domain: shared, sizing: scale-band,
      scaleBand: {value: 10, label: "10"}}
-  - {id: meur-fy, unit: mEUR, kind: absolute, members: [v2.extension], domain: shared, sizing: scale-band,
+  - {id: meur-fy, unit: mEUR, kind: absolute, members: [v2.extension, v2.extension.dbu], domain: shared, sizing: scale-band,
      scaleBand: {value: 10, label: "10"}}
   - {id: pct-bu, unit: "%", kind: relative, members: [v2.dbup], domain: shared, sizing: identical}
 
@@ -874,9 +874,9 @@ visuals:
 deviations:
   - rule: "CH 4.1"
     visual: v2
-    what: "The full-year extension of v2 (base tier) is drawn on its own scale meur-fy, not on the months' scale."
+    what: "The full-year extension of v2 (its base and its ΔBU tier) is drawn on its own scale meur-fy, not on the months' scale."
     reason: "The year (≈ 216 mEUR) is about 10× a month; on one scale the months would flatten."
-    mitigation: "10 mEUR scale band in both groups; footnote 3 names the two scales; the ΔBU tiers of the year stay on the months' scales."
+    mitigation: "10 mEUR scale band in both groups, in the base and in the ΔBU tier; footnote 3 names the two scales; the year's ΔBU tier uses the year's own scale and lines up with the months' tier axes (alignTiers)."
     acceptedBy: TBD (report owner)
 
 openQuestions:

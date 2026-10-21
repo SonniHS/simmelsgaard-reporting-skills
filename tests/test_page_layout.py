@@ -254,6 +254,35 @@ class PinOutliers(unittest.TestCase):
         self.assertEqual(row["pinStemsShort"]["short"], 7)
         self.assertIn("carry no magnitude", err)
 
+    def test_a_one_pin_total_aligned_with_the_months_is_not_judged_alone(self):
+        """Proof run 3: a Total whose single pin shares the months' pin scale failed "1 of 1 pins under 4 px"."""
+        with tempfile.TemporaryDirectory() as tmp:
+            g = Path(tmp) / "g.json"
+            g.write_text(json.dumps({"maxExtentPx": 300, "alignTiers": [["m", "t"]], "members": [
+                {"id": "m", "template": "column-two-tier-variance", "params": {"pinTier": True},
+                 "tiers": {"base": [0, 6.2], "variance": [-0.1, 0.1]}, "pinValues": [-2.4, 3.1, -1.2, 2.0, 1.4]},
+                {"id": "t", "template": "column-two-tier-variance", "params": {"pinTier": True},
+                 "tiers": {"base": [0, 60], "variance": [-1, 1]}, "pinValues": [0.2]}]}))
+            p = subprocess.run([sys.executable, "-I", "-B", str(SCALE_LAYOUT), str(g), "--json"],
+                               capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        rows = {r["id"]: r for r in json.loads(p.stdout)["members"]}
+        self.assertNotIn("pinStemsShort", rows["t"])
+        self.assertEqual(rows["m"]["pinStemsShort"]["total"], 6)   # judged as one group
+        self.assertNotIn("carry no magnitude", p.stderr)
+
+    def test_a_scale_band_larger_than_the_data_warns(self):
+        """Proof run 3: a 50 mEUR band on a chart whose data peaks at 23 doubled its plot without a warning."""
+        with tempfile.TemporaryDirectory() as tmp:
+            g = Path(tmp) / "g.json"
+            g.write_text(json.dumps({"maxExtentPx": 300, "members": [
+                {"id": "m", "template": "column-two-tier-variance", "params": {"scaleBand": 50},
+                 "tiers": {"base": [0, 23], "variance": [-1, 1]}}]}))
+            p = subprocess.run([sys.executable, "-I", "-B", str(SCALE_LAYOUT), str(g), "--json"],
+                               capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stderr)
+        self.assertIn("scaleBand 50 exceeds", p.stderr)
+
     def test_templates_default_to_the_outlier_factor(self):
         for name in ("column-two-tier-variance", "pin-relative-variance"):
             spec = json.loads((ROOT / f"plugins/ibcs-power-bi/skills/ibcs-deneb/assets/templates/{name}.vl.json")
@@ -342,6 +371,21 @@ class TitleLines(unittest.TestCase):
 
     def test_one_type_passes(self):
         self.assertEqual(self.lines(["cardVisual", "cardVisual", "cardVisual"]), [])
+
+    def test_chart_card_title_with_card_subtitle_passes(self):
+        """Proof run 3: a chart card's text-box title over a cardVisual subtitle is not a page title stack."""
+        header = [shape("hdr", 16, 16, 1248, 200)]
+        for k, (t, y, h) in enumerate(zip(["cardVisual"] * 3, (88, 122, 144), (34, 22, 22))):
+            name, v = placed(textbox(f"line{k}", "x"), 16, y, 1248, h)
+            v["visual"]["visualType"] = t
+            header.append((name, v))
+        title = placed(textbox("chartTitle", "Revenue in mEUR"), 32, 420, 600, 22)
+        sub_name, sub = placed(textbox("chartSub", "x"), 32, 442, 600, 20)
+        sub["visual"]["visualType"] = "cardVisual"
+        page = [*header, shape("chartCard", 16, 409, 1248, 300), title, (sub_name, sub)]
+        with tempfile.TemporaryDirectory() as tmp:
+            _, f, _ = lint(report(Path(tmp), {"p1": page}))
+        self.assertEqual([x for x in rows(f, "LINT") if "title lines mix" in x["evidence"]], [])
 
 
 class CardBottom(unittest.TestCase):
@@ -597,3 +641,15 @@ class PublicCopyPbir(unittest.TestCase):
             hits = rows(f, "C16")
             self.assertEqual(len(hits), 1)
             self.assertIn("note", hits[0]["location"])
+
+    def test_internal_note_in_a_text_measure_literal_fails(self):
+        """Proof run 3: dynamic page text comes from report-level text measures; their literals are public copy."""
+        with tempfile.TemporaryDirectory() as tmp:
+            r = report(Path(tmp), {"p1": [textbox("src", "Source: Sales model")]})
+            (r / "definition" / "reportExtensions.json").write_text(json.dumps({"entities": [{"name": "_Measures", "measures": [
+                {"name": "Footnote 3", "expression": '"Gross margin after discounts; change requested"', "references": {}},
+                {"name": "Title 1", "expression": '"Sales | " & SELECTEDVALUE ( Region[Region], "All regions" )', "references": {}},
+                {"name": "Todo", "expression": '"TODO: wording"', "references": {}}]}]}))
+            _, f, _ = lint(r)
+            hits = sorted(h["location"].split("[")[-1] for h in rows(f, "C16"))
+            self.assertEqual(hits, ["Footnote 3]", "Todo]"])

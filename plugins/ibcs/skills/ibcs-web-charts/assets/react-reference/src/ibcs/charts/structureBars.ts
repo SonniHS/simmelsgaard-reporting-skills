@@ -104,7 +104,10 @@ export function layoutStructureBars(input: StructureRow[], o: StructureBarsOptio
   const warnings: string[] = [];
   const size = o.fontSize ?? T.typography.size.label.px;
   const box = lineBox(size);
-  const step = o.rowStep ?? Math.max(T.geometry.categoryStepPx.structureRow, box + 6);
+  // a name wider than the label column (30 % of the width) wraps to two lines instead of being cut:
+  // without an explicit rowStep the rows grow to 2.2 × the font size (proof run 1: "Services and oth…")
+  const longName = input.some((r) => textWidth(r.category, size) + 8 > o.width * 0.3);
+  const step = o.rowStep ?? Math.max(T.geometry.categoryStepPx.structureRow, box + 6, longName ? Math.ceil(2.2 * size) : 0);
   const B = step * T.geometry.barWidthRatio.absolute;
   const mode = o.colorMode ?? "color";
   const primary = o.primary ?? "AC";
@@ -163,6 +166,18 @@ export function layoutStructureBars(input: StructureRow[], o: StructureBarsOptio
   const wMax = (labels: string[]) => Math.max(0, ...labels.map((s) => textWidth(s, size))) + 4;
   const nameW = Math.max(0, ...rows.map((r) => textWidth(r.category, size))) + 8;
   let labelCol = Math.min(nameW, o.width * 0.3);
+  if (longName) {
+    // two-line names: the column takes the longer half of the widest name (split at the space nearest
+    // the middle, as fitLines does), up to 45 % of the width, so the halves are not cut as well
+    const half = (t: string) => {
+      const sp = [...t.matchAll(/ /g)].map((m) => m.index!);
+      if (!sp.length) return t;
+      const at = sp.reduce((a, b) => (Math.abs(b - t.length / 2) < Math.abs(a - t.length / 2) ? b : a));
+      return textWidth(t.slice(0, at), size) > textWidth(t.slice(at + 1), size) ? t.slice(0, at) : t.slice(at + 1);
+    };
+    const halfW = Math.max(...rows.map((r) => textWidth(half(r.category), size))) + 8;
+    labelCol = Math.max(labelCol, Math.min(halfW, o.width * 0.45));
+  }
   const base = span(rows.flatMap((r) => [r.P, r.R]), o.ppu);
   const delta = span(rows.map((r) => r.delta), o.ppu);
   const pct = span(rows.map((r) => (r.deltaPct == null ? null : clamp(r.deltaPct, -limit, limit))), pctPpu);
@@ -229,17 +244,18 @@ export function layoutStructureBars(input: StructureRow[], o: StructureBarsOptio
     marks.push({ kind: "text", role: "tier-name", x: Math.min(Math.max(ax, half), o.width - half), y: box / 2 + 1, text: tn, anchor: "middle", size, fill: C.text.primary });
   }
 
-  // pin-tier scaling marker (OURS): a thin band just above the first row, from the axis towards the side
-  // the pins use most, its value beyond its end (clear of the tier name above the axis)
+  // pin-tier scaling marker (OURS): a thin band just above the first row, its value beyond its end. It goes
+  // to the free side, opposite the first row's Δ% label (positive, zero and N/A labels sit right of the
+  // axis), and keeps at least 8 px from the tier name centred on the axis above it (proof run 3)
   const pctBand = o.pctScaleBand === "auto" ? pinScaleBand(o.pctTierPx ?? 90, pctPpu) : o.pctScaleBand;
   if (pctBand && x0.pct != null) {
     const ax = x0.pct;
     const w = pctBand * pctPpu;
-    const right = pct.right >= pct.left;
+    const first = rows[0]?.deltaPct;
+    const right = first != null && first < 0;
     const text = `${+(pctBand * 100).toFixed(0)}%`;
     back.push({ kind: "rect", role: "scale-band", tier: "pct", x: right ? ax : ax - w, y: top - 6, w, h: 5, fill: C.marker.scaleBandFill, stroke: C.marker.scaleBandLine, strokeWidth: 0.5 });
-    // keep the label clear of the tier name centred on the axis above it
-    const nameHalf = textWidth(`${refCode}%`, size) / 2 + 4;
+    const nameHalf = textWidth(`${refCode}%`, size) / 2 + 8;
     const lx = right ? Math.max(ax + w + 3, ax + nameHalf) : Math.min(ax - w - 3, ax - nameHalf);
     marks.push({ kind: "text", role: "scale-band-label", tier: "pct", x: lx, y: top - 3.5, text, anchor: right ? "start" : "end", size, fill: C.text.secondary });
   }

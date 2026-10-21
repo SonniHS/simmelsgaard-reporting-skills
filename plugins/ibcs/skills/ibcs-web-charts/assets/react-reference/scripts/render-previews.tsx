@@ -8,8 +8,9 @@ import { renderToStaticMarkup } from "react-dom/server";
 import type { ReactNode } from "react";
 import {
   KpiCard, MarksSvg, alignTiers, cardSurface, columnTiersExtents, layoutColumnTiers, layoutStructureBars,
-  fitWaterfalls, layoutTimeWaterfall, layoutVarianceWaterfall, pagePinScales, pickScale, pxPerUnit, structureExtents, tokens, type Layout, type PeriodRow,
+  fitWaterfalls, layoutTimeWaterfall, layoutVarianceWaterfall, pagePinScales, pinScale, pickScale, pxPerUnit, structureExtents, tokens, type Layout, type PeriodRow,
 } from "../src/ibcs";
+import { m1Months, m1Total } from "../src/ibcs/m1Fixture";
 
 const out = join(fileURLToPath(new URL(".", import.meta.url)), "../previews");
 mkdirSync(out, { recursive: true });
@@ -187,4 +188,41 @@ writeFileSync(
   join(out, "phone.html"),
   `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>IBCS reference components (phone)</title></head><body style="margin:0">${renderToStaticMarkup(phone)}</body></html>\n`,
 );
+// M1 regression pages (proof run 3): the Key figures month chart with its Total at 390 and 326 px
+// viewports, Sep highlighted, plus a Drivers-style structure chart at 390. Screenshot each at exactly
+// its viewport width.
+const m1Scale = pickScale([40e6]);
+const driverRows = [
+  { category: "Volume", AC: 18.4e6, BU: 17.1e6, delta: 1.3e6, deltaPct: 1.3 / 17.1 },
+  { category: "Price", AC: 9.6e6, BU: 9.9e6, delta: -0.3e6, deltaPct: -0.3 / 9.9 },
+  { category: "Services and other income", AC: 4.1e6, BU: 4.3e6, delta: -0.2e6, deltaPct: -0.2 / 4.3 },
+  { category: "Discounts", AC: 1.08e6, BU: 1.0e6, delta: 0.08e6, deltaPct: 0.08 },
+  { category: "Other", AC: 0.51e6, BU: 0.6e6, delta: -0.09e6, deltaPct: -0.15, remainder: true },
+];
+for (const vw of [390, 326]) {
+  const w = vw - 2 * 16 - 2 * 16;
+  // the months and their Total are read together: one pin scale for both, marked (it differs from the drivers)
+  const sharedPct = pinScale([
+    { ...columnTiersExtents(m1Months, { reference: "BU", triangle: "PY" }).pct, tierPx: 48 },
+    { ...columnTiersExtents(m1Total, { reference: "BU", triangle: "PY" }).pct, tierPx: 48 },
+  ]);
+  const mOpts = { reference: "BU" as const, triangle: "PY" as const, scale: m1Scale, polarity: 1, pctTierPx: 48, pctPpu: sharedPct, pctScaleBand: "auto" as const };
+  const mm = layoutColumnTiers(m1Months, { ...mOpts, width: w, ppu: 120 / 40e6, selected: "Sep", highlight: { category: "Sep", tier: "delta" as const }, scaleBand: 10e6 });
+  const tt = layoutColumnTiers(m1Total, { ...mOpts, width: 170, ppu: 120 / 400e6, primaryLabel: "AC&FC", scaleBand: 10e6 });
+  const al = alignTiers(mm, tt);
+  const m2 = layoutColumnTiers(m1Months, { ...mOpts, width: w, ppu: 120 / 40e6, selected: "Sep", highlight: { category: "Sep", tier: "delta" as const }, scaleBand: 10e6, minTierPx: al });
+  const t2 = layoutColumnTiers(m1Total, { ...mOpts, width: 170, ppu: 120 / 400e6, primaryLabel: "AC&FC", scaleBand: 10e6, minTierPx: al });
+  const drivers = vw === 390 ? layoutStructureBars(driverRows, { width: w, reference: "BU", stack: "auto", ppu: 8 / 1e6, scale: m1Scale, polarity: 1, pctTierPx: 60, pctScaleBand: "auto" }) : null;
+  for (const [n, l] of [[`m1 ${vw} months`, m2], [`m1 ${vw} total`, t2], ...(drivers ? [[`m1 ${vw} drivers`, drivers]] : [])] as const)
+    for (const x of (l as Layout).warnings) console.warn(`${n}: ${x}`);
+  const pg = (
+    <main style={{ background: "rgba(0,0,0,0.05)", padding: 16, display: "grid", gap: 12, width: vw - 2 * 16, fontFamily: tokens.typography.family.web.join(", ") }}>
+      <Card title="Revenue in mEUR" sub="2026 AC&FC vs BU and PY, ΔBU and ΔBU%, by month (Sep selected)"><MarksSvg layout={m2} title="Revenue by month" /></Card>
+      <Card title="Revenue in mEUR" sub="2026 total, own scale (band 10 mEUR)"><MarksSvg layout={t2} title="Revenue total" /></Card>
+      {drivers && <Card title="Revenue in mEUR" sub="Jan..Sep 2026 AC vs BU, by driver"><MarksSvg layout={drivers} title="Revenue by driver" /></Card>}
+    </main>
+  );
+  writeFileSync(join(out, `phone-m1-${vw}.html`),
+    `<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>M1 check ${vw} px</title></head><body style="margin:0">${renderToStaticMarkup(pg)}</body></html>\n`);
+}
 console.log(`previews written to ${out}`);

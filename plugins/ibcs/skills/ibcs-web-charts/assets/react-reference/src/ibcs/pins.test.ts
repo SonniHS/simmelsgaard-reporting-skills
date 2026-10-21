@@ -73,18 +73,26 @@ describe("thinning at phone width keeps the extremes first (proof run 2)", () =>
 });
 
 describe("structure pin band label", () => {
-  it("never overlaps the tier name", () => {
-    const rows = [
-      { category: "North", AC: 5e6, BU: 4.6e6, delta: 0.4e6, deltaPct: 0.087 },
-      { category: "West", AC: 3e6, BU: 3.3e6, delta: -0.3e6, deltaPct: -0.091 },
-      { category: "Other", AC: 0.4e6, BU: 0.9e6, delta: -0.5e6, deltaPct: -0.556, remainder: true },
-    ];
-    const l = layoutStructureBars(rows, { width: 640, reference: "BU", ppu: 40 / 1e6, scale: pickScale([5e6]), pctTierPx: 60, pctScaleBand: "auto" });
-    const label = l.marks.find((m) => m.role === "scale-band-label");
-    const name = l.marks.find((m) => m.role === "tier-name" && m.kind === "text" && m.text === "ΔBU%");
-    expect(label && name).toBeTruthy();
-    const a = markBox(label!), b = markBox(name!);
-    const overlap = a.x < b.x + b.w && b.x < a.x + a.w && a.y < b.y + b.h && b.y < a.y + a.h;
-    expect(overlap).toBe(false);
-  });
+  const boxesOverlap = (a: { x: number; y: number; w: number; h: number }, b: typeof a, gap = 0) =>
+    a.x < b.x + b.w + gap && b.x < a.x + a.w + gap && a.y < b.y + b.h && b.y < a.y + a.h;
+  for (const first of [0.024, -0.024]) {
+    it(`sits on the free side, clear of the tier name and the first row's label (first Δ% ${first})`, () => {
+      const rows = [
+        { category: "North", AC: 5e6, BU: 4.6e6, delta: 0.4e6, deltaPct: first },
+        { category: "West", AC: 3e6, BU: 3.3e6, delta: -0.3e6, deltaPct: -0.091 },
+        { category: "Other", AC: 0.4e6, BU: 0.9e6, delta: -0.5e6, deltaPct: -0.556, remainder: true },
+      ];
+      const l = layoutStructureBars(rows, { width: 640, reference: "PY", ppu: 40 / 1e6, scale: pickScale([5e6]), pctTierPx: 60, pctScaleBand: "auto" });
+      const label = l.marks.find((m) => m.role === "scale-band-label")!;
+      const name = l.marks.find((m) => m.role === "tier-name" && m.kind === "text" && m.text === "ΔPY%")!;
+      const firstLabel = l.marks.find((m) => m.role === "variance-label" && m.category === "North" && m.kind === "text" && m.text.endsWith("%"))!;
+      expect(label && name && firstLabel).toBeTruthy();
+      expect(boxesOverlap(markBox(label), markBox(name), 8)).toBe(false);
+      expect(boxesOverlap(markBox(label), markBox(firstLabel))).toBe(false);
+      const ax = markBox(name).x + markBox(name).w / 2;
+      const labelRight = markBox(label).x > ax;
+      const firstRight = markBox(firstLabel).x > ax;
+      expect(labelRight).not.toBe(firstRight);
+    });
+  }
 });

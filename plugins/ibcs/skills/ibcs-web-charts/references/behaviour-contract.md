@@ -112,27 +112,33 @@ Data: period rows `{ period, period2?, closed?, AC?, FC?, PY?, PL?, BU? }`.
   a quarter of its height: the middle collides with the primary's name), AC or FC at the middle of
   the last bar; "AC&FC"
   only when the series runs from AC into FC, plain "AC" when the last column is AC. Collision
-  shift: names at least font size + 2 px apart (centre to centre), kept inside the base tier,
-  each with a short leader when moved far from its mark. One rule for web charts and the Deneb
-  template (`column-two-tier-variance` legendSide "end").
+  shift: names at least one line box + 2 px apart (centre to centre: 1.2 em + 2 px, so the label
+  boxes never overlap; font size + 2 px left the 1.2 em boxes overlapping, proof run 3), kept inside
+  the base tier, each with a short leader when moved far from its mark. The Deneb template
+  (`column-two-tier-variance`, end legend) still spreads by font size + 2 px; it moves to the same
+  rule in 1.1.
 - **Label collisions** (every width, decisive on a phone): each label is a box 1.2 em high and
   as wide as its measured text (≈ 0.6 em per digit). Place the labels of a tier in priority order
-  — a Total, **the extremes** (the largest and smallest value, Δ and Δ% of the tier), the values the
-  key message cites, the selected period, the last AC period, first and last, the rest — and test each against **every mark of its tier** (columns, the reference behind,
+  — a Total; the labels that are **never left out**: the values the key message cites, the
+  highlighted and the selected category, and each variance tier's largest |Δ| (and |Δ%|); then the
+  other extremes (largest and smallest value, Δ and Δ% of the tier), the last AC period, first and
+  last, the rest — and test each against **every mark of its tier** (columns, the reference behind,
   triangles including the category's own PY triangle, which reaches half its size above its
-  value, variance bars, pins and heads) and against the labels already placed. A label that hits
-  a mark moves once past it on its own side (above for positive values, below for negative);
-  if it still collides or leaves the tier's label room it is left out (the value stays in the
-  hidden table and the tooltip). The Total and the cited values are always drawn; the extremes
-  win every collision with lower-priority labels (a phone chart that dropped Aug +12.4 % lost the
-  month the reader looks for). Never draw a label over a
-  bar. Reference implementation: `layoutColumnTiers` in
+  value, variance bars, pins and heads) and against the labels already placed. A colliding label
+  tries, in order (OURS, proof run 3): past the mark it hits on its own side (above for positive
+  values, below for negative); the **other side of the axis** (a stagger: below a positive bar,
+  above a negative one, inside the tier's label room); then the same places **one type step
+  smaller** (size − 1 px, at least 10 px); only then is it left out (the value stays in the hidden
+  table and the tooltip). A highlight that points at a value the reader cannot read defeats the
+  highlight (the 390 px chart that dropped the highlighted Sep +1.3). Δ% labels keep **one
+  decimal at every width**; a pin that rounds to zero shows an unsigned "0.0%". Never draw a
+  label over a bar. Reference implementation: `layoutColumnTiers` in
   `assets/react-reference` (test "no placed label overlaps …").
 - **Category axis** (proof run, OURS): period names **never** get an ellipsis ("J… F… M…" is
   ambiguous). Fallback chain: the full name (Jan) → for month names the first letter (J; the year
   is in title line 3) → two staggered rows. Quarters and other codes skip the letter step
   (Q1 → two rows). Value labels thin by the priority above (Total, extremes, cited, selected, last
-  AC, first and last); neighbouring labels keep at least 2 px between them. A second line (`period2`, e.g. the year) under the first
+  AC, first and last); neighbouring value labels keep at least 4 px between them ("+3.6%+0.3%" at 2 px read as one number). A second line (`period2`, e.g. the year) under the first
   period and where it changes, **only** when the periods span two values.
 
 ## 3. Variance chart (absolute bars, relative pins)

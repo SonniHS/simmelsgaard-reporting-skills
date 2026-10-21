@@ -36,7 +36,8 @@ in plugin `reporting-data` has the query patterns).
 cp -R <this folder>/src/ibcs src/ibcs                     # the components and their tests
 cp <ibcs-notation skill>/assets/ibcs-tokens.json design/   # then regenerate tokens.generated.ts
 cp <ibcs-notation skill>/scripts/gen_tokens.mjs scripts/   # with your overrides (chart-layer below)
-npm i react react-dom && npm i -D vitest typescript @types/react @types/react-dom
+npm i react react-dom && npm i -D vitest typescript @types/react @types/react-dom react-test-renderer @types/react-test-renderer
+# react-test-renderer must match the React major: 18.3.1 here; with React 19 use react-test-renderer@19
 ```
 
 ```tsx

@@ -8,4 +8,5 @@ export * from "./charts/varianceWaterfall";
 export * from "./charts/timeWaterfall";
 export { MarksSvg } from "./charts/MarksSvg";
 export { KpiCard, cardSurface } from "./KpiCard";
+export type { KpiCardProps, KpiVariance } from "./KpiCard";
 export { tokens } from "./tokens.generated";

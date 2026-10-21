@@ -462,7 +462,10 @@ Parts are the template slots of the message (`ibcs-composition`): text parts in 
 signed variance its own part with `_Imp ( Δ )`. Line breaks happen only between parts, so keep a
 number and its unit in one part. A part that starts a new line loses its leading space. A part
 that starts with `)`, `,`, `.` or `;` never starts a line (it stays on the line it closes, even if
-that line runs a few characters over `_Budget`): a line must not begin with punctuation.
+that line runs a few characters over `_Budget`): a line must not begin with punctuation. So keep
+that punctuation as **its own short part** (`")"`, `"; "`), never at the start of a long text part:
+a long part glued to the line before runs past the SVG width and is cut (proof run 3). Size `_Budget`
+from `_W` with one character of slack per line, and keep every text part shorter than half a line.
 
 ```dax
 SVG Key Message =
@@ -549,13 +552,17 @@ Power BI route:
   (one row, columns: a blank text measure as wide as the category column + `SVG Rows Header`) and
   the rows table (columns: the category + `SVG Row`, sorted by `SVG Row`, which leads with a sortable
   `<desc>` holding AC).
-- `grid.imageWidth` = `_W`, `imageHeight` = `_H` (rows) / 30 (header); image column width = `_W` + 20;
+- `grid.imageWidth` = `_W`, `imageHeight` = `_H` (rows) / 26 (header); image column width = `_W` + 20;
   no rules (page-shell.md §3); the rows table's height = 17 (its empty header strip) + rows × (`_H` + 2) + 24.
-- Stacking: the header table is 17 (its empty header strip) + 30 + 2 = **49 px** high; the rows table
+- Stacking: the header table is **full card width** and 49 px high with a **26 px** header SVG (a 30 px
+  SVG in a 49 px table scrolls in the service, proof run 3); the rows table
   starts **32 px** below the header table's top (header y + 49 − 17) at a z **below** the header
   table, so its own empty 17 px header strip lies behind the header table's bottom and the first
   row starts right under the header SVG, with no gap and no doubled strip. Both tables have no
   background of their own on a card shape (page-shell.md §1).
+- The rows table's sort arrow (▼) can show in its header strip when the strip is not fully behind the
+  header table: sort the visual by `SVG Row` in its `query.sortDefinition` and keep the header table
+  above it in z, so the arrow stays hidden behind it.
 - `_S` = the page scale group's px per unit (`scale_layout.py`, the same value as the Deneb month
   chart's `pxPerUnit`), so a company bar of 10 mEUR is as long as a month column of 10 mEUR is high.
 

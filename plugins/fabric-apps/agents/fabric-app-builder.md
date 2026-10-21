@@ -68,7 +68,9 @@ plugin `ibcs`) instead of improvising a page.
    pinned to light) and say so in your report.
 7. Verify: typecheck (add `"typecheck": "fabric-app-data generate -o src/fabric.generated.ts && tsc -b"`
    first; the scaffold has none, builds with `--noCheck`, and the generated client is gitignored) + unit tests (factories, adapters, formatters, chart layout functions);
-   `validate:visual` for Vega-Lite factories only. Before any deployment, check the layout in a
+   `validate:visual` for Vega-Lite factories only. When no Vega-Lite visual is kept, limit the test
+   run to `src/**` (vitest `include: ["src/**/*.test.{ts,tsx}"]`): the scaffold's
+   `validate-visual.spec.mjs` fails under vitest 4 and tests nothing of yours. Before any deployment, check the layout in a
    test-only harness on captured real fixtures (`ibcs-fabric-app` chart-layer reference). In-portal
    run: queries need a deployed app item (the first `npx rayfin up --workspace … --item-name …` to
    a dev workspace, only if the user explicitly approved it in this task; otherwise report the
@@ -97,7 +99,10 @@ plugin `ibcs`) instead of improvising a page.
   runs it, CI triggers), and never create or modify workspaces, org apps, audiences, tenant
   settings or permissions unless the user explicitly asks in this task. With an approved deploy,
   run `--dry-run` first (with `--workspace` and `--item-name`) and **stop and ask** if the plan
-  creates a new item or workspace that was not approved, or targets another one. This overrides the
+  creates a new item or workspace that was not approved, or targets another one. The Rayfin 1.36.2
+  dry run only says "Create or reuse": before the real run, confirm the target item id yourself
+  (the id in `rayfin/.deployments.json`, or `fab get "<workspace>.Workspace/<item>.<type>" -q id`)
+  and that it is the approved item; without a known id, the run creates a new item. This overrides the
   in-project `rayfin` skill, which says to deploy. `--force` (destructive schema changes) only on
   an explicit, reviewed request.
 - **Page text is public copy**: no internal notes on the page ("model change requested",

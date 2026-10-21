@@ -350,60 +350,84 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
     }
   });
 
-  // 7. place the labels: by priority (Total, extremes, cited, selected, last AC, first/last, rest), each
-  // tested against every mark of its tier (columns, triangles, pins, heads) and the labels already
-  // placed; a label that hits a mark moves past it once, else it is left out (its value stays in the
-  // hidden table and the tooltip).
+  // 7. place the labels: by priority, each tested against every mark of its tier (columns, triangles,
+  // pins, heads) and the labels already placed. On a collision a label tries, in order: past the marks
+  // it hits on its own side; the other side of the axis (a stagger: below for a positive value, above
+  // for a negative one, inside the tier's label room); then the same places one type step smaller
+  // (size − 1 px, at least 10 px); only then is it left out (its value stays in the hidden table and
+  // the tooltip). Never left out: the Total, the cited and highlighted categories, the selected one,
+  // and each variance tier's largest |Δ| (proof run 3: the highlighted month lost its label at 390 px).
   const cited = new Set([...(o.keep ?? []), ...(o.highlight ? [o.highlight.category] : [])]);
   const extremes = (vals: (number | null | undefined)[]) => {
     const idx = vals.map((v, i) => ({ v, i })).filter((x): x is { v: number; i: number } => x.v != null);
     return idx.length ? [idx.reduce((a, b) => (b.v > a.v ? b : a)).i, idx.reduce((a, b) => (b.v < a.v ? b : a)).i] : [];
   };
-  const ext3: Record<TierKey, number[]> = {
-    base: extremes(prim.map((p) => p?.value)),
-    delta: extremes(rows.map((r) => r.delta)),
-    delta2: extremes(rows.map((r) => r.delta2)),
-    pct: extremes(rows.map((r) => r.deltaPct)),
+  const largestAbs = (vals: (number | null | undefined)[]) => {
+    let best = -1;
+    vals.forEach((v, i) => { if (v != null && !rows[i]!.total && (best < 0 || Math.abs(v) > Math.abs(vals[best]!))) best = i; });
+    return best;
   };
+  const tierVals: Record<TierKey, (number | null | undefined)[]> = {
+    base: prim.map((p) => p?.value), delta: rows.map((r) => r.delta), delta2: rows.map((r) => r.delta2), pct: rows.map((r) => r.deltaPct),
+  };
+  const ext3 = Object.fromEntries((Object.keys(tierVals) as TierKey[]).map((t) => [t, extremes(tierVals[t])])) as Record<TierKey, number[]>;
+  const big = Object.fromEntries((Object.keys(tierVals) as TierKey[]).map((t) => [t, largestAbs(tierVals[t])])) as Record<TierKey, number>;
   const lastAc = prim.map((p) => p?.scenario).lastIndexOf("AC");
-  // placing order: Total, the extremes of each tier (largest and smallest Δ, Δ%, value), cited,
-  // selected, last AC, first and last, rest; the Total and cited values are never left out
-  const keepAlways = (c: Cand) => !!rows[c.i]!.total || cited.has(rows[c.i]!.period);
+  const keepAlways = (c: Cand) => {
+    const r = rows[c.i]!;
+    return !!r.total || cited.has(r.period) || c.i === selIdx || (c.t !== "base" && c.i === big[c.t]);
+  };
+  // placing order: Total, the never-dropped labels, the extremes of each tier, last AC, first and last, rest
   const rank = (c: Cand) => {
     const r = rows[c.i]!;
     if (r.total) return 0;
-    if (ext3[c.t].includes(c.i)) return 1;
-    if (cited.has(r.period)) return 2;
-    if (c.i === selIdx) return 3;
-    if (c.i === lastAc) return 4;
-    if (c.i === 0 || c.i === rows.length - 1) return 5;
-    return 6;
+    if (keepAlways(c)) return 1;
+    if (ext3[c.t].includes(c.i)) return 2;
+    if (c.i === lastAc) return 3;
+    if (c.i === 0 || c.i === rows.length - 1) return 4;
+    return 5;
   };
   const band = (t: TierKey) => ({ top: tiers[t].y0 - tiers[t].up - (t === "pct" ? room + 9 : room), bottom: tiers[t].y0 + tiers[t].down + (t === "pct" ? room + 9 : room) });
   const obstacleRoles = /^(col-|triangle-|pin|pin-head|variance$|outlier)/;
   const obstacles = marks.filter((m) => m.kind !== "text" && obstacleRoles.test(m.role)).map(markBox);
   const placed: { x: number; y: number; w: number; h: number }[] = [];
+  const minSize = Math.min(size, 10);
   let dropped = 0;
   for (const c of [...cands].sort((a, b) => rank(a) - rank(b) || a.i - b.i)) {
     const { top, bottom } = band(c.t);
     const inside = (bx: ReturnType<typeof markBox>) => bx.y >= top - 0.5 && bx.y + bx.h <= bottom + 0.5 && bx.x >= -0.5 && bx.x + bx.w <= o.width + 0.5;
-    let bx = markBox(c.m);
-    const hits = obstacles.filter((ob) => overlaps(bx, ob));
-    if (hits.length) {
-      // move past the marks it hits, on its own side (above for positive values, below for negative)
-      const y = c.above ? Math.min(...hits.map((h) => h.y)) - box / 2 - 1 : Math.max(...hits.map((h) => h.y + h.h)) + box / 2 + 1;
-      c.m = { ...c.m, y };
-      bx = markBox(c.m);
+    // neighbouring labels keep at least 4 px between them ("+3.6%+0.3%" at 2 px read as one number)
+    const free = (m: typeof c.m) => {
+      const bx = markBox(m);
+      const padded = { x: bx.x - 4, y: bx.y, w: bx.w + 8, h: bx.h };
+      return inside(bx) && !obstacles.some((ob) => overlaps(bx, ob)) && !placed.some((pl) => overlaps(padded, pl, 0));
+    };
+    const tries = (m: typeof c.m): (typeof c.m)[] => {
+      const lb = lineBox(m.size);
+      const out = [m];
+      const hits = obstacles.filter((ob) => overlaps(markBox(m), ob));
+      if (hits.length)
+        out.push({ ...m, y: c.above ? Math.min(...hits.map((h) => h.y)) - lb / 2 - 1 : Math.max(...hits.map((h) => h.y + h.h)) + lb / 2 + 1 });
+      if (c.t !== "base") {
+        const ty = tiers[c.t].y0;
+        const head = c.t === "pct" ? headPx / 2 + 1 : 0;
+        out.push({ ...m, y: c.above ? ty + head + lb / 2 + 2 : ty - head - lb / 2 - 2 });
+      }
+      return out;
+    };
+    let options = tries(c.m);
+    if (c.m.size > minSize) {
+      const small = { ...c.m, size: c.m.size - 1 };
+      const dy = (lineBox(c.m.size) - lineBox(small.size)) / 2;
+      options = [...options, ...tries({ ...small, y: small.y + (c.above ? dy : -dy) })];
     }
-    // neighbouring labels keep at least 2 px between them ("4.14.0" reads as one number)
-    const padded = { x: bx.x - 2, y: bx.y, w: bx.w + 4, h: bx.h };
-    const free = inside(bx) && !obstacles.some((ob) => overlaps(bx, ob)) && !placed.some((pl) => overlaps(padded, pl, 0));
-    if (!free && !keepAlways(c)) { dropped++; continue; }
-    placed.push(bx);
-    marks.push(c.m);
-    if (o.highlight?.category === rows[c.i]!.period && o.highlight.tier === c.t) ring(c.m.x, c.m.y, c.m.text, rows[c.i]!.period);
+    const pick = options.find(free) ?? (keepAlways(c) ? options.find((m) => inside(markBox(m))) ?? options[0] : undefined);
+    if (!pick) { dropped++; continue; }
+    placed.push(markBox(pick));
+    marks.push(pick);
+    if (o.highlight?.category === rows[c.i]!.period && o.highlight.tier === c.t) ring(pick.x, pick.y, pick.text, rows[c.i]!.period);
   }
-  if (dropped) warnings.push(`${dropped} labels left out to avoid collisions (priority: Total, extremes, cited, selected, last AC, first and last)`);
+  if (dropped) warnings.push(`${dropped} labels left out to avoid collisions (never: Total, cited, highlighted, selected, each variance tier's largest |Δ|)`);
 
   // 8. category labels, never with an ellipsis: the full period (Jan), else its first letter (J; the
   // year is in the title), else two staggered rows
@@ -443,7 +467,7 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
   const firstFc = prim.findIndex((p) => p?.scenario === "FC");
   if (anyAC && firstFc > 0) back.push({ kind: "line", role: "axis", x1: left + step * firstFc, x2: left + step * firstFc, y1: y0, y2: y0 + 5, stroke: C.axis.category, strokeWidth: 1 });
 
-  // 9. end legend: each name level with its mark at the last period, spread by font + 2 px
+  // 9. end legend: each name level with its mark at the last period, spread by one line box (1.2 em) + 2 px
   if (legendOn) {
     const li = rows.length - 1;
     const r = rows[li]!;
@@ -459,7 +483,7 @@ export function layoutColumnTiers(input: PeriodRow[], o: ColumnTiersOptions): Co
     if (o.triangle && triV != null) items.push({ text: o.triangle, y: yOf(triV) });
     const top = y0 - tiers.base.up - room + box / 2;
     const bottom = y0 + tiers.base.down + room - box / 2;
-    const ys = spreadLabels(items.map((it) => it.y), size + 2, top, bottom);
+    const ys = spreadLabels(items.map((it) => it.y), box + 2, top, bottom);
     items.forEach((it, k) => {
       const y = ys[k]!;
       const x = left + plotW + 6;

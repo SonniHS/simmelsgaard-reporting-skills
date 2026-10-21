@@ -534,17 +534,45 @@ def main() -> int:
     for m in members:
         pin_outliers(m, tdir)                                          # one extreme pin does not set the scale
     pin_ppu = pin_group(g, members, tdir, warnings, set_params)      # pin scale per chart (aligned charts share)
-    for mid, k in pin_ppu.items():                                   # pins carry magnitude: few stems < 4 px
-        stems = next((m.get("_pinStemValues") for m in members if m["id"] == mid), None)
-        if stems:
-            short = sum(1 for v in stems if v * k < PIN_SHORT_PX)
-            for m in members:
-                if m["id"] == mid:
-                    m["_pinStemsShort"] = {"short": short, "total": len(stems)}
-            if 2 * short > len(stems):
-                warnings[mid].append(f"member {mid}: {short} of {len(stems)} non-zero pins get a stem under "
-                                     f"{PIN_SHORT_PX:g} px at {k:g} px per point: pins carry no magnitude")
+    # pins carry magnitude: few stems < 4 px. Charts read together (alignTiers: months and their Total)
+    # share one pin scale, so they are judged together: a one-pin Total drawn at the template's minimum
+    # stem is not a failure of its own; a member (or group) with fewer than two pins is never judged.
+    stems_of = {m["id"]: m.get("_pinStemValues") or [] for m in members}
+    judged = set()
+    for ids in g.get("alignTiers") or []:
+        ids = [i for i in ids if i in pin_ppu]
+        if len(ids) > 1:
+            judged.update(ids)
+            pooled = [v for i in ids for v in stems_of.get(i, [])]
+            owner = max(ids, key=lambda i: len(stems_of.get(i, [])))
+            if len(pooled) >= 2:
+                short = sum(1 for v in pooled if v * pin_ppu[owner] < PIN_SHORT_PX)
+                next(m for m in members if m["id"] == owner)["_pinStemsShort"] = {"short": short, "total": len(pooled)}
+                if 2 * short > len(pooled):
+                    warnings[owner].append(f"aligned group {ids}: {short} of {len(pooled)} non-zero pins get a stem "
+                                           f"under {PIN_SHORT_PX:g} px: pins carry no magnitude")
+    for mid, k in pin_ppu.items():
+        stems = stems_of.get(mid)
+        if mid in judged or not stems or len(stems) < 2:
+            continue
+        short = sum(1 for v in stems if v * k < PIN_SHORT_PX)
+        next(m for m in members if m["id"] == mid)["_pinStemsShort"] = {"short": short, "total": len(stems)}
+        if 2 * short > len(stems):
+            warnings[mid].append(f"member {mid}: {short} of {len(stems)} non-zero pins get a stem under "
+                                 f"{PIN_SHORT_PX:g} px at {k:g} px per point: pins carry no magnitude")
     pin_markers(pin_ppu, members, set_params)                        # differing % scales are marked
+    # a scale band larger than a member's data grows that chart's plot to the band (proof run 3: 50 vs
+    # 23 mEUR doubled the height); the sizes here do not include it, so warn and advise a smaller band
+    base_max = {m["id"]: max(abs(float(x)) for x in (m.get("tiers") or {})["base"])
+                for m in members if (m.get("tiers") or {}).get("base")}
+    if base_max:
+        smallest = min(base_max.values())
+        for m in members:
+            band = (m.get("params") or {}).get("scaleBand")
+            if isinstance(band, (int, float)) and band > smallest:
+                warnings[m["id"]].append(
+                    f"member {m['id']}: scaleBand {band:g} exceeds the smallest member's maximum {smallest:g}: the "
+                    f"band would stretch that chart beyond the sizes computed here; use a round band of at most {smallest:g}")
     derive = [m for m in members if m.get("own") and not m.get("basePxPerUnit")]
     for m in derive:
         m["basePxPerUnit"] = 1.0   # placeholder: derived below, once the group's px per unit is known

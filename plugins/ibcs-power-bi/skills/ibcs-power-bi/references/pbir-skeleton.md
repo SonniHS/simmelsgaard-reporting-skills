@@ -237,7 +237,17 @@ to the last closed month" saved today is wrong next month. Options, best first:
    VAR __P    = FILTER ( ALL ( 'Date'[Month] ),
                    IF ( __sel, 'Date'[Month] IN __selM,
                         'Date'[Month] <= __lcm && LEFT ( 'Date'[Month], 4 ) = LEFT ( __lcm, 4 ) ) )
-   RETURN CALCULATE ( [Revenue], REMOVEFILTERS ( 'Date' ), __P )
+   RETURN CALCULATE ( [Revenue], KEEPFILTERS ( __P ) )
+   ```
+   `KEEPFILTERS ( __P )` intersects the effective period with the filter already on the row, so
+   the measure works on cards (no month in context) **and** on a month axis or row (each month
+   keeps its own value, months outside the period are blank). Never `REMOVEFILTERS ( 'Date' ), __P`:
+   it wipes the row's month, and a month chart or matrix then shows the whole period total in every
+   row (reproduced on a deployed model, 2026-10: 12 rows of the same YTD value). Check it with the
+   period measure next to the month: the rows must differ and add up to the card value:
+   ```dax
+   EVALUATE
+   SUMMARIZECOLUMNS ( 'Date'[Month], "Period", [Revenue AC Period] )   // rows differ, Σ rows = the card
    ```
    A matching `Period Label` text measure ("Jan..Sep 2026") feeds the title's when-line and the
    slicer header says what "none selected" means. Visuals that always show the whole year (a
@@ -268,6 +278,23 @@ publishing (verify how the export splits a tall page).
 
 Taken from a report that rendered in the service (end-to-end test, as of 2026-10); names are
 placeholders. `visualContainerObjects.title.show = false` on all of them.
+
+**Card shape** (page-shell §1, fluent cards). One rectangle per card, behind its content (z 0–999).
+The bundled theme styles the shape's **visual container** as the card (white background, 1 px
+border with radius, shadow) and switches the shape's own fill and outline off, so the visual.json
+needs no formatting of its own; formatting set here would override the theme:
+```json
+{"$schema": "https://developer.microsoft.com/json-schemas/fabric/item/report/definition/visualContainer/2.0.0/schema.json",
+ "name": "cardKpiRow",
+ "position": {"x": 16, "y": 262, "z": 0, "width": 1248, "height": 131, "tabOrder": 0},
+ "visual": {"visualType": "shape", "drillFilterOtherVisuals": true}}
+```
+Checked against Microsoft's `visualContainer` 2.0.0 schema (`position`, `visual.visualType`); the
+container look (`background`, `border.radius`, `dropShadow`) rendered in the service from the
+theme (proof runs 2 and 3, 2026-10). Not verified: the shape's own object names (`shapeType`, `fill`,
+`outline`) when written into visual.json instead of the theme; if you need them, copy what Desktop
+writes for a rectangle. `tabOrder` and `drillFilterOtherVisuals` are what Desktop writes; a card
+shape is decoration, so keep it out of the keyboard order of the content where the report allows it.
 
 **Slicer** (dropdown, multi-select). `"active": true` is what Desktop writes for a slicer field;
 never copy it to other visuals. Font sizes are `textSize` (points) on `header` and `items`;

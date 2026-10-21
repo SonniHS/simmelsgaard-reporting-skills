@@ -788,6 +788,8 @@ def lint_report_extensions(d: Path, palette, tokens=None) -> dict:
                     "measure referencing one) fails with \"Something's wrong with one or more fields\". Group helper "
                     "measures in a displayFolder instead.")
             expr = m.get("expression") or ""
+            # text measures carry most of Power BI's dynamic page text: their string literals are public copy
+            lint_public_copy((lit.replace('""', '"') for lit in DAX_STRING.findall(expr)), mloc)
             if isinstance(expr, list):
                 expr = "\n".join(map(str, expr))
             hexes = sorted({full_hex(h) for h in HEX_IN_TEXT.findall(expr)})
@@ -1023,7 +1025,7 @@ def lint_scale_groups(infos: dict, ploc: str, layout_rows: dict):
     #     that get a stem under 4 px at its pin scale (pinValues on the member, after the outlier rule)
     for n, row in layout_rows.items():
         short = row.get("pinStemsShort")
-        if n in infos and isinstance(short, dict) and short.get("total") and 2 * short.get("short", 0) > short["total"]:
+        if n in infos and isinstance(short, dict) and (short.get("total") or 0) >= 2 and 2 * short.get("short", 0) > short["total"]:
             add("E12", "UN 4.1", "M", "fail", f"{ploc} / {n}",
                 f"{short['short']} of {short['total']} non-zero pins get a stem under 4 px",
                 "Pins must carry the relative variance: size the pin tier to its own scale (pinPxPerUnit 0, "
@@ -1143,7 +1145,12 @@ def lint_page_geometry(boxes: list[dict]):
                 "(page-shell.md §3): give the slicer padding top 12 or move it down.")
     # title lines: one visual type for the three lines (a card visual bottom-aligns its text, a text box
     # top-aligns it, so mixed lines sit unevenly); lines = text visuals stacked edge to edge, ≤ 40 px high
-    lines = sorted((b for b in ok if b["type"] in TEXT_TYPES and b["height"] <= 40), key=lambda b: (b["x"], b["y"]))
+    # only the page title lines in the header card are checked: a chart card's text-box title with a
+    # cardVisual subtitle below it is the chart-subtitle recipe (page-shell.md §3) and is allowed
+    header = min(shapes, key=lambda b: b["y"]) if shapes else None
+    in_header = (lambda b: within(b, header)) if header else (lambda b: b["y"] < 200)
+    lines = sorted((b for b in ok if b["type"] in TEXT_TYPES and b["height"] <= 40 and in_header(b)),
+                   key=lambda b: (b["x"], b["y"]))
     stack = []
     for b in lines + [None]:
         if b is not None and stack and abs(b["x"] - stack[-1]["x"]) <= 1 and abs(b["width"] - stack[-1]["width"]) <= 1 \
@@ -1636,7 +1643,8 @@ def lint_spec(spec: dict, loc):
 
 # ----------------------------------------------------------------------------- public copy (OURS)
 
-INTERNAL_NOTE = re.compile(r"\b(?:proposed|tbd|to be confirmed|model change)\b", re.I)
+INTERNAL_NOTE = re.compile(r"\b(?:proposed|tbd|todo|fixme|to be confirmed|model change|change requested)\b", re.I)
+DAX_STRING = re.compile(r'"((?:[^"]|"")*)"')
 
 
 def lint_public_copy(texts, loc) -> None:

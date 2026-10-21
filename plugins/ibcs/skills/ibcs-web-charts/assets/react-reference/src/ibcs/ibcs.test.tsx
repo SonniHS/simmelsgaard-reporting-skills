@@ -152,10 +152,10 @@ describe("column chart with tiers", () => {
       }
     }
   });
-  it("end legend names sit at least font + 2 px apart", () => {
+  it("end legend names sit at least one line box (1.2 em) + 2 px apart", () => {
     const crowd = layoutColumnTiers([{ period: "Jan", AC: 4e6, BU: 4.01e6, PY: 3.99e6 }], { ...opts, tiers: [] });
     const ys = byRole(crowd, "legend").map((m) => (m.kind === "text" ? m.y : 0)).sort((a, b) => a - b);
-    for (let k = 1; k < ys.length; k++) expect(ys[k]! - ys[k - 1]!).toBeGreaterThanOrEqual(tokens.typography.size.label.px + 2 - 1e-6);
+    for (let k = 1; k < ys.length; k++) expect(ys[k]! - ys[k - 1]!).toBeGreaterThanOrEqual(1.2 * tokens.typography.size.label.px + 2 - 1e-6);
   });
   it("aligns a Total chart on its own scale with the months: same baselines and tier axes", () => {
     const total: PeriodRow[] = [{ period: "Total", closed: false, AC: 15.9e6, BU: 15.7e6, PY: 14.9e6, delta: 0.2e6, deltaPct: 0.013 }];
